@@ -387,6 +387,39 @@ if DependencyHelper.sidekiq_present?
         expect(job).to_not have_key("traceparent")
       end
     end
+
+    context "when job enqueue events are suppressed" do
+      # As happens under Active Job, which records the enqueue itself.
+      def enqueue_suppressed(transaction)
+        transaction.suppress_job_enqueue_events { enqueue }
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
+
+        expect(enqueue_suppressed(transaction)).to eq(:enqueued)
+
+        # The outer integration records the enqueue, so this one doesn't.
+        event_names = transaction.to_h["events"].map { |event| event["name"] }
+        expect(event_names).to_not include("enqueue.sidekiq")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
+
+        expect(enqueue_suppressed(transaction)).to eq(:enqueued)
+        Appsignal::Transaction.complete_current!
+
+        # No producer span for the suppressed enqueue...
+        expect(span_exporter.finished_spans.map(&:name)).to_not include("enqueue.sidekiq")
+        # ...but the trace context is still injected so the job links back.
+        expect(job).to have_key("traceparent")
+      end
+    end
   end
 
   describe Appsignal::Integrations::SidekiqMiddleware do

@@ -61,6 +61,15 @@ module Appsignal
     # @!visibility private
     class SidekiqClientMiddleware
       def call(_worker_class, job, _queue, _redis_pool)
+        # Under Active Job the enqueue is already recorded as an
+        # `enqueue.active_job` event, so skip recording it again here. The trace
+        # context is still injected so the performed job links back.
+        if Appsignal::Transaction.current? &&
+            Appsignal::Transaction.current.job_enqueue_events_suppressed?
+          Appsignal::OpenTelemetry.inject_context(job)
+          return yield
+        end
+
         Appsignal.instrument("enqueue.sidekiq", :opentelemetry_kind => :producer) do
           Appsignal::OpenTelemetry.inject_context(job)
           yield
