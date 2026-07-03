@@ -158,6 +158,15 @@ module Appsignal
     # @!visibility private
     class ShoryukenClientMiddleware
       def call(options)
+        # Under Active Job the enqueue is already recorded as an
+        # `enqueue.active_job` event, so skip recording it again here. The trace
+        # context is still injected so the performed job links back.
+        if Appsignal::Transaction.current? &&
+            Appsignal::Transaction.current.job_enqueue_events_suppressed?
+          ShoryukenTraceContext.inject(options)
+          return yield
+        end
+
         Appsignal.instrument("enqueue.shoryuken", :opentelemetry_kind => :producer) do
           ShoryukenTraceContext.inject(options)
           yield
