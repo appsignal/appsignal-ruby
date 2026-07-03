@@ -612,6 +612,40 @@ if DependencyHelper.active_job_present?
         end
       end
 
+      describe "suppressing nested adapter enqueue events" do
+        before { ActiveJob::Base.queue_adapter = :test }
+
+        # Records whether job enqueue events were suppressed at the moment the
+        # adapter enqueued the job -- the window in which a nested adapter
+        # integration (Sidekiq, Resque, ...) would record its own event, and
+        # which Active Job suppresses so the enqueue is recorded once.
+        def suppressed_during_enqueue
+          captured = nil
+          adapter = ActiveJob::Base.queue_adapter
+          allow(adapter).to receive(:enqueue).and_wrap_original do |method, *args|
+            captured = Appsignal::Transaction.current.job_enqueue_events_suppressed?
+            method.call(*args)
+          end
+
+          transaction = http_request_transaction
+          set_current_transaction(transaction)
+          ActiveJobTestJob.perform_later
+
+          captured
+        end
+
+        it "suppresses them while the adapter enqueues in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          expect(suppressed_during_enqueue).to be(true)
+        end
+
+        it "suppresses them while the adapter enqueues in collector mode",
+          :collector_mode do
+          start_collector_agent
+          expect(suppressed_during_enqueue).to be(true)
+        end
+      end
+
       describe "linking a performed job back to the enqueuer" do
         # A job arrives with OpenTelemetry's serialized array-of-pairs carrier.
         def perform_with_incoming_context
