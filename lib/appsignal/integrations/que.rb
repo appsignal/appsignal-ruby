@@ -116,7 +116,10 @@ module Appsignal
         # propagation are recorded once by the `bulk_enqueue` wrapper.
         return super if bulk_insert_in_progress?
 
-        record_enqueue(job_options) do |merged|
+        # Resolve the job class the way Que does: an explicit `:job_class`, else
+        # the class `enqueue` was called on.
+        title = "enqueue #{job_options[:job_class] || name} job"
+        record_enqueue(job_options, "enqueue.que", title) do |merged|
           super(*args, :job_options => merged, **rest)
         end
       end
@@ -127,7 +130,7 @@ module Appsignal
       # the current trace context into the job's tags so the job that later
       # performs links back. Yields the (possibly tag-augmented) `job_options` to
       # do the actual enqueue.
-      def record_enqueue(job_options, event_name = "enqueue.que")
+      def record_enqueue(job_options, event_name, title)
         # Under Active Job the enqueue is already recorded as an
         # `enqueue.active_job` event, so skip recording it again here. The trace
         # context is still injected so the performed job links back.
@@ -136,7 +139,7 @@ module Appsignal
           return yield job_options_with_context(job_options)
         end
 
-        Appsignal.instrument(event_name, :opentelemetry_kind => :producer) do
+        Appsignal.instrument(event_name, title, :opentelemetry_kind => :producer) do
           yield job_options_with_context(job_options)
         end
       end
@@ -163,9 +166,23 @@ module Appsignal
     # the inner enqueues are pass-throughs.
     module QueBulkClientPlugin
       def bulk_enqueue(job_options: {}, **rest, &block)
-        record_enqueue(job_options, "bulk_enqueue.que") do |merged|
+        record_enqueue(job_options, "bulk_enqueue.que", bulk_enqueue_title(job_options)) do |merged|
           super(:job_options => merged, **rest, &block)
         end
+      end
+
+      private
+
+      # The batch's job class is known up front only from an explicit
+      # `:job_class` or when `bulk_enqueue` is called on a concrete subclass;
+      # called on `Que::Job` itself the class isn't known until the inner
+      # enqueues run, so the title is left class-less.
+      def bulk_enqueue_title(job_options)
+        job_class = job_options[:job_class]
+        job_class ||= name unless equal?(::Que::Job)
+        return "bulk enqueue jobs" unless job_class
+
+        "bulk enqueue #{job_class} jobs"
       end
     end
   end

@@ -388,8 +388,10 @@ if DependencyHelper.que_present?
 
         enqueue
 
-        event_names = transaction.to_h["events"].map { |event| event["name"] }
-        expect(event_names).to include("enqueue.que")
+        # Records an enqueue event on the transaction, titled after the job.
+        event = transaction.to_h["events"].find { |e| e["name"] == "enqueue.que" }
+        expect(event).to_not be_nil
+        expect(event["title"]).to eq("enqueue MyQueJob job")
         # No wire context in agent mode; only the user's own tag persists.
         expect(enqueued_tags).to eq(["user:42"])
       end
@@ -402,8 +404,10 @@ if DependencyHelper.que_present?
         enqueue
         Appsignal::Transaction.complete_current!
 
-        # The enqueue is a producer event span under the active transaction.
-        producer = event_spans.find { |s| s.name == "enqueue.que" }
+        # The enqueue is a producer event span under the active transaction,
+        # named after the job being enqueued.
+        producer = event_spans.find { |s| s.name == "enqueue MyQueJob job" }
+        expect(producer.attributes["appsignal.category"]).to eq("enqueue.que")
         expect(producer.kind).to eq(:producer)
         expect(producer.parent_span_id).to eq(root_span.span_id)
 
@@ -503,9 +507,13 @@ if DependencyHelper.que_present?
 
           bulk_enqueue
 
+          # One event for the whole batch, titled after the job -- the inner
+          # enqueues don't add their own.
+          bulk_events =
+            transaction.to_h["events"].select { |e| e["name"] == "bulk_enqueue.que" }
+          expect(bulk_events.size).to eq(1)
+          expect(bulk_events.first["title"]).to eq("bulk enqueue MyQueJob jobs")
           event_names = transaction.to_h["events"].map { |event| event["name"] }
-          # One event for the whole batch -- the inner enqueues don't add their own.
-          expect(event_names.count { |name| name == "bulk_enqueue.que" }).to eq(1)
           expect(event_names).to_not include("enqueue.que")
           expect(enqueued_tags).to eq(["user:42"])
         end
@@ -518,9 +526,10 @@ if DependencyHelper.que_present?
           bulk_enqueue
           Appsignal::Transaction.complete_current!
 
-          producers = event_spans.select { |s| s.name == "bulk_enqueue.que" }
+          producers = event_spans.select { |s| s.name == "bulk enqueue MyQueJob jobs" }
           expect(producers.size).to eq(1)
           producer = producers.first
+          expect(producer.attributes["appsignal.category"]).to eq("bulk_enqueue.que")
           expect(producer.kind).to eq(:producer)
           expect(producer.parent_span_id).to eq(root_span.span_id)
 
