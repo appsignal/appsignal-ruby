@@ -183,5 +183,20 @@ if DependencyHelper.resque_present?
         expect(item).to eq("class" => "ResqueTestJob", "args" => [])
       end
     end
+
+    context "when job enqueue events are suppressed" do
+      # As happens under Active Job, which records the enqueue itself.
+      it "passes through without recording the enqueue" do
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
+
+        result = transaction.suppress_job_enqueue_events { enqueue }
+        expect(result).to eq(:pushed)
+
+        # The outer integration records the enqueue, so this one doesn't.
+        event_names = transaction.to_h["events"].map { |event| event["name"] }
+        expect(event_names).to_not include("enqueue.resque")
+      end
+    end
   end
 end

@@ -35,6 +35,11 @@ module Appsignal
     # @!visibility private
     module ResquePushIntegration
       def push(_queue, _item)
+        # Under Active Job the enqueue is already recorded as an
+        # `enqueue.active_job` event, so skip recording it again here.
+        return super if Appsignal::Transaction.current? &&
+          Appsignal::Transaction.current.job_enqueue_events_suppressed?
+
         Appsignal.instrument("enqueue.resque") { super }
       end
     end
