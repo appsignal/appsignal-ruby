@@ -110,10 +110,47 @@ module Appsignal
     # transparent pass-through.
     module QueClientPlugin
       def enqueue(*args, job_options: {}, **rest)
-        Appsignal.instrument("enqueue.que", :opentelemetry_kind => :producer) do
+        # Inside a Que 2 `bulk_enqueue` block the per-job enqueue must stay a
+        # pass-through: tags come from `bulk_enqueue`'s own `job_options` (Que
+        # raises if an inner enqueue passes them), and the batch's event and
+        # propagation are recorded once by the `bulk_enqueue` wrapper.
+        return super if bulk_insert_in_progress?
+
+        record_enqueue(job_options) do |merged|
+          super(*args, :job_options => merged, **rest)
+        end
+      end
+
+      private
+
+      # Records the enqueue as a producer event and, in collector mode, injects
+      # the current trace context into the job's tags so the job that later
+      # performs links back. Yields the (possibly tag-augmented) `job_options` to
+      # do the actual enqueue.
+      def record_enqueue(job_options, event_name = "enqueue.que")
+        Appsignal.instrument(event_name, :opentelemetry_kind => :producer) do
           tags = QueTraceContext.inject(job_options[:tags])
           merged = tags.empty? ? job_options : job_options.merge(:tags => tags)
-          super(*args, :job_options => merged, **rest)
+          yield merged
+        end
+      end
+
+      def bulk_insert_in_progress?
+        !Thread.current[:que_jobs_to_bulk_insert].nil?
+      end
+    end
+
+    # @!visibility private
+    #
+    # `bulk_enqueue` exists only on Que 2+, so this lives in its own module that
+    # the hook prepends only when Que has the method -- otherwise we'd define a
+    # `bulk_enqueue` on Que versions that have none. The whole batch shares one
+    # `job_options`, so it records a single `bulk_enqueue.que` producer event and
+    # the inner enqueues are pass-throughs.
+    module QueBulkClientPlugin
+      def bulk_enqueue(job_options: {}, **rest, &block)
+        record_enqueue(job_options, "bulk_enqueue.que") do |merged|
+          super(:job_options => merged, **rest, &block)
         end
       end
     end

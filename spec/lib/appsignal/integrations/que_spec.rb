@@ -347,9 +347,10 @@ if DependencyHelper.que_present?
     end
   end
 
-  # Enqueue-side propagation reads context from the job's tags, which only Que 2
-  # persists in the layout these tests inspect; Que 1 enqueue is not covered.
-  describe Appsignal::Integrations::QueClientPlugin, :if => DependencyHelper.que2_present? do
+  # Enqueue-side propagation reads context from the job's tags. The carrier
+  # (tags serialized into the job's `data`) is identical on Que 1 and Que 2, so
+  # this is covered on both versions.
+  describe Appsignal::Integrations::QueClientPlugin do
     let(:job) do
       Class.new(::Que::Job) do
         def self.name
@@ -367,10 +368,11 @@ if DependencyHelper.que_present?
       end
     end
 
-    # `data` is the 7th value Que passes to its `:insert_job` query; the tags
-    # live under it as a JSON string.
+    # `data` is the last value Que passes to its `:insert_job` query on both Que
+    # 1 and Que 2 (Que 2 inserts `kwargs` before it, shifting its index); the
+    # tags live under it as a JSON string.
     def enqueued_tags
-      data = captured[:values] && captured[:values][6]
+      data = captured[:values]&.last
       data ? JSON.parse(data)["tags"] : nil
     end
 
@@ -436,6 +438,76 @@ if DependencyHelper.que_present?
         # No transaction to attach to: nothing recorded, nothing injected.
         expect(span_exporter.finished_spans.map(&:name)).to_not include("enqueue.que")
         expect(enqueued_tags).to eq(["user:42"])
+      end
+    end
+
+    # `bulk_enqueue` is Que 2 only. The whole batch shares one `job_options`, so
+    # it records a single producer event and the inner enqueues are pass-throughs.
+    describe "#bulk_enqueue", :if => DependencyHelper.que2_present? do
+      before do
+        # Que's bulk path constantizes the job class by name, so it needs a real
+        # constant (the single-enqueue path uses `new` and doesn't).
+        stub_const("MyQueJob", job)
+        allow(Que).to receive(:transaction).and_yield
+        allow(Que).to receive(:execute) do |command, values|
+          captured[:values] = values if command == :bulk_insert_jobs
+          [{}]
+        end
+      end
+
+      def bulk_enqueue(tags: ["user:42"])
+        job.bulk_enqueue(:job_options => { :tags => tags }) do
+          job.enqueue("post_id_123")
+          job.enqueue("post_id_456")
+        end
+      end
+
+      context "with an active transaction" do
+        it "records one producer event for the batch in agent mode", :agent_mode do
+          start_agent
+          transaction = http_request_transaction
+          set_current_transaction(transaction)
+
+          bulk_enqueue
+
+          event_names = transaction.to_h["events"].map { |event| event["name"] }
+          # One event for the whole batch -- the inner enqueues don't add their own.
+          expect(event_names.count { |name| name == "bulk_enqueue.que" }).to eq(1)
+          expect(event_names).to_not include("enqueue.que")
+          expect(enqueued_tags).to eq(["user:42"])
+        end
+
+        it "injects the batch's context once in collector mode", :collector_mode do
+          start_collector_agent
+          transaction = http_request_transaction
+          set_current_transaction(transaction)
+
+          bulk_enqueue
+          Appsignal::Transaction.complete_current!
+
+          producers = event_spans.select { |s| s.name == "bulk_enqueue.que" }
+          expect(producers.size).to eq(1)
+          producer = producers.first
+          expect(producer.kind).to eq(:producer)
+          expect(producer.parent_span_id).to eq(root_span.span_id)
+
+          # Every job in the batch carries the one producer span's context.
+          expect(enqueued_tags).to include("user:42")
+          expect(enqueued_tags)
+            .to include("traceparent:00-#{producer.hex_trace_id}-#{producer.hex_span_id}-01")
+        end
+
+        it "skips propagation rather than break the enqueue when tags are full",
+          :collector_mode do
+          start_collector_agent
+          set_current_transaction(http_request_transaction)
+
+          full = %w[t1 t2 t3 t4 t5]
+          expect { bulk_enqueue(:tags => full) }.to_not raise_error
+          Appsignal::Transaction.complete_current!
+
+          expect(enqueued_tags).to eq(full)
+        end
       end
     end
   end
