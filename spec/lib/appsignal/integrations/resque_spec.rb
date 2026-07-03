@@ -171,8 +171,10 @@ if DependencyHelper.resque_present?
 
         expect(enqueue).to eq(:pushed)
 
-        event_names = transaction.to_h["events"].map { |event| event["name"] }
-        expect(event_names).to include("enqueue.resque")
+        # Records an enqueue event on the transaction, titled after the job.
+        event = transaction.to_h["events"].find { |e| e["name"] == "enqueue.resque" }
+        expect(event).to_not be_nil
+        expect(event["title"]).to eq("enqueue ResqueTestJob job")
         expect(item).to eq("class" => "ResqueTestJob", "args" => [])
       end
     end
