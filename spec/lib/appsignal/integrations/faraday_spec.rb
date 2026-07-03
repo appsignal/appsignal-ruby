@@ -2,10 +2,11 @@ if DependencyHelper.faraday_present?
   require "faraday"
   require "appsignal/integrations/faraday"
 
-  # Integration test against the real Faraday gem. The hook auto-installs, onto
-  # every connection, Faraday's instrumentation middleware (so the
-  # `request.faraday` event fires without the user adding it) and an inject-only
-  # middleware (so outgoing requests carry trace context).
+  # Integration test against the real Faraday gem. The hook auto-installs
+  # AppSignal's middleware onto every connection, so the `request.faraday` event
+  # is recorded and outgoing requests carry trace context, without the user
+  # adding anything -- and without a dependency on ActiveSupport (these gemfiles
+  # no longer load it).
   describe "Faraday integration" do
     before { Appsignal::Hooks::FaradayHook.new.install }
 

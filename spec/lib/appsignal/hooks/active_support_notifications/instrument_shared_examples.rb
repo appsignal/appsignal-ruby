@@ -151,6 +151,34 @@ shared_examples "activesupport instrument override" do
     end
   end
 
+  describe "a suppressed event, recorded by a dedicated integration" do
+    def perform
+      as.instrument("request.faraday", :method => :get) { "value" }
+    end
+
+    it "in agent mode", :agent_mode do
+      start_agent
+      transaction = http_request_transaction
+      set_current_transaction(transaction)
+      as.notifier = notifier
+
+      expect(perform).to eq "value"
+      expect(transaction).to_not include_events
+    end
+
+    it "in collector mode", :collector_mode do
+      start_collector_agent
+      transaction = http_request_transaction
+      set_current_transaction(transaction)
+      as.notifier = notifier
+
+      expect(perform).to eq "value"
+      Appsignal::Transaction.complete_current!
+
+      expect(event_spans).to be_empty
+    end
+  end
+
   describe "when an error is raised in an instrumented block" do
     def perform
       expect do
