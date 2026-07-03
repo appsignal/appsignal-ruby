@@ -289,6 +289,39 @@ if DependencyHelper.resque_present?
           expect(item).to_not have_key("traceparent")
         end
       end
+
+      context "when job enqueue events are suppressed" do
+        # As happens under Active Job, which records the enqueue itself.
+        def enqueue_suppressed(transaction)
+          transaction.suppress_job_enqueue_events { enqueue }
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent
+          transaction = http_request_transaction
+          set_current_transaction(transaction)
+
+          expect(enqueue_suppressed(transaction)).to eq(:pushed)
+
+          # The outer integration records the enqueue, so this one doesn't.
+          event_names = transaction.to_h["events"].map { |event| event["name"] }
+          expect(event_names).to_not include("enqueue.resque")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          transaction = http_request_transaction
+          set_current_transaction(transaction)
+
+          expect(enqueue_suppressed(transaction)).to eq(:pushed)
+          Appsignal::Transaction.complete_current!
+
+          # No producer span for the suppressed enqueue...
+          expect(span_exporter.finished_spans.map(&:name)).to_not include("enqueue.resque")
+          # ...but the trace context is still injected so the job links back.
+          expect(item).to have_key("traceparent")
+        end
+      end
     end
 
     describe "does not set arguments for ActiveJob" do

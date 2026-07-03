@@ -42,6 +42,15 @@ module Appsignal
     # @!visibility private
     module ResquePushIntegration
       def push(queue, item)
+        # Under Active Job the enqueue is already recorded as an
+        # `enqueue.active_job` event, so skip recording it again here. The trace
+        # context is still injected so the performed job links back.
+        if Appsignal::Transaction.current? &&
+            Appsignal::Transaction.current.job_enqueue_events_suppressed?
+          Appsignal::OpenTelemetry.inject_context(item)
+          return super
+        end
+
         Appsignal.instrument("enqueue.resque", :opentelemetry_kind => :producer) do
           Appsignal::OpenTelemetry.inject_context(item)
           super
