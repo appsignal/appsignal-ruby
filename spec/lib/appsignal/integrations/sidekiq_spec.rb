@@ -191,8 +191,10 @@ if DependencyHelper.sidekiq_present?
 
         expect(enqueue).to eq(:enqueued)
 
-        event_names = transaction.to_h["events"].map { |event| event["name"] }
-        expect(event_names).to include("enqueue.sidekiq")
+        # Records an enqueue event on the transaction, titled after the job.
+        event = transaction.to_h["events"].find { |e| e["name"] == "enqueue.sidekiq" }
+        expect(event).to_not be_nil
+        expect(event["title"]).to eq("enqueue TestClass job")
       end
     end
 
