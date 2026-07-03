@@ -2,7 +2,7 @@
 # This is a generated file by the `rake build_matrix:github:generate` task.
 # See `build_matrix.yml` for the build matrix.
 # Generate this file with `rake build_matrix:github:generate`.
-# Generated job count: 396
+# Generated job count: 408
 ---
 name: Ruby gem CI
 'on':
@@ -1401,6 +1401,60 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/sequel-collector.gemfile
+  ruby_4-0-0__shoryuken_ubuntu-latest:
+    name: Ruby 4.0.0 - shoryuken
+    needs: ruby_4-0-0_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 4.0.0
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - &25
+      name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/shoryuken.gemfile
+  ruby_4-0-0__shoryuken-collector_ubuntu-latest:
+    name: Ruby 4.0.0 - shoryuken-collector
+    needs: ruby_4-0-0_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 4.0.0
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - *25
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/shoryuken-collector.gemfile
   ruby_4-0-0__sinatra_ubuntu-latest:
     name: Ruby 4.0.0 - sinatra
     needs: ruby_4-0-0_ubuntu-latest
@@ -1421,7 +1475,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &25
+    - &26
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -1449,7 +1503,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *25
+    - *26
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1475,7 +1529,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &26
+    - &27
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -1503,7 +1557,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *26
+    - *27
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1529,7 +1583,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &27
+    - &28
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -1557,7 +1611,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *27
+    - *28
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1583,7 +1637,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &28
+    - &29
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -1611,7 +1665,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *28
+    - *29
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1637,7 +1691,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &29
+    - &30
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -1665,7 +1719,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *29
+    - *30
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1691,7 +1745,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &30
+    - &31
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -1719,7 +1773,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *30
+    - *31
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1774,7 +1828,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &31
+    - &32
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     - name: Run tests without extension
@@ -1804,7 +1858,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *31
+    - *32
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1830,7 +1884,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &32
+    - &33
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -1858,7 +1912,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *32
+    - *33
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1884,7 +1938,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &33
+    - &34
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -1912,7 +1966,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *33
+    - *34
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1938,7 +1992,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &34
+    - &35
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -1966,7 +2020,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *34
+    - *35
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -1992,7 +2046,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &35
+    - &36
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -2020,7 +2074,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *35
+    - *36
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2046,7 +2100,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &36
+    - &37
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -2074,7 +2128,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *36
+    - *37
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2100,7 +2154,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &37
+    - &38
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -2128,7 +2182,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *37
+    - *38
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2154,7 +2208,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &38
+    - &39
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -2182,7 +2236,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *38
+    - *39
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2208,7 +2262,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &39
+    - &40
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -2236,7 +2290,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *39
+    - *40
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2262,7 +2316,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &40
+    - &41
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -2290,7 +2344,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *40
+    - *41
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2316,7 +2370,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &41
+    - &42
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -2344,7 +2398,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *41
+    - *42
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2370,7 +2424,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &42
+    - &43
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -2398,7 +2452,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *42
+    - *43
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2424,7 +2478,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &43
+    - &44
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -2452,7 +2506,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *43
+    - *44
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2478,7 +2532,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &44
+    - &45
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -2506,7 +2560,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *44
+    - *45
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2532,7 +2586,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &45
+    - &46
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -2560,7 +2614,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *45
+    - *46
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2586,7 +2640,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &46
+    - &47
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -2614,7 +2668,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *46
+    - *47
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2640,7 +2694,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &47
+    - &48
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -2668,7 +2722,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *47
+    - *48
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2694,7 +2748,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &48
+    - &49
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -2722,7 +2776,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *48
+    - *49
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2748,7 +2802,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &49
+    - &50
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -2776,7 +2830,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *49
+    - *50
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2802,7 +2856,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &50
+    - &51
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -2830,7 +2884,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *50
+    - *51
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2856,7 +2910,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &51
+    - &52
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -2884,7 +2938,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *51
+    - *52
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2910,7 +2964,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &52
+    - &53
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -2938,7 +2992,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *52
+    - *53
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -2964,7 +3018,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &53
+    - &54
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -2992,7 +3046,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *53
+    - *54
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -3018,7 +3072,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &54
+    - &55
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -3046,7 +3100,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *54
+    - *55
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -3072,7 +3126,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &55
+    - &56
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -3100,7 +3154,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *55
+    - *56
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -3126,7 +3180,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &56
+    - &57
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -3154,7 +3208,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *56
+    - *57
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -3180,7 +3234,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &57
+    - &58
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -3208,7 +3262,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *57
+    - *58
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -3234,7 +3288,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &58
+    - &59
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -3262,7 +3316,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *58
+    - *59
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -3288,7 +3342,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &59
+    - &60
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -3316,12 +3370,66 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *59
+    - *60
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/sequel-collector.gemfile
+  ruby_3-4-1__shoryuken_ubuntu-latest:
+    name: Ruby 3.4.1 - shoryuken
+    needs: ruby_3-4-1_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.4.1
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - &61
+      name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/shoryuken.gemfile
+  ruby_3-4-1__shoryuken-collector_ubuntu-latest:
+    name: Ruby 3.4.1 - shoryuken-collector
+    needs: ruby_3-4-1_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.4.1
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - *61
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/shoryuken-collector.gemfile
   ruby_3-4-1__sinatra_ubuntu-latest:
     name: Ruby 3.4.1 - sinatra
     needs: ruby_3-4-1_ubuntu-latest
@@ -3342,7 +3450,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &60
+    - &62
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -3370,7 +3478,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *60
+    - *62
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -3396,7 +3504,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &61
+    - &63
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -3424,7 +3532,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *61
+    - *63
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -3450,7 +3558,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &62
+    - &64
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -3478,7 +3586,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *62
+    - *64
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -3504,7 +3612,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &63
+    - &65
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -3532,7 +3640,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *63
+    - *65
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -3558,7 +3666,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &64
+    - &66
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -3586,7 +3694,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *64
+    - *66
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -3612,7 +3720,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &65
+    - &67
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -3640,7 +3748,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *65
+    - *67
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -3695,7 +3803,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &66
+    - &68
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     - name: Run tests without extension
@@ -3725,7 +3833,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *66
+    - *68
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -3751,7 +3859,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &67
+    - &69
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -3779,7 +3887,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *67
+    - *69
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -3805,7 +3913,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &68
+    - &70
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -3833,7 +3941,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *68
+    - *70
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -3859,7 +3967,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &69
+    - &71
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -3887,7 +3995,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *69
+    - *71
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -3913,7 +4021,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &70
+    - &72
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -3941,7 +4049,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *70
+    - *72
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -3967,7 +4075,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &71
+    - &73
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -3995,7 +4103,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *71
+    - *73
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -4021,7 +4129,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &72
+    - &74
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -4049,7 +4157,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *72
+    - *74
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -4075,7 +4183,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &73
+    - &75
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -4103,7 +4211,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *73
+    - *75
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -4129,7 +4237,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &74
+    - &76
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -4157,7 +4265,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *74
+    - *76
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -4183,7 +4291,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &75
+    - &77
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -4211,7 +4319,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *75
+    - *77
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -4237,7 +4345,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &76
+    - &78
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -4265,7 +4373,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *76
+    - *78
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -4291,7 +4399,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &77
+    - &79
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -4319,7 +4427,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *77
+    - *79
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -4345,7 +4453,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &78
+    - &80
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -4373,7 +4481,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *78
+    - *80
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -4399,7 +4507,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &79
+    - &81
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -4427,7 +4535,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *79
+    - *81
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -4453,7 +4561,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &80
+    - &82
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -4481,7 +4589,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *80
+    - *82
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -4507,7 +4615,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &81
+    - &83
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -4535,7 +4643,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *81
+    - *83
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -4561,7 +4669,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &82
+    - &84
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -4589,7 +4697,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *82
+    - *84
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -4615,7 +4723,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &83
+    - &85
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -4643,7 +4751,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *83
+    - *85
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -4669,7 +4777,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &84
+    - &86
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -4697,7 +4805,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *84
+    - *86
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -4723,7 +4831,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &85
+    - &87
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -4751,7 +4859,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *85
+    - *87
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -4777,7 +4885,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &86
+    - &88
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -4805,7 +4913,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *86
+    - *88
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -4831,7 +4939,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &87
+    - &89
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -4859,7 +4967,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *87
+    - *89
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -4885,7 +4993,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &88
+    - &90
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -4913,7 +5021,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *88
+    - *90
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -4939,7 +5047,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &89
+    - &91
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -4967,7 +5075,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *89
+    - *91
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -4993,7 +5101,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &90
+    - &92
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -5021,7 +5129,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *90
+    - *92
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -5047,7 +5155,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &91
+    - &93
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -5075,7 +5183,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *91
+    - *93
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -5101,7 +5209,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &92
+    - &94
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -5129,7 +5237,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *92
+    - *94
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -5155,7 +5263,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &93
+    - &95
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -5183,7 +5291,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *93
+    - *95
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -5209,7 +5317,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &94
+    - &96
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -5237,7 +5345,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *94
+    - *96
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -5263,7 +5371,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &95
+    - &97
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -5291,12 +5399,66 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *95
+    - *97
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/sequel-collector.gemfile
+  ruby_3-3-4__shoryuken_ubuntu-latest:
+    name: Ruby 3.3.4 - shoryuken
+    needs: ruby_3-3-4_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.3.4
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - &98
+      name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/shoryuken.gemfile
+  ruby_3-3-4__shoryuken-collector_ubuntu-latest:
+    name: Ruby 3.3.4 - shoryuken-collector
+    needs: ruby_3-3-4_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.3.4
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - *98
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/shoryuken-collector.gemfile
   ruby_3-3-4__sinatra_ubuntu-latest:
     name: Ruby 3.3.4 - sinatra
     needs: ruby_3-3-4_ubuntu-latest
@@ -5317,7 +5479,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &96
+    - &99
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -5345,7 +5507,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *96
+    - *99
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -5371,7 +5533,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &97
+    - &100
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -5399,7 +5561,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *97
+    - *100
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -5425,7 +5587,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &98
+    - &101
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -5453,7 +5615,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *98
+    - *101
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -5479,7 +5641,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &99
+    - &102
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -5507,7 +5669,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *99
+    - *102
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -5562,7 +5724,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &100
+    - &103
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     - name: Run tests without extension
@@ -5592,7 +5754,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *100
+    - *103
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -5618,7 +5780,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &101
+    - &104
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -5646,7 +5808,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *101
+    - *104
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -5672,7 +5834,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &102
+    - &105
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -5700,7 +5862,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *102
+    - *105
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -5726,7 +5888,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &103
+    - &106
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -5754,7 +5916,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *103
+    - *106
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -5780,7 +5942,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &104
+    - &107
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -5808,7 +5970,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *104
+    - *107
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -5834,7 +5996,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &105
+    - &108
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -5862,7 +6024,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *105
+    - *108
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -5888,7 +6050,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &106
+    - &109
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -5916,7 +6078,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *106
+    - *109
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -5942,7 +6104,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &107
+    - &110
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -5970,7 +6132,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *107
+    - *110
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -5996,7 +6158,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &108
+    - &111
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -6024,7 +6186,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *108
+    - *111
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -6050,7 +6212,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &109
+    - &112
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -6078,7 +6240,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *109
+    - *112
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -6104,7 +6266,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &110
+    - &113
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -6132,7 +6294,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *110
+    - *113
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -6158,7 +6320,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &111
+    - &114
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -6186,7 +6348,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *111
+    - *114
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -6212,7 +6374,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &112
+    - &115
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -6240,7 +6402,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *112
+    - *115
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -6266,7 +6428,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &113
+    - &116
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -6294,7 +6456,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *113
+    - *116
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -6320,7 +6482,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &114
+    - &117
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -6348,7 +6510,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *114
+    - *117
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -6374,7 +6536,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &115
+    - &118
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -6402,7 +6564,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *115
+    - *118
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -6428,7 +6590,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &116
+    - &119
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -6456,7 +6618,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *116
+    - *119
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -6482,7 +6644,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &117
+    - &120
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -6510,7 +6672,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *117
+    - *120
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -6536,7 +6698,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &118
+    - &121
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -6564,7 +6726,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *118
+    - *121
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -6590,7 +6752,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &119
+    - &122
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -6618,7 +6780,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *119
+    - *122
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -6644,7 +6806,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &120
+    - &123
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -6672,7 +6834,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *120
+    - *123
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -6698,7 +6860,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &121
+    - &124
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -6726,7 +6888,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *121
+    - *124
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -6752,7 +6914,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &122
+    - &125
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -6780,7 +6942,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *122
+    - *125
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -6806,7 +6968,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &123
+    - &126
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -6834,7 +6996,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *123
+    - *126
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -6860,7 +7022,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &124
+    - &127
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -6888,7 +7050,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *124
+    - *127
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -6914,7 +7076,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &125
+    - &128
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -6942,7 +7104,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *125
+    - *128
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -6968,7 +7130,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &126
+    - &129
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -6996,7 +7158,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *126
+    - *129
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -7022,7 +7184,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &127
+    - &130
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -7050,7 +7212,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *127
+    - *130
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -7076,7 +7238,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &128
+    - &131
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -7104,12 +7266,66 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *128
+    - *131
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/sequel-collector.gemfile
+  ruby_3-2-5__shoryuken_ubuntu-latest:
+    name: Ruby 3.2.5 - shoryuken
+    needs: ruby_3-2-5_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.2.5
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - &132
+      name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/shoryuken.gemfile
+  ruby_3-2-5__shoryuken-collector_ubuntu-latest:
+    name: Ruby 3.2.5 - shoryuken-collector
+    needs: ruby_3-2-5_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.2.5
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - *132
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/shoryuken-collector.gemfile
   ruby_3-2-5__sinatra_ubuntu-latest:
     name: Ruby 3.2.5 - sinatra
     needs: ruby_3-2-5_ubuntu-latest
@@ -7130,7 +7346,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &129
+    - &133
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -7158,7 +7374,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *129
+    - *133
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -7184,7 +7400,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &130
+    - &134
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -7212,7 +7428,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *130
+    - *134
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -7238,7 +7454,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &131
+    - &135
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -7266,7 +7482,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *131
+    - *135
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -7292,7 +7508,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &132
+    - &136
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -7320,7 +7536,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *132
+    - *136
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -7375,7 +7591,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &133
+    - &137
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     - name: Run tests without extension
@@ -7405,7 +7621,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *133
+    - *137
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -7431,7 +7647,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &134
+    - &138
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -7459,7 +7675,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *134
+    - *138
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -7485,7 +7701,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &135
+    - &139
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -7513,7 +7729,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *135
+    - *139
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -7539,7 +7755,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &136
+    - &140
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -7567,7 +7783,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *136
+    - *140
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -7593,7 +7809,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &137
+    - &141
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -7621,7 +7837,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *137
+    - *141
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -7647,7 +7863,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &138
+    - &142
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -7675,7 +7891,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *138
+    - *142
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -7701,7 +7917,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &139
+    - &143
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -7729,7 +7945,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *139
+    - *143
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -7755,7 +7971,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &140
+    - &144
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -7783,7 +7999,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *140
+    - *144
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -7809,7 +8025,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &141
+    - &145
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -7837,7 +8053,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *141
+    - *145
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -7863,7 +8079,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &142
+    - &146
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -7891,7 +8107,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *142
+    - *146
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -7917,7 +8133,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &143
+    - &147
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -7945,7 +8161,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *143
+    - *147
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -7971,7 +8187,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &144
+    - &148
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -7999,7 +8215,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *144
+    - *148
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -8025,7 +8241,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &145
+    - &149
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -8053,7 +8269,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *145
+    - *149
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -8079,7 +8295,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &146
+    - &150
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -8107,7 +8323,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *146
+    - *150
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -8133,7 +8349,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &147
+    - &151
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -8161,7 +8377,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *147
+    - *151
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -8187,7 +8403,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &148
+    - &152
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -8215,7 +8431,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *148
+    - *152
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -8241,7 +8457,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &149
+    - &153
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -8269,7 +8485,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *149
+    - *153
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -8295,7 +8511,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &150
+    - &154
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -8323,7 +8539,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *150
+    - *154
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -8349,7 +8565,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &151
+    - &155
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -8377,7 +8593,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *151
+    - *155
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -8403,7 +8619,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &152
+    - &156
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -8431,7 +8647,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *152
+    - *156
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -8457,7 +8673,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &153
+    - &157
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -8485,7 +8701,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *153
+    - *157
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -8511,7 +8727,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &154
+    - &158
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -8539,7 +8755,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *154
+    - *158
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -8565,7 +8781,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &155
+    - &159
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -8593,7 +8809,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *155
+    - *159
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -8619,7 +8835,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &156
+    - &160
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -8647,7 +8863,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *156
+    - *160
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -8673,7 +8889,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &157
+    - &161
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -8701,7 +8917,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *157
+    - *161
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -8727,7 +8943,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &158
+    - &162
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -8755,12 +8971,66 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *158
+    - *162
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/sequel-collector.gemfile
+  ruby_3-1-6__shoryuken_ubuntu-latest:
+    name: Ruby 3.1.6 - shoryuken
+    needs: ruby_3-1-6_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.1.6
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - &163
+      name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/shoryuken.gemfile
+  ruby_3-1-6__shoryuken-collector_ubuntu-latest:
+    name: Ruby 3.1.6 - shoryuken-collector
+    needs: ruby_3-1-6_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.1.6
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - *163
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/shoryuken-collector.gemfile
   ruby_3-1-6__sinatra_ubuntu-latest:
     name: Ruby 3.1.6 - sinatra
     needs: ruby_3-1-6_ubuntu-latest
@@ -8781,7 +9051,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &159
+    - &164
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -8809,7 +9079,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *159
+    - *164
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -8835,7 +9105,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &160
+    - &165
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -8863,7 +9133,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *160
+    - *165
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -8889,7 +9159,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &161
+    - &166
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -8917,7 +9187,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *161
+    - *166
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -8943,7 +9213,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - &162
+    - &167
       name: Run tests
       run: "./script/bundler_wrapper exec rake test"
     env:
@@ -8971,7 +9241,7 @@ jobs:
     - name: Print Makefile log file
       run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
         found'"
-    - *162
+    - *167
     env:
       RAILS_ENV: test
       JRUBY_OPTS: ''
@@ -9683,6 +9953,33 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/sequel.gemfile
+  ruby_3-0-7__shoryuken_ubuntu-latest:
+    name: Ruby 3.0.7 - shoryuken
+    needs: ruby_3-0-7_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.0.7
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/shoryuken.gemfile
   ruby_3-0-7__sinatra_ubuntu-latest:
     name: Ruby 3.0.7 - sinatra
     needs: ruby_3-0-7_ubuntu-latest
@@ -10335,6 +10632,33 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/sequel.gemfile
+  ruby_2-7-8__shoryuken_ubuntu-latest:
+    name: Ruby 2.7.8 - shoryuken
+    needs: ruby_2-7-8_ubuntu-latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 2.7.8
+        bundler-cache: true
+    - name: Install gem extension
+      run: "./script/bundler_wrapper exec rake extension:install"
+    - name: Print extension install report
+      run: "[ -e ext/install.report ] && cat ext/install.report || echo 'No ext/install.report
+        file found'"
+    - name: Print Makefile log file
+      run: "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file
+        found'"
+    - name: Run tests
+      run: "./script/bundler_wrapper exec rake test"
+    env:
+      RAILS_ENV: test
+      JRUBY_OPTS: ''
+      COV: '1'
+      BUNDLE_GEMFILE: gemfiles/shoryuken.gemfile
   ruby_2-7-8__sinatra_ubuntu-latest:
     name: Ruby 2.7.8 - sinatra
     needs: ruby_2-7-8_ubuntu-latest

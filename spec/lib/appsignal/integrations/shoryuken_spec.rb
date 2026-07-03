@@ -7,7 +7,7 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
   let(:time) { "2010-01-01 10:01:00UTC" }
   let(:worker_instance) { DemoShoryukenWorker.new }
   let(:queue) { "some-funky-queue-name" }
-  let(:sqs_msg) { double(:message_id => "msg1", :attributes => {}) }
+  let(:sqs_msg) { double(:message_id => "msg1", :attributes => {}, :message_attributes => {}) }
   let(:body) { {} }
   let(:options) { {} }
 
@@ -33,7 +33,11 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
   context "with a performance call" do
     let(:sent_timestamp) { Time.parse("2024-11-18 0:00:00UTC").to_i * 1000 }
     let(:sqs_msg) do
-      double(:message_id => "msg1", :attributes => { "SentTimestamp" => sent_timestamp })
+      double(
+        :message_id => "msg1",
+        :attributes => { "SentTimestamp" => sent_timestamp },
+        :message_attributes => {}
+      )
     end
 
     context "with complex argument" do
@@ -174,6 +178,51 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
     end
   end
 
+  context "with incoming trace context" do
+    let(:trace_id_hex) { "0af7651916cd43dd8448eb211c80319c" }
+    let(:span_id_hex) { "b7ad6b7169203331" }
+    let(:traceparent) { "00-#{trace_id_hex}-#{span_id_hex}-01" }
+    let(:sqs_msg) do
+      double(
+        :message_id => "msg1",
+        :attributes => {},
+        :message_attributes => {
+          "traceparent" => { :string_value => traceparent, :data_type => "String" }
+        }
+      )
+    end
+
+    describe "links the transaction back to the enqueuer" do
+      def perform
+        perform_shoryuken_job
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+
+        # The trace header doesn't leak into the transaction as a tag.
+        expect(last_transaction).to_not include_tags("traceparent" => traceparent)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+
+        # The job runs as its own trace, linked back to the span that enqueued it.
+        expect(root_span.kind).to eq(:consumer)
+        expect(root_span.hex_trace_id).to_not eq(trace_id_hex)
+        expect(root_span.links.size).to eq(1)
+        link_context = root_span.links.first.span_context
+        expect(link_context.hex_trace_id).to eq(trace_id_hex)
+        expect(link_context.hex_span_id).to eq(span_id_hex)
+
+        # The trace header doesn't leak into the trace as a tag.
+        expect(root_span.attributes).to_not have_key("appsignal.tag.traceparent")
+      end
+    end
+  end
+
   context "with exception" do
     describe "sets the exception on the transaction" do
       def perform
@@ -302,6 +351,78 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
           .to eq(sent_timestamp.to_s)
         queue_event = Array(root_span.events).find { |e| e.name == "appsignal.queue_start" }
         expect(queue_event.attributes["appsignal.queue_start"]).to eq(sent_timestamp)
+
+        # A batch carries messages from multiple traces, so it is not linked back.
+        expect(Array(root_span.links)).to be_empty
+      end
+    end
+  end
+end
+
+describe Appsignal::Integrations::ShoryukenClientMiddleware do
+  let(:options) { { :message_body => "foo" } }
+
+  def enqueue(&block)
+    block ||= lambda {}
+    described_class.new.call(options, &block)
+  end
+
+  context "with an active transaction" do
+    describe "records the enqueue under the transaction" do
+      def perform
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
+        enqueue
+        transaction
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent
+        transaction = perform
+
+        # Records an enqueue event on the transaction; no wire context in agent mode.
+        event_names = transaction.to_h["events"].map { |event| event["name"] }
+        expect(event_names).to include("enqueue.shoryuken")
+        expect(options).to_not have_key(:message_attributes)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        Appsignal::Transaction.complete_current!
+
+        # The enqueue is a producer event span under the active transaction.
+        producer = event_spans.find { |s| s.name == "enqueue.shoryuken" }
+        expect(producer.kind).to eq(:producer)
+        expect(producer.parent_span_id).to eq(root_span.span_id)
+
+        # The message carries the producer span's trace context as an SQS message
+        # attribute, wire-equivalent to OpenTelemetry's aws-sdk instrumentation.
+        expect(options[:message_attributes]["traceparent"]).to eq(
+          :string_value => "00-#{producer.hex_trace_id}-#{producer.hex_span_id}-01",
+          :data_type => "String"
+        )
+      end
+    end
+  end
+
+  context "without an active transaction" do
+    describe "passes through without recording or injecting" do
+      it "in agent mode", :agent_mode do
+        start_agent
+
+        enqueue
+        expect(options).to_not have_key(:message_attributes)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+
+        # No transaction to attach the event to, so nothing is emitted and the
+        # outgoing options are untouched.
+        enqueue
+        expect(span_exporter.finished_spans.map(&:name)).to_not include("enqueue.shoryuken")
+        expect(options).to_not have_key(:message_attributes)
       end
     end
   end
