@@ -60,6 +60,11 @@ module Appsignal
     # @!visibility private
     class SidekiqClientMiddleware
       def call(_worker_class, _job, _queue, _redis_pool, &block)
+        # Under Active Job the enqueue is already recorded as an
+        # `enqueue.active_job` event, so skip recording it again here.
+        return yield if Appsignal::Transaction.current? &&
+          Appsignal::Transaction.current.job_enqueue_events_suppressed?
+
         Appsignal.instrument("enqueue.sidekiq", &block)
       end
     end
