@@ -155,7 +155,11 @@ module Appsignal
         # transparent pass-through when there's no active transaction, and
         # `inject_context` no-ops outside collector mode.
         def enqueue(*, **)
-          Appsignal.instrument("enqueue.active_job", :opentelemetry_kind => :producer) do
+          Appsignal.instrument(
+            "enqueue.active_job",
+            "enqueue #{self.class.name} job",
+            :opentelemetry_kind => :producer
+          ) do
             Appsignal::OpenTelemetry.inject_context(__otel_headers)
             # Active Job enqueues through an adapter (Sidekiq, Resque, ...) that
             # has its own enqueue instrumentation. Suppress it so the enqueue is

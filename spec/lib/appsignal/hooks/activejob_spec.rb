@@ -585,8 +585,10 @@ if DependencyHelper.active_job_present?
           enqueue_within_transaction
           Appsignal::Transaction.complete_current!
 
-          # The enqueue is a producer event span under the enqueuing transaction.
-          producer = event_spans.find { |s| s.name == "enqueue.active_job" }
+          # The enqueue is a producer event span under the enqueuing
+          # transaction, named after the job being enqueued.
+          producer = event_spans.find { |s| s.name == "enqueue ActiveJobTestJob job" }
+          expect(producer.attributes["appsignal.category"]).to eq("enqueue.active_job")
           expect(producer.kind).to eq(:producer)
           expect(producer.parent_span_id).to eq(root_span.span_id)
 
@@ -604,8 +606,11 @@ if DependencyHelper.active_job_present?
 
           # Exactly one enqueue event: ours. The native `enqueue.active_job`
           # notification is suppressed so it isn't recorded a second time.
-          event_names = transaction.to_h["events"].map { |event| event["name"] }
-          expect(event_names.count("enqueue.active_job")).to eq(1)
+          enqueue_events =
+            transaction.to_h["events"].select { |event| event["name"] == "enqueue.active_job" }
+          expect(enqueue_events.size).to eq(1)
+          # The event is titled after the job being enqueued.
+          expect(enqueue_events.first["title"]).to eq("enqueue ActiveJobTestJob job")
 
           enqueued = ActiveJob::Base.queue_adapter.enqueued_jobs.first
           expect(enqueued).to_not have_key("__otel_headers")
