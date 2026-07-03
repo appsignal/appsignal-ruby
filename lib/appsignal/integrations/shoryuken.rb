@@ -82,6 +82,11 @@ module Appsignal
     # @!visibility private
     class ShoryukenClientMiddleware
       def call(_options, &block)
+        # Under Active Job the enqueue is already recorded as an
+        # `enqueue.active_job` event, so skip recording it again here.
+        return yield if Appsignal::Transaction.current? &&
+          Appsignal::Transaction.current.job_enqueue_events_suppressed?
+
         Appsignal.instrument("enqueue.shoryuken", &block)
       end
     end
