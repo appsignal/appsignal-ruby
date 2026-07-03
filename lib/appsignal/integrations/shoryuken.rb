@@ -81,13 +81,26 @@ module Appsignal
     #
     # @!visibility private
     class ShoryukenClientMiddleware
-      def call(_options, &block)
+      def call(options, &block)
         # Under Active Job the enqueue is already recorded as an
         # `enqueue.active_job` event, so skip recording it again here.
         return yield if Appsignal::Transaction.current? &&
           Appsignal::Transaction.current.job_enqueue_events_suppressed?
 
-        Appsignal.instrument("enqueue.shoryuken", &block)
+        Appsignal.instrument("enqueue.shoryuken", enqueue_title(options), &block)
+      end
+
+      private
+
+      # Enqueues through a Shoryuken worker carry the worker class in the
+      # `shoryuken_class` message attribute. Raw `send_message` enqueues don't,
+      # so there's no worker class to name -- fall back to the queue instead.
+      def enqueue_title(options)
+        worker_class = options.dig(:message_attributes, "shoryuken_class", :string_value)
+        return "enqueue #{worker_class} job" if worker_class
+
+        queue = options[:queue_url].to_s.split("/").last
+        "enqueue on #{queue}"
       end
     end
   end

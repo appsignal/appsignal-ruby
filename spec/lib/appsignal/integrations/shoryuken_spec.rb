@@ -175,14 +175,48 @@ describe Appsignal::Integrations::ShoryukenClientMiddleware do
   end
 
   context "with an active transaction" do
-    it "records the enqueue under the transaction" do
-      transaction = http_request_transaction
-      set_current_transaction(transaction)
+    # Enqueuing through a Shoryuken worker carries the worker class in the
+    # `shoryuken_class` message attribute, so the event is titled after it.
+    context "enqueued through a worker" do
+      let(:options) do
+        {
+          :message_body => "foo",
+          :queue_url => "https://sqs.us-east-1.amazonaws.com/0/my-queue",
+          :message_attributes => {
+            "shoryuken_class" => { :string_value => "MyShoryukenWorker", :data_type => "String" }
+          }
+        }
+      end
 
-      enqueue
+      it "records the enqueue under the transaction, titled after the worker" do
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
 
-      event_names = transaction.to_h["events"].map { |event| event["name"] }
-      expect(event_names).to include("enqueue.shoryuken")
+        enqueue
+
+        event = transaction.to_h["events"].find { |e| e["name"] == "enqueue.shoryuken" }
+        expect(event).to_not be_nil
+        expect(event["title"]).to eq("enqueue MyShoryukenWorker job")
+      end
+    end
+
+    # A raw `send_message` enqueue has no worker class, so the event falls back
+    # to naming the queue it was sent to.
+    context "enqueued as a raw message" do
+      let(:options) do
+        { :message_body => "foo", :queue_url => "https://sqs.us-east-1.amazonaws.com/0/my-queue" }
+      end
+
+      it "records the enqueue under the transaction, titled after the queue" do
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
+
+        enqueue
+
+        event = transaction.to_h["events"].find { |e| e["name"] == "enqueue.shoryuken" }
+        expect(event).to_not be_nil
+        expect(event["title"]).to eq("enqueue on my-queue")
+      end
     end
   end
 
