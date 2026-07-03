@@ -360,6 +360,28 @@ if DependencyHelper.active_job_present?
           expect(ActiveJob::Base.queue_adapter.enqueued_jobs.count).to eq(1)
         end
       end
+
+      context "with an active transaction" do
+        it "suppresses nested adapter enqueue events while enqueuing" do
+          transaction = http_request_transaction
+          set_current_transaction(transaction)
+
+          # The window in which a nested adapter integration (Sidekiq, Resque,
+          # ...) would record its own event, which Active Job suppresses so the
+          # enqueue is recorded once.
+          suppressed_during_enqueue = nil
+          adapter = ActiveJob::Base.queue_adapter
+          allow(adapter).to receive(:enqueue).and_wrap_original do |method, *args|
+            suppressed_during_enqueue =
+              Appsignal::Transaction.current.job_enqueue_events_suppressed?
+            method.call(*args)
+          end
+
+          ActiveJobTestJob.perform_later
+
+          expect(suppressed_during_enqueue).to be(true)
+        end
+      end
     end
 
     context "with params" do

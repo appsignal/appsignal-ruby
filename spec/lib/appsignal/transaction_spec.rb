@@ -681,6 +681,41 @@ describe Appsignal::Transaction do
     end
   end
 
+  describe "#suppress_job_enqueue_events" do
+    let(:transaction) { new_transaction }
+
+    it "suppresses job enqueue events for the duration of the block" do
+      expect(transaction.job_enqueue_events_suppressed?).to be(false)
+
+      transaction.suppress_job_enqueue_events do
+        expect(transaction.job_enqueue_events_suppressed?).to be(true)
+      end
+
+      expect(transaction.job_enqueue_events_suppressed?).to be(false)
+    end
+
+    it "resets the suppression when the block raises" do
+      expect do
+        transaction.suppress_job_enqueue_events { raise "error" }
+      end.to raise_error("error")
+
+      expect(transaction.job_enqueue_events_suppressed?).to be(false)
+    end
+
+    it "stays suppressed in an outer block when a nested block returns" do
+      transaction.suppress_job_enqueue_events do
+        transaction.suppress_job_enqueue_events do
+          expect(transaction.job_enqueue_events_suppressed?).to be(true)
+        end
+
+        # The nested block must not unsuppress while the outer block is active.
+        expect(transaction.job_enqueue_events_suppressed?).to be(true)
+      end
+
+      expect(transaction.job_enqueue_events_suppressed?).to be(false)
+    end
+  end
+
   describe "#add_params" do
     let(:transaction) { new_transaction }
 

@@ -56,7 +56,17 @@ module Appsignal
       # @!visibility private
       module ActiveJobEnqueueInstrumentation
         def enqueue(*, **)
-          Appsignal.instrument("enqueue.active_job") { super }
+          Appsignal.instrument("enqueue.active_job") do
+            # Active Job enqueues through an adapter (Sidekiq, Resque, ...) that
+            # has its own enqueue instrumentation. Suppress it so the enqueue is
+            # recorded once, as this event, rather than as nested Active Job +
+            # adapter events.
+            if Appsignal::Transaction.current?
+              Appsignal::Transaction.current.suppress_job_enqueue_events { super }
+            else
+              super
+            end
+          end
         end
       end
 
