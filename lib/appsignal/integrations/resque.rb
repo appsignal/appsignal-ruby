@@ -51,7 +51,11 @@ module Appsignal
           return super
         end
 
-        Appsignal.instrument("enqueue.resque", :opentelemetry_kind => :producer) do
+        Appsignal.instrument(
+          "enqueue.resque",
+          "enqueue #{item["class"]} job",
+          :opentelemetry_kind => :producer
+        ) do
           Appsignal::OpenTelemetry.inject_context(item)
           super
         end
