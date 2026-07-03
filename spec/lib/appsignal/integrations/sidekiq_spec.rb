@@ -370,8 +370,10 @@ if DependencyHelper.sidekiq_present?
       it "in agent mode", :agent_mode do
         start_agent
 
-        # A transparent pass-through: the job hash is untouched.
+        # A transparent pass-through: nothing is recorded and the job hash is
+        # untouched.
         expect(enqueue).to eq(:enqueued)
+        expect(created_transactions).to be_empty
         expect(job).to_not have_key("traceparent")
       end
 
