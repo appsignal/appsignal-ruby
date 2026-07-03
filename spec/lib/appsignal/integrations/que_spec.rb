@@ -225,8 +225,10 @@ if DependencyHelper.que_present?
 
         enqueue
 
-        event_names = transaction.to_h["events"].map { |event| event["name"] }
-        expect(event_names).to include("enqueue.que")
+        # Records an enqueue event on the transaction, titled after the job.
+        event = transaction.to_h["events"].find { |e| e["name"] == "enqueue.que" }
+        expect(event).to_not be_nil
+        expect(event["title"]).to eq("enqueue MyQueJob job")
         expect(enqueued_tags).to eq(["user:42"])
       end
     end
@@ -280,9 +282,13 @@ if DependencyHelper.que_present?
 
         bulk_enqueue
 
+        # One event for the whole batch, titled after the job -- the inner
+        # enqueues don't add their own.
+        bulk_events =
+          transaction.to_h["events"].select { |e| e["name"] == "bulk_enqueue.que" }
+        expect(bulk_events.size).to eq(1)
+        expect(bulk_events.first["title"]).to eq("bulk enqueue MyQueJob jobs")
         event_names = transaction.to_h["events"].map { |event| event["name"] }
-        # One event for the whole batch -- the inner enqueues don't add their own.
-        expect(event_names.count { |name| name == "bulk_enqueue.que" }).to eq(1)
         expect(event_names).to_not include("enqueue.que")
         expect(enqueued_tags).to eq(["user:42"])
       end
