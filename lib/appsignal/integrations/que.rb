@@ -44,10 +44,10 @@ module Appsignal
     # pass-through.
     module QueClientPlugin
       def enqueue(*_args, job_options: {}, **_rest)
-        # Inside a Que 2 `bulk_enqueue` block the batch is recorded once by the
+        # Inside a `bulk_enqueue` block the batch is recorded once by the
         # `bulk_enqueue` wrapper, so each inner enqueue is a pass-through to
         # avoid recording an event per job.
-        return super if bulk_insert_in_progress?
+        return super if Thread.current[:appsignal_que_bulk_enqueue]
 
         # Under Active Job the enqueue is already recorded as an
         # `enqueue.active_job` event, so skip recording it again here.
@@ -58,12 +58,6 @@ module Appsignal
         # the class `enqueue` was called on.
         title = "enqueue #{job_options[:job_class] || name} job"
         Appsignal.instrument("enqueue.que", title) { super }
-      end
-
-      private
-
-      def bulk_insert_in_progress?
-        !Thread.current[:que_jobs_to_bulk_insert].nil?
       end
     end
 
@@ -80,7 +74,17 @@ module Appsignal
         return super if Appsignal::Transaction.current? &&
           Appsignal::Transaction.current.job_enqueue_events_suppressed?
 
-        Appsignal.instrument("bulk_enqueue.que", bulk_enqueue_title(job_options)) { super }
+        Appsignal.instrument("bulk_enqueue.que", bulk_enqueue_title(job_options)) do
+          # Flag the batch so the enqueues this block triggers pass through
+          # without recording, without reading Que's internal bulk state.
+          was_bulk = Thread.current[:appsignal_que_bulk_enqueue]
+          Thread.current[:appsignal_que_bulk_enqueue] = true
+          begin
+            super
+          ensure
+            Thread.current[:appsignal_que_bulk_enqueue] = was_bulk
+          end
+        end
       end
 
       private
