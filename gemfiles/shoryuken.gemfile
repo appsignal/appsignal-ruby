@@ -1,8 +1,0 @@
-source "https://rubygems.org"
-
-# Shoryuken loads the AWS SDK, which since v3 needs aws-sdk-sqs declared
-# separately or it raises on load.
-gem "aws-sdk-sqs"
-gem "shoryuken"
-
-gemspec :path => "../"
