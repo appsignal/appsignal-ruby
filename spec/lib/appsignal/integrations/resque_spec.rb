@@ -64,6 +64,45 @@ if DependencyHelper.resque_present?
       end
     end
 
+    describe "with incoming trace context" do
+      let(:trace_id_hex) { "0af7651916cd43dd8448eb211c80319c" }
+      let(:span_id_hex) { "b7ad6b7169203331" }
+      let(:traceparent) { "00-#{trace_id_hex}-#{span_id_hex}-01" }
+
+      def perform
+        perform_rescue_job(ResqueTestJob, "traceparent" => traceparent)
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        expect(Appsignal).to receive(:stop)
+        perform
+
+        # The trace header doesn't leak into the transaction as metadata or tags.
+        transaction = last_transaction
+        expect(transaction).to_not include_metadata
+        expect(transaction).to include_tags("queue" => queue)
+        expect(transaction).to_not include_tags("traceparent" => traceparent)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        expect(Appsignal).to receive(:stop)
+        perform
+
+        # The job runs as its own trace, linked back to the span that enqueued it.
+        expect(root_span.kind).to eq(:consumer)
+        expect(root_span.hex_trace_id).to_not eq(trace_id_hex)
+        expect(root_span.links.size).to eq(1)
+        link_context = root_span.links.first.span_context
+        expect(link_context.hex_trace_id).to eq(trace_id_hex)
+        expect(link_context.hex_span_id).to eq(span_id_hex)
+
+        # The trace header doesn't leak into the trace as a tag.
+        expect(root_span.attributes).to_not have_key("appsignal.tag.traceparent")
+      end
+    end
+
     describe "tracks the error on the transaction" do
       def perform
         expect do
@@ -176,6 +215,119 @@ if DependencyHelper.resque_present?
       end
     end
 
+    describe Appsignal::Integrations::ResquePushIntegration do
+      # A stand-in for the `Resque` singleton with the integration prepended.
+      # Its `push` records the pushed item so we can inspect what was written.
+      let(:resque) do
+        Class.new do
+          attr_reader :pushed
+
+          def push(queue, item)
+            @pushed = [queue, item]
+            :pushed
+          end
+
+          prepend Appsignal::Integrations::ResquePushIntegration
+        end.new
+      end
+      let(:item) { { "class" => "ResqueTestJob", "args" => [] } }
+
+      def enqueue
+        resque.push("default", item)
+      end
+
+      context "with an active transaction" do
+        it "in agent mode", :agent_mode do
+          start_agent
+          transaction = http_request_transaction
+          set_current_transaction(transaction)
+
+          expect(enqueue).to eq(:pushed)
+
+          # Records an enqueue event on the transaction, titled after the job;
+          # no wire context in agent mode.
+          event = transaction.to_h["events"].find { |e| e["name"] == "enqueue.resque" }
+          expect(event).to_not be_nil
+          expect(event["title"]).to eq("enqueue ResqueTestJob job")
+          expect(item).to_not have_key("traceparent")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          transaction = http_request_transaction
+          set_current_transaction(transaction)
+
+          expect(enqueue).to eq(:pushed)
+          Appsignal::Transaction.complete_current!
+
+          # The enqueue is a producer event span under the active transaction,
+          # named after the job being enqueued.
+          producer = event_spans.find { |s| s.name == "enqueue ResqueTestJob job" }
+          expect(producer.attributes["appsignal.category"]).to eq("enqueue.resque")
+          expect(producer.kind).to eq(:producer)
+          expect(producer.parent_span_id).to eq(root_span.span_id)
+
+          # The job carries the producer span's trace context, so the job that
+          # performs can link back to it.
+          expect(item["traceparent"])
+            .to eq("00-#{producer.hex_trace_id}-#{producer.hex_span_id}-01")
+        end
+      end
+
+      context "without an active transaction" do
+        it "in agent mode", :agent_mode do
+          start_agent
+
+          # A transparent pass-through: the job hash is untouched.
+          expect(enqueue).to eq(:pushed)
+          expect(item).to_not have_key("traceparent")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+
+          # No transaction to attach the event to, so nothing is emitted and the
+          # job hash is untouched.
+          expect(enqueue).to eq(:pushed)
+          expect(span_exporter.finished_spans.map(&:name)).to_not include("enqueue.resque")
+          expect(item).to_not have_key("traceparent")
+        end
+      end
+
+      context "when job enqueue events are suppressed" do
+        # As happens under Active Job, which records the enqueue itself.
+        def enqueue_suppressed(transaction)
+          transaction.suppress_job_enqueue_events { enqueue }
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent
+          transaction = http_request_transaction
+          set_current_transaction(transaction)
+
+          expect(enqueue_suppressed(transaction)).to eq(:pushed)
+
+          # The outer integration records the enqueue, so this one doesn't.
+          event_names = transaction.to_h["events"].map { |event| event["name"] }
+          expect(event_names).to_not include("enqueue.resque")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          transaction = http_request_transaction
+          set_current_transaction(transaction)
+
+          expect(enqueue_suppressed(transaction)).to eq(:pushed)
+          Appsignal::Transaction.complete_current!
+
+          # No producer span for the suppressed enqueue...
+          expect(span_exporter.finished_spans.map(&:name)).to_not include("enqueue.resque")
+          # ...but the trace context is still injected so the job links back.
+          expect(item).to have_key("traceparent")
+        end
+      end
+    end
+
     describe "does not set arguments for ActiveJob" do
       before do
         stub_const("ActiveJob::QueueAdapters::ResqueAdapter::JobWrapper", Class.new do
@@ -231,68 +383,6 @@ if DependencyHelper.resque_present?
         expect(root_span.attributes["appsignal.tag.queue"]).to eq(queue)
         expect(event_spans.map(&:name)).to include("perform.resque")
         expect(root_span.attributes).to_not have_key("appsignal.function.parameters")
-      end
-    end
-  end
-
-  describe Appsignal::Integrations::ResquePushIntegration do
-    # A stand-in for the `Resque` singleton with the integration prepended.
-    # Its `push` records the pushed item so we can inspect what was written.
-    let(:resque) do
-      Class.new do
-        attr_reader :pushed
-
-        def push(queue, item)
-          @pushed = [queue, item]
-          :pushed
-        end
-
-        prepend Appsignal::Integrations::ResquePushIntegration
-      end.new
-    end
-    let(:item) { { "class" => "ResqueTestJob", "args" => [] } }
-
-    before { start_agent }
-    around { |example| keep_transactions { example.run } }
-
-    def enqueue
-      resque.push("default", item)
-    end
-
-    context "with an active transaction" do
-      it "records an enqueue event and leaves the job untouched" do
-        transaction = http_request_transaction
-        set_current_transaction(transaction)
-
-        expect(enqueue).to eq(:pushed)
-
-        # Records an enqueue event on the transaction, titled after the job.
-        event = transaction.to_h["events"].find { |e| e["name"] == "enqueue.resque" }
-        expect(event).to_not be_nil
-        expect(event["title"]).to eq("enqueue ResqueTestJob job")
-        expect(item).to eq("class" => "ResqueTestJob", "args" => [])
-      end
-    end
-
-    context "without an active transaction" do
-      it "is a transparent pass-through" do
-        expect(enqueue).to eq(:pushed)
-        expect(item).to eq("class" => "ResqueTestJob", "args" => [])
-      end
-    end
-
-    context "when job enqueue events are suppressed" do
-      # As happens under Active Job, which records the enqueue itself.
-      it "passes through without recording the enqueue" do
-        transaction = http_request_transaction
-        set_current_transaction(transaction)
-
-        result = transaction.suppress_job_enqueue_events { enqueue }
-        expect(result).to eq(:pushed)
-
-        # The outer integration records the enqueue, so this one doesn't.
-        event_names = transaction.to_h["events"].map { |event| event["name"] }
-        expect(event_names).to_not include("enqueue.resque")
       end
     end
   end

@@ -49,23 +49,35 @@ module Appsignal
       end
     end
 
-    # Sidekiq client middleware that runs on enqueue. Records an
-    # `enqueue.sidekiq` event so the enqueue shows up under the active
-    # transaction.
+    # Client middleware that runs on enqueue. Records an `enqueue.sidekiq`
+    # event so the enqueue shows up under the active transaction (both modes),
+    # and in collector mode writes the trace context onto the job hash so the
+    # job that later performs links back to it.
     #
     # Like all AppSignal events, this only records when there's an active
-    # transaction (e.g. enqueuing from within a web request or another job). An
-    # enqueue with no transaction is a transparent pass-through.
+    # transaction (e.g. enqueuing from within a web request or another job).
+    # An enqueue with no transaction is a transparent pass-through.
     #
     # @!visibility private
     class SidekiqClientMiddleware
-      def call(_worker_class, job, _queue, _redis_pool, &block)
+      def call(_worker_class, job, _queue, _redis_pool)
         # Under Active Job the enqueue is already recorded as an
-        # `enqueue.active_job` event, so skip recording it again here.
-        return yield if Appsignal::Transaction.current? &&
-          Appsignal::Transaction.current.job_enqueue_events_suppressed?
+        # `enqueue.active_job` event, so skip recording it again here. The trace
+        # context is still injected so the performed job links back.
+        if Appsignal::Transaction.current? &&
+            Appsignal::Transaction.current.job_enqueue_events_suppressed?
+          Appsignal::OpenTelemetry.inject_context(job)
+          return yield
+        end
 
-        Appsignal.instrument("enqueue.sidekiq", "enqueue #{job["class"]} job", &block)
+        Appsignal.instrument(
+          "enqueue.sidekiq",
+          "enqueue #{job["class"]} job",
+          :opentelemetry_kind => :producer
+        ) do
+          Appsignal::OpenTelemetry.inject_context(job)
+          yield
+        end
       end
     end
 
@@ -76,7 +88,7 @@ module Appsignal
       EXCLUDED_JOB_KEYS = %w[
         args backtrace class created_at enqueued_at error_backtrace error_class
         error_message failed_at jid retried_at retry wrapped cattr tags retry_for
-        unique_for
+        unique_for traceparent tracestate __otel_headers
       ].freeze
 
       def self.sidekiq8?
@@ -88,7 +100,12 @@ module Appsignal
       def call(_worker, item, _queue, &block)
         job_status = nil
         action_name = formatted_action_name(item)
-        transaction = Appsignal::Transaction.create(Appsignal::Transaction::BACKGROUND_JOB)
+        # Read trace context off the job so the transaction links back to the
+        # enqueuer. No-op outside collector mode.
+        transaction = Appsignal::Transaction.create(
+          Appsignal::Transaction::BACKGROUND_JOB,
+          :opentelemetry_context => Appsignal::OpenTelemetry.extract_job_context(item)
+        )
         transaction.set_action_if_nil(action_name)
 
         formatted_metadata(item).each do |key, value|
