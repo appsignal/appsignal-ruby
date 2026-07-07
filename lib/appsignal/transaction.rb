@@ -311,6 +311,27 @@ module Appsignal
       store("http_client")[:suppressed] == true
     end
 
+    # @!visibility private
+    #
+    # Run a block during which nested job enqueue integrations (Sidekiq, Resque,
+    # ...) skip recording their own enqueue event. Used when an outer integration
+    # (Active Job) already records the enqueue, so the same enqueue is not
+    # instrumented twice as nested enqueue events.
+    def suppress_job_enqueue_events
+      # Restore the previous value rather than forcing `false`, so nested calls
+      # don't unsuppress while an outer block is still active.
+      previously_suppressed = store("job_enqueue")[:suppressed]
+      store("job_enqueue")[:suppressed] = true
+      yield
+    ensure
+      store("job_enqueue")[:suppressed] = previously_suppressed
+    end
+
+    # @!visibility private
+    def job_enqueue_events_suppressed?
+      store("job_enqueue")[:suppressed] == true
+    end
+
     # Add parameters to the transaction.
     #
     # When this method is called multiple times, it will merge the request parameters.

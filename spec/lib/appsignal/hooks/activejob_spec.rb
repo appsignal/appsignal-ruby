@@ -334,6 +334,59 @@ if DependencyHelper.active_job_present?
       end
     end
 
+    context "when enqueuing a job" do
+      before { ActiveJob::Base.queue_adapter = :test }
+
+      context "with an active transaction" do
+        it "records a single enqueue.active_job event on the transaction" do
+          transaction = http_request_transaction
+          set_current_transaction(transaction)
+
+          ActiveJobTestJob.perform_later
+
+          # Exactly one enqueue event: ours. Rails' native `enqueue.active_job`
+          # notification is suppressed so it isn't recorded a second time.
+          enqueue_events =
+            transaction.to_h["events"].select { |event| event["name"] == "enqueue.active_job" }
+          expect(enqueue_events.size).to eq(1)
+          # The event is titled after the job being enqueued.
+          expect(enqueue_events.first["title"]).to eq("enqueue ActiveJobTestJob job")
+        end
+      end
+
+      context "without an active transaction" do
+        it "is a transparent pass-through that still enqueues the job" do
+          expect do
+            ActiveJobTestJob.perform_later
+          end.to_not(change { created_transactions.count })
+
+          expect(ActiveJob::Base.queue_adapter.enqueued_jobs.count).to eq(1)
+        end
+      end
+
+      context "with an active transaction" do
+        it "suppresses nested adapter enqueue events while enqueuing" do
+          transaction = http_request_transaction
+          set_current_transaction(transaction)
+
+          # The window in which a nested adapter integration (Sidekiq, Resque,
+          # ...) would record its own event, which Active Job suppresses so the
+          # enqueue is recorded once.
+          suppressed_during_enqueue = nil
+          adapter = ActiveJob::Base.queue_adapter
+          allow(adapter).to receive(:enqueue).and_wrap_original do |method, *args|
+            suppressed_during_enqueue =
+              Appsignal::Transaction.current.job_enqueue_events_suppressed?
+            method.call(*args)
+          end
+
+          ActiveJobTestJob.perform_later
+
+          expect(suppressed_during_enqueue).to be(true)
+        end
+      end
+    end
+
     context "with params" do
       let(:options) { { :filter_parameters => ["foo"] } }
 
