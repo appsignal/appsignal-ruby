@@ -36,12 +36,7 @@ module Appsignal
         ENV["OTEL_METRICS_EXPORTER"] = "none"
         ENV["OTEL_LOGS_EXPORTER"] = "none"
 
-        require "opentelemetry/sdk"
-        require "opentelemetry/exporter/otlp"
-        require "opentelemetry-metrics-sdk"
-        require "opentelemetry-exporter-otlp-metrics"
-        require "opentelemetry-logs-sdk"
-        require "opentelemetry-exporter-otlp-logs"
+        require_sdk_gems
 
         # The OpenTelemetry gems are optional and installed by the user (not
         # declared in the gemspec). If they're present but older than the
@@ -114,6 +109,72 @@ module Appsignal
         defined?(@started) ? @started : false
       end
 
+      # Write the current trace context onto an outgoing carrier (HTTP request,
+      # job hash, ...) using the globally configured propagator (W3C
+      # TraceContext + baggage). Called by integrations on the emit side so a
+      # downstream service joins the same trace.
+      #
+      # No-op unless the SDK has booted ({.started?}); outside collector mode
+      # there is no context to propagate. The carrier is injected from whatever
+      # span is current at call time -- inside an `Appsignal.instrument` block
+      # that is the AppSignal event span, so the written `traceparent` reflects
+      # it.
+      def inject_context(carrier)
+        if_started do
+          ::OpenTelemetry.propagation.inject(carrier)
+        end
+      end
+
+      # Read the trace context off an incoming Rack request env using the
+      # globally configured propagator, so an AppSignal transaction created for
+      # the request can continue the upstream trace. Returns an
+      # `OpenTelemetry::Context` (its current span is the remote parent), or
+      # `nil` when the SDK has not booted -- outside collector mode there is
+      # nothing to continue. `rack_env_getter` reads the `HTTP_*`-mangled header
+      # names Rack puts in the env.
+      def extract_rack_context(env)
+        if_started do
+          ::OpenTelemetry.propagation.extract(
+            env,
+            :getter => ::OpenTelemetry::Common::Propagation.rack_env_getter
+          )
+        end
+      end
+
+      # Read the trace context off an incoming background job hash, so a
+      # transaction created for the job can link back to the enqueuer. Returns
+      # an `OpenTelemetry::Context`, or `nil` when the SDK has not booted.
+      #
+      # Reads both carriers a job can arrive with: top-level `traceparent` /
+      # `tracestate` keys (how OpenTelemetry's Sidekiq instrumentation injects)
+      # and a nested `__otel_headers` (how its ActiveJob instrumentation does).
+      # ActiveJob runs the headers through ActiveJob's argument serializer, so
+      # `__otel_headers` arrives as an array of `[key, value]` pairs, not a hash;
+      # accept both shapes. The nested keys win when present, since ActiveJob is
+      # the outer, more specific layer.
+      def extract_job_context(item)
+        if_started do
+          carrier = item
+          nested = item["__otel_headers"]
+          nested = nested.to_h if otel_header_pairs?(nested)
+          carrier = item.merge(nested) if nested.is_a?(Hash)
+          ::OpenTelemetry.propagation.extract(carrier)
+        end
+      end
+
+      # Run `block` only when the OpenTelemetry SDK has booted (collector mode),
+      # returning its result; a no-op returning `nil` otherwise. The block can
+      # touch the OTel SDK freely -- it only runs when the SDK is loaded.
+      #
+      # This is the gate every integration's OTel-specific work goes through, so
+      # integration-specific carrier/getter/setter logic lives in the
+      # integration rather than as a bespoke helper here.
+      def if_started
+        return unless started?
+
+        yield
+      end
+
       # @!visibility private
       #
       # Test-only. Drops the started flag so subsequent tests start from a
@@ -175,6 +236,27 @@ module Appsignal
       end
 
       private
+
+      # Whether a `__otel_headers` value is the array-of-`[key, value]`-pairs
+      # shape produced by ActiveJob's argument serializer, so it can be turned
+      # into a hash carrier. Anything else (including a malformed array) is left
+      # alone rather than raising on `to_h` inside a job perform.
+      def otel_header_pairs?(value)
+        value.is_a?(Array) && value.all? { |pair| pair.is_a?(Array) && pair.size == 2 }
+      end
+
+      # The optional OpenTelemetry gems, required lazily so users not in
+      # collector mode don't pay the load cost. A missing gem raises LoadError,
+      # caught by {.configure}.
+      def require_sdk_gems
+        require "opentelemetry/sdk"
+        require "opentelemetry-common"
+        require "opentelemetry/exporter/otlp"
+        require "opentelemetry-metrics-sdk"
+        require "opentelemetry-exporter-otlp-metrics"
+        require "opentelemetry-logs-sdk"
+        require "opentelemetry-exporter-otlp-logs"
+      end
 
       # Checks the installed OpenTelemetry gem versions against {REQUIRED_GEMS}.
       # On a shortfall, warns and flags the SDK as not started so the caller

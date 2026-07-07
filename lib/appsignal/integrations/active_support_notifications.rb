@@ -19,8 +19,11 @@ module Appsignal
         # semantics, so the generic notifications path must not record them a
         # second time. The ActiveJob hook owns `enqueue.active_job`: it wraps the
         # enqueue in a producer event that also injects trace context, and the
-        # native notification fires nested inside it.
-        SUPPRESSED_EVENT_NAMES = ["enqueue.active_job"].freeze
+        # native notification fires nested inside it. The Faraday integration owns
+        # `request.faraday`: its middleware records the request as a client event
+        # and injects trace context, and Faraday's own instrumentation
+        # notification, if the user added that middleware, fires nested inside it.
+        SUPPRESSED_EVENT_NAMES = ["enqueue.active_job", "request.faraday"].freeze
 
         def start_event(name)
           return unless record_event?(name)

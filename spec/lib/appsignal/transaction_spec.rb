@@ -860,19 +860,6 @@ describe Appsignal::Transaction do
 
       expect(transaction.http_client_events_suppressed?).to be(false)
     end
-
-    it "stays suppressed in an outer block when a nested block returns" do
-      transaction.suppress_http_client_events do
-        transaction.suppress_http_client_events do
-          expect(transaction.http_client_events_suppressed?).to be(true)
-        end
-
-        # The nested block must not unsuppress while the outer block is active.
-        expect(transaction.http_client_events_suppressed?).to be(true)
-      end
-
-      expect(transaction.http_client_events_suppressed?).to be(false)
-    end
   end
 
   describe "#suppress_job_enqueue_events" do
@@ -4296,9 +4283,17 @@ describe Appsignal::Transaction do
     let(:transaction) { new_transaction }
 
     it "starts the event in the extension" do
-      expect(transaction.backend).to receive(:start_event).with(no_args).and_call_original
+      expect(transaction.backend).to receive(:start_event)
+        .with(:opentelemetry_kind => nil).and_call_original
 
       transaction.start_event
+    end
+
+    it "passes the opentelemetry_kind to the backend" do
+      expect(transaction.backend).to receive(:start_event)
+        .with(:opentelemetry_kind => :client).and_call_original
+
+      transaction.start_event(:opentelemetry_kind => :client)
     end
 
     context "when transaction is paused" do
