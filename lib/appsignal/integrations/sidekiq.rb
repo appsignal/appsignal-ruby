@@ -49,6 +49,26 @@ module Appsignal
       end
     end
 
+    # Sidekiq client middleware that runs on enqueue. Records an
+    # `enqueue.sidekiq` event so the enqueue shows up under the active
+    # transaction.
+    #
+    # Like all AppSignal events, this only records when there's an active
+    # transaction (e.g. enqueuing from within a web request or another job). An
+    # enqueue with no transaction is a transparent pass-through.
+    #
+    # @!visibility private
+    class SidekiqClientMiddleware
+      def call(_worker_class, job, _queue, _redis_pool, &block)
+        # Under Active Job the enqueue is already recorded as an
+        # `enqueue.active_job` event, so skip recording it again here.
+        return yield if Appsignal::Transaction.current? &&
+          Appsignal::Transaction.current.job_enqueue_events_suppressed?
+
+        Appsignal.instrument("enqueue.sidekiq", "enqueue #{job["class"]} job", &block)
+      end
+    end
+
     # @!visibility private
     class SidekiqMiddleware
       include Appsignal::Hooks::Helpers
