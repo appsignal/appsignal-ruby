@@ -1,6 +1,4 @@
 describe Appsignal::Hooks::ExconHook do
-  before { start_agent }
-
   context "with Excon" do
     before do
       stub_const("Excon", Class.new do
@@ -12,6 +10,7 @@ describe Appsignal::Hooks::ExconHook do
     end
 
     describe "#dependencies_present?" do
+      before { start_agent }
       subject { described_class.new.dependencies_present? }
 
       it { is_expected.to be_truthy }
@@ -24,34 +23,74 @@ describe Appsignal::Hooks::ExconHook do
     end
 
     describe "instrumentation" do
-      let(:transaction) { http_request_transaction }
-      before { set_current_transaction(transaction) }
-      around { |example| keep_transactions { example.run } }
+      describe "a http request" do
+        def perform
+          data = {
+            :host => "www.google.com",
+            :method => :get,
+            :scheme => "http"
+          }
+          Excon.defaults[:instrumentor].instrument("excon.request", data) {} # rubocop:disable Lint/EmptyBlock
+        end
 
-      it "instruments a http request" do
-        data = {
-          :host => "www.google.com",
-          :method => :get,
-          :scheme => "http"
-        }
-        Excon.defaults[:instrumentor].instrument("excon.request", data) {} # rubocop:disable Lint/EmptyBlock
+        it "in agent mode", :agent_mode do
+          transaction = http_request_transaction
+          set_current_transaction(transaction)
+          perform
 
-        expect(transaction).to include_event(
-          "name" => "request.excon",
-          "title" => "GET http://www.google.com",
-          "body" => ""
-        )
+          expect(transaction).to include_event(
+            "name" => "request.excon",
+            "title" => "GET http://www.google.com",
+            "body" => ""
+          )
+        end
+
+        it "in collector mode", :collector_mode do
+          transaction = http_request_transaction
+          set_current_transaction(transaction)
+          perform
+          Appsignal::Transaction.complete_current!
+
+          expect(event_spans.size).to eq(1)
+          span = event_spans.first
+          expect(span.name).to eq("GET http://www.google.com")
+          expect(span.parent_span_id).to eq(root_span.span_id)
+          expect(span.attributes["appsignal.category"]).to eq("request.excon")
+          expect(span.attributes).not_to have_key("appsignal.body")
+        end
       end
 
-      it "instruments a http response" do
-        data = { :host => "www.google.com" }
-        Excon.defaults[:instrumentor].instrument("excon.response", data) {} # rubocop:disable Lint/EmptyBlock
+      describe "a http response" do
+        def perform
+          data = { :host => "www.google.com" }
+          Excon.defaults[:instrumentor].instrument("excon.response", data) {} # rubocop:disable Lint/EmptyBlock
+        end
 
-        expect(transaction).to include_event(
-          "name" => "response.excon",
-          "title" => "www.google.com",
-          "body" => ""
-        )
+        it "in agent mode", :agent_mode do
+          transaction = http_request_transaction
+          set_current_transaction(transaction)
+          perform
+
+          expect(transaction).to include_event(
+            "name" => "response.excon",
+            "title" => "www.google.com",
+            "body" => ""
+          )
+        end
+
+        it "in collector mode", :collector_mode do
+          transaction = http_request_transaction
+          set_current_transaction(transaction)
+          perform
+          Appsignal::Transaction.complete_current!
+
+          expect(event_spans.size).to eq(1)
+          span = event_spans.first
+          expect(span.name).to eq("www.google.com")
+          expect(span.parent_span_id).to eq(root_span.span_id)
+          expect(span.attributes["appsignal.category"]).to eq("response.excon")
+          expect(span.attributes).not_to have_key("appsignal.body")
+        end
       end
     end
   end

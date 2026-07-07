@@ -25,111 +25,205 @@ if DependencyHelper.que_present?
       let(:instance) { job.new(job_attrs) }
       before do
         allow(Que).to receive(:execute)
-
-        start_agent
       end
-      around { |example| keep_transactions { example.run } }
 
       def perform_que_job(job)
         job._run
       end
 
       context "without exception" do
-        it "creates a transaction for a job" do
-          expect do
-            perform_que_job(instance)
-          end.to change { created_transactions.length }.by(1)
+        def perform
+          perform_que_job(instance)
+        end
 
-          transaction = last_transaction
-          expect(transaction).to have_id
-          expect(transaction).to have_namespace(Appsignal::Transaction::BACKGROUND_JOB)
-          expect(transaction).to have_action("MyQueJob#run")
-          expect(transaction).to_not have_error
-          expect(transaction).to include_event(
-            "body" => "",
-            "body_format" => Appsignal::EventFormatter::DEFAULT,
-            "count" => 1,
-            "name" => "perform_job.que",
-            "title" => ""
-          )
-          expect(transaction).to include_params(
-            "arguments" => %w[post_id_123 user_id_123]
-          )
-          if DependencyHelper.que2_present?
+        describe "creates a transaction for a job" do
+          it "in agent mode", :agent_mode do
+            start_agent
+            expect { perform }.to change { created_transactions.length }.by(1)
+
+            transaction = last_transaction
+            expect(transaction).to have_id
+            expect(transaction).to have_namespace(Appsignal::Transaction::BACKGROUND_JOB)
+            expect(transaction).to have_action("MyQueJob#run")
+            expect(transaction).to_not have_error
+            expect(transaction).to include_event(
+              "body" => "",
+              "body_format" => Appsignal::EventFormatter::DEFAULT,
+              "count" => 1,
+              "name" => "perform_job.que",
+              "title" => ""
+            )
             expect(transaction).to include_params(
-              "keyword_arguments" => {}
+              "arguments" => %w[post_id_123 user_id_123]
             )
-          else
-            expect(transaction).to_not include_params(
-              "keyword_arguments" => anything
+            if DependencyHelper.que2_present?
+              expect(transaction).to include_params(
+                "keyword_arguments" => {}
+              )
+            else
+              expect(transaction).to_not include_params(
+                "keyword_arguments" => anything
+              )
+            end
+            expect(transaction).to include_tags(
+              "attempts" => 0,
+              "id" => 123,
+              "priority" => 100,
+              "queue" => "dfl",
+              "run_at" => fixed_time.to_s
             )
+            expect(transaction).to be_completed
           end
-          expect(transaction).to include_tags(
-            "attempts" => 0,
-            "id" => 123,
-            "priority" => 100,
-            "queue" => "dfl",
-            "run_at" => fixed_time.to_s
-          )
-          expect(transaction).to be_completed
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            expect { perform }.to change { created_transactions.length }.by(1)
+
+            expect(root_span.kind).to eq(:consumer)
+            expect(root_span.attributes["appsignal.namespace"])
+              .to eq("background")
+            expect(root_span.attributes["appsignal.action_name"]).to eq("MyQueJob#run")
+            expect(exception_events).to be_empty
+            span = event_spans.find { |s| s.name == "perform_job.que" }
+            expect(span).not_to be_nil
+            expect(span.parent_span_id).to eq(root_span.span_id)
+            expect(span.attributes).not_to have_key("appsignal.body")
+            expect(span.attributes["appsignal.category"]).to eq("perform_job.que")
+            expected_params = { "arguments" => %w[post_id_123 user_id_123] }
+            expected_params["keyword_arguments"] = {} if DependencyHelper.que2_present?
+            expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+              .to eq(expected_params)
+            expect(root_span.attributes["appsignal.tag.attempts"]).to eq(0)
+            expect(root_span.attributes["appsignal.tag.id"]).to eq(123)
+            expect(root_span.attributes["appsignal.tag.priority"]).to eq(100)
+            expect(root_span.attributes["appsignal.tag.queue"]).to eq("dfl")
+            expect(root_span.attributes["appsignal.tag.run_at"]).to eq(fixed_time.to_s)
+            expect(last_transaction).to be_completed
+          end
         end
       end
 
       context "with exception" do
         let(:error) { ExampleException.new("oh no!") }
 
-        it "reports exceptions and re-raise them" do
+        before do
           allow(instance).to receive(:run).and_raise(error)
+        end
 
+        def perform
           expect do
-            expect do
-              perform_que_job(instance)
-            end.to raise_error(ExampleException)
-          end.to change { created_transactions.length }.by(1)
+            perform_que_job(instance)
+          end.to raise_error(ExampleException)
+        end
 
-          transaction = last_transaction
-          expect(transaction).to have_id
-          expect(transaction).to have_action("MyQueJob#run")
-          expect(transaction).to have_namespace(Appsignal::Transaction::BACKGROUND_JOB)
-          expect(transaction).to have_error(error.class.name, error.message)
-          expect(transaction).to include_params(
-            "arguments" => %w[post_id_123 user_id_123]
-          )
-          expect(transaction).to include_tags(
-            "attempts" => 0,
-            "id" => 123,
-            "priority" => 100,
-            "queue" => "dfl",
-            "run_at" => fixed_time.to_s
-          )
-          expect(transaction).to be_completed
+        describe "reports exceptions and re-raises them" do
+          it "in agent mode", :agent_mode do
+            start_agent
+            expect { perform }.to change { created_transactions.length }.by(1)
+
+            transaction = last_transaction
+            expect(transaction).to have_id
+            expect(transaction).to have_action("MyQueJob#run")
+            expect(transaction).to have_namespace(Appsignal::Transaction::BACKGROUND_JOB)
+            expect(transaction).to have_error(error.class.name, error.message)
+            expect(transaction).to include_params(
+              "arguments" => %w[post_id_123 user_id_123]
+            )
+            expect(transaction).to include_tags(
+              "attempts" => 0,
+              "id" => 123,
+              "priority" => 100,
+              "queue" => "dfl",
+              "run_at" => fixed_time.to_s
+            )
+            expect(transaction).to be_completed
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            expect { perform }.to change { created_transactions.length }.by(1)
+
+            expect(root_span.kind).to eq(:consumer)
+            expect(root_span.attributes["appsignal.action_name"]).to eq("MyQueJob#run")
+            expect(root_span.attributes["appsignal.namespace"])
+              .to eq("background")
+            event = exception_events.find { |e| e.attributes["exception.type"] == error.class.name }
+            expect(event).not_to be_nil
+            expect(event.attributes["exception.message"]).to eq(error.message)
+            expect(event.attributes["exception.stacktrace"]).to be_a(String)
+            expect(event.attributes["appsignal.alert_this_error"]).to eq(true)
+            expected_params = { "arguments" => %w[post_id_123 user_id_123] }
+            expected_params["keyword_arguments"] = {} if DependencyHelper.que2_present?
+            expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+              .to eq(expected_params)
+            expect(root_span.attributes["appsignal.tag.attempts"]).to eq(0)
+            expect(root_span.attributes["appsignal.tag.id"]).to eq(123)
+            expect(root_span.attributes["appsignal.tag.priority"]).to eq(100)
+            expect(root_span.attributes["appsignal.tag.queue"]).to eq("dfl")
+            expect(root_span.attributes["appsignal.tag.run_at"]).to eq(fixed_time.to_s)
+            expect(last_transaction).to be_completed
+          end
         end
       end
 
       context "with error" do
         let(:error) { ExampleStandardError.new("oh no!") }
 
-        it "reports errors and not re-raise them" do
+        before do
           allow(instance).to receive(:run).and_raise(error)
+        end
 
-          expect { perform_que_job(instance) }.to change { created_transactions.length }.by(1)
+        def perform
+          perform_que_job(instance)
+        end
 
-          transaction = last_transaction
-          expect(transaction).to have_id
-          expect(transaction).to have_action("MyQueJob#run")
-          expect(transaction).to have_namespace(Appsignal::Transaction::BACKGROUND_JOB)
-          expect(transaction).to have_error(error.class.name, error.message)
-          expect(transaction).to include_params(
-            "arguments" => %w[post_id_123 user_id_123]
-          )
-          expect(transaction).to include_tags(
-            "attempts" => 0,
-            "id" => 123,
-            "priority" => 100,
-            "queue" => "dfl",
-            "run_at" => fixed_time.to_s
-          )
-          expect(transaction).to be_completed
+        describe "reports errors and does not re-raise them" do
+          it "in agent mode", :agent_mode do
+            start_agent
+            expect { perform }.to change { created_transactions.length }.by(1)
+
+            transaction = last_transaction
+            expect(transaction).to have_id
+            expect(transaction).to have_action("MyQueJob#run")
+            expect(transaction).to have_namespace(Appsignal::Transaction::BACKGROUND_JOB)
+            expect(transaction).to have_error(error.class.name, error.message)
+            expect(transaction).to include_params(
+              "arguments" => %w[post_id_123 user_id_123]
+            )
+            expect(transaction).to include_tags(
+              "attempts" => 0,
+              "id" => 123,
+              "priority" => 100,
+              "queue" => "dfl",
+              "run_at" => fixed_time.to_s
+            )
+            expect(transaction).to be_completed
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            expect { perform }.to change { created_transactions.length }.by(1)
+
+            expect(root_span.kind).to eq(:consumer)
+            expect(root_span.attributes["appsignal.action_name"]).to eq("MyQueJob#run")
+            expect(root_span.attributes["appsignal.namespace"])
+              .to eq("background")
+            event = exception_events.find { |e| e.attributes["exception.type"] == error.class.name }
+            expect(event).not_to be_nil
+            expect(event.attributes["exception.message"]).to eq(error.message)
+            expect(event.attributes["exception.stacktrace"]).to be_a(String)
+            expect(event.attributes["appsignal.alert_this_error"]).to eq(true)
+            expected_params = { "arguments" => %w[post_id_123 user_id_123] }
+            expected_params["keyword_arguments"] = {} if DependencyHelper.que2_present?
+            expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+              .to eq(expected_params)
+            expect(root_span.attributes["appsignal.tag.attempts"]).to eq(0)
+            expect(root_span.attributes["appsignal.tag.id"]).to eq(123)
+            expect(root_span.attributes["appsignal.tag.priority"]).to eq(100)
+            expect(root_span.attributes["appsignal.tag.queue"]).to eq("dfl")
+            expect(root_span.attributes["appsignal.tag.run_at"]).to eq(fixed_time.to_s)
+            expect(last_transaction).to be_completed
+          end
         end
       end
 
@@ -154,13 +248,31 @@ if DependencyHelper.que_present?
             end
           end
 
-          it "reports keyword arguments as parameters" do
+          def perform
             perform_que_job(instance)
+          end
 
-            expect(last_transaction).to include_params(
-              "arguments" => %w[post_id_123],
-              "keyword_arguments" => { "user_id" => "user_id_123" }
-            )
+          describe "reports keyword arguments as parameters" do
+            it "in agent mode", :agent_mode do
+              start_agent
+              perform
+
+              expect(last_transaction).to include_params(
+                "arguments" => %w[post_id_123],
+                "keyword_arguments" => { "user_id" => "user_id_123" }
+              )
+            end
+
+            it "in collector mode", :collector_mode do
+              start_collector_agent
+              perform
+
+              expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+                .to eq(
+                  "arguments" => %w[post_id_123],
+                  "keyword_arguments" => { "user_id" => "user_id_123" }
+                )
+            end
           end
         end
       end
@@ -174,12 +286,28 @@ if DependencyHelper.que_present?
           end
         end
 
-        it "uses the custom action" do
+        def perform
           perform_que_job(instance)
+        end
 
-          transaction = last_transaction
-          expect(transaction).to have_action("MyCustomJob#perform")
-          expect(transaction).to be_completed
+        describe "uses the custom action" do
+          it "in agent mode", :agent_mode do
+            start_agent
+            perform
+
+            transaction = last_transaction
+            expect(transaction).to have_action("MyCustomJob#perform")
+            expect(transaction).to be_completed
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            perform
+
+            expect(root_span.attributes["appsignal.action_name"])
+              .to eq("MyCustomJob#perform")
+            expect(last_transaction).to be_completed
+          end
         end
       end
     end

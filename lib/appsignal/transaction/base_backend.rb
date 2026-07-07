@@ -10,7 +10,7 @@ module Appsignal
     # contract; a backend that leaves a method unimplemented raises here.
     class BaseBackend
       # Instrumented events.
-      def start_event
+      def start_event(opentelemetry_kind: nil)
         raise NotImplementedError
       end
 
@@ -18,7 +18,7 @@ module Appsignal
         raise NotImplementedError
       end
 
-      def record_event(_name, _title, _body, _body_format, _duration)
+      def record_event(_name, _title, _body, _body_format, _duration, opentelemetry_kind: nil) # rubocop:disable Metrics/ParameterLists
         raise NotImplementedError
       end
 

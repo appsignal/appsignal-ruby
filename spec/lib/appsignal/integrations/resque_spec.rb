@@ -2,18 +2,12 @@ require "appsignal/integrations/resque"
 
 if DependencyHelper.resque_present?
   describe Appsignal::Integrations::ResqueIntegration do
-    def perform_rescue_job(klass, options = {})
-      payload = { "class" => klass.to_s }.merge(options)
-      job = ::Resque::Job.new(queue, payload)
-      keep_transactions { job.perform }
-    end
-
     let(:queue) { "default" }
     let(:namespace) { Appsignal::Transaction::BACKGROUND_JOB }
     let(:options) { {} }
-    before do
-      start_agent(:options => options)
+    let(:start_agent_args) { { :options => options } }
 
+    before do
       stub_const("ResqueTestJob", Class.new do
         def self.perform(*_args)
         end
@@ -24,32 +18,63 @@ if DependencyHelper.resque_present?
           raise "resque job error"
         end
       end)
-
-      expect(Appsignal).to receive(:stop) # Resque calls stop after every job
-    end
-    around do |example|
-      keep_transactions { example.run }
     end
 
-    it "tracks a transaction on perform" do
-      perform_rescue_job(ResqueTestJob)
-
-      transaction = last_transaction
-      expect(transaction).to have_id
-      expect(transaction).to have_namespace(namespace)
-      expect(transaction).to have_action("ResqueTestJob#perform")
-      expect(transaction).to_not have_error
-      expect(transaction).to_not include_metadata
-      expect(transaction).to_not include_breadcrumbs
-      expect(transaction).to include_tags("queue" => queue)
-      expect(transaction).to include_event("name" => "perform.resque")
+    def perform_rescue_job(klass, job_options = {})
+      payload = { "class" => klass.to_s }.merge(job_options)
+      job = ::Resque::Job.new(queue, payload)
+      keep_transactions { job.perform }
     end
 
-    context "with error" do
-      it "tracks the error on the transaction" do
+    describe "tracks a transaction on perform" do
+      def perform
+        perform_rescue_job(ResqueTestJob)
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        expect(Appsignal).to receive(:stop)
+        perform
+
+        transaction = last_transaction
+        expect(transaction).to have_id
+        expect(transaction).to have_namespace(namespace)
+        expect(transaction).to have_action("ResqueTestJob#perform")
+        expect(transaction).to_not have_error
+        expect(transaction).to_not include_metadata
+        expect(transaction).to_not include_breadcrumbs
+        expect(transaction).to include_tags("queue" => queue)
+        expect(transaction).to include_event("name" => "perform.resque")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        expect(Appsignal).to receive(:stop)
+        perform
+
+        expect(root_span.kind).to eq(:consumer)
+        expect(root_span.attributes["appsignal.namespace"]).to eq("background")
+        expect(root_span.attributes["appsignal.action_name"]).to eq("ResqueTestJob#perform")
+        expect(exception_events).to be_empty
+        expect(root_span.attributes).to_not have_key("appsignal.tag.metadata_key")
+        expect(root_span.attributes["appsignal.tag.queue"]).to eq(queue)
+        span = event_spans.find { |s| s.name == "perform.resque" }
+        expect(span).not_to be_nil
+        expect(span.parent_span_id).to eq(root_span.span_id)
+      end
+    end
+
+    describe "tracks the error on the transaction" do
+      def perform
         expect do
           perform_rescue_job(ResqueErrorTestJob)
         end.to raise_error(RuntimeError, "resque job error")
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        expect(Appsignal).to receive(:stop)
+        perform
 
         transaction = last_transaction
         expect(transaction).to have_id
@@ -61,12 +86,33 @@ if DependencyHelper.resque_present?
         expect(transaction).to include_tags("queue" => queue)
         expect(transaction).to include_event("name" => "perform.resque")
       end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        expect(Appsignal).to receive(:stop)
+        perform
+
+        expect(root_span.kind).to eq(:consumer)
+        expect(root_span.attributes["appsignal.namespace"]).to eq("background")
+        expect(root_span.attributes["appsignal.action_name"]).to eq("ResqueErrorTestJob#perform")
+        event = root_span.events.find { |e| e.name == "exception" }
+        expect(event).not_to be_nil
+        expect(event.attributes["exception.type"]).to eq("RuntimeError")
+        expect(event.attributes["exception.message"]).to eq("resque job error")
+        expect(event.attributes["exception.stacktrace"]).to be_a(String)
+        expect(event.attributes["appsignal.alert_this_error"]).to eq(true)
+        expect(root_span.status.code).to eq(::OpenTelemetry::Trace::Status::ERROR)
+        expect(root_span.attributes["appsignal.tag.queue"]).to eq(queue)
+        span = event_spans.find { |s| s.name == "perform.resque" }
+        expect(span).not_to be_nil
+        expect(span.parent_span_id).to eq(root_span.span_id)
+      end
     end
 
-    context "with arguments" do
+    describe "filters out configured arguments" do
       let(:options) { { :filter_parameters => ["foo"] } }
 
-      it "filters out configured arguments" do
+      def perform
         perform_rescue_job(
           ResqueTestJob,
           "args" => [
@@ -78,6 +124,12 @@ if DependencyHelper.resque_present?
             }
           ]
         )
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        expect(Appsignal).to receive(:stop)
+        perform
 
         transaction = last_transaction
         expect(transaction).to have_id
@@ -99,9 +151,32 @@ if DependencyHelper.resque_present?
           ]
         )
       end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        expect(Appsignal).to receive(:stop)
+        perform
+
+        expect(root_span.attributes["appsignal.namespace"]).to eq("background")
+        expect(root_span.attributes["appsignal.action_name"]).to eq("ResqueTestJob#perform")
+        expect(exception_events).to be_empty
+        expect(root_span.attributes["appsignal.tag.queue"]).to eq(queue)
+        expect(event_spans.map(&:name)).to include("perform.resque")
+        params = JSON.parse(root_span.attributes["appsignal.function.parameters"])
+        expect(params).to eq(
+          [
+            "foo",
+            {
+              "foo" => "[FILTERED]",
+              "bar" => "Bar",
+              "baz" => { "1" => "foo" }
+            }
+          ]
+        )
+      end
     end
 
-    context "with active job" do
+    describe "does not set arguments for ActiveJob" do
       before do
         stub_const("ActiveJob::QueueAdapters::ResqueAdapter::JobWrapper", Class.new do
           class << self
@@ -114,7 +189,7 @@ if DependencyHelper.resque_present?
         end)
       end
 
-      it "does not set arguments but lets the ActiveJob integration handle it" do
+      def perform
         perform_rescue_job(
           ResqueTestJob,
           "class" => "ActiveJob::QueueAdapters::ResqueAdapter::JobWrapper",
@@ -125,6 +200,12 @@ if DependencyHelper.resque_present?
             }
           ]
         )
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        expect(Appsignal).to receive(:stop)
+        perform
 
         transaction = last_transaction
         expect(transaction).to have_id
@@ -136,6 +217,20 @@ if DependencyHelper.resque_present?
         expect(transaction).to include_tags("queue" => queue)
         expect(transaction).to include_event("name" => "perform.resque")
         expect(transaction).to_not include_params
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        expect(Appsignal).to receive(:stop)
+        perform
+
+        expect(root_span.attributes["appsignal.namespace"]).to eq("background")
+        expect(root_span.attributes["appsignal.action_name"])
+          .to eq("ResqueTestJobByActiveJob#perform")
+        expect(exception_events).to be_empty
+        expect(root_span.attributes["appsignal.tag.queue"]).to eq(queue)
+        expect(event_spans.map(&:name)).to include("perform.resque")
+        expect(root_span.attributes).to_not have_key("appsignal.function.parameters")
       end
     end
   end

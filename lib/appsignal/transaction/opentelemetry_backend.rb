@@ -11,7 +11,7 @@ module Appsignal
     # root span for the transaction, a child span per instrumented event, and
     # queue timing as a metric. Errors and breadcrumbs attach to whichever span
     # is current when they happen.
-    class OpenTelemetryBackend
+    class OpenTelemetryBackend < BaseBackend
       TRACER_NAME = "appsignal-ruby"
 
       # Keys correspond to `Appsignal::Transaction::HTTP_REQUEST`,
@@ -30,6 +30,14 @@ module Appsignal
       # external-triggered units of work).
       DEFAULT_SPAN_KIND = :server
 
+      # The collector expects "web"/"background"; the agent's processor converts
+      # these internal namespaces in agent mode, but nothing does in collector
+      # mode. Other namespaces pass through unchanged.
+      DISPLAY_NAMESPACE = {
+        "http_request" => "web",
+        "background_job" => "background"
+      }.freeze
+
       # Placeholder name an event span carries between `start_event` and
       # `finish_event`. `finish_event` overwrites it with the AS::N event
       # name; only surfaces if `complete` has to drain a span that was
@@ -47,6 +55,7 @@ module Appsignal
       QUEUE_START_MIN = 946_681_200_000
 
       def initialize(transaction_id, namespace, **)
+        super()
         @transaction_id = transaction_id
         @namespace = namespace
         @completed = false
@@ -68,11 +77,14 @@ module Appsignal
 
         # Transaction#initialize sets the namespace directly without calling
         # set_namespace, so emit the attribute from here.
-        @span.set_attribute("appsignal.namespace", namespace) if namespace
+        @span.set_attribute("appsignal.namespace", display_namespace(namespace)) if namespace
       end
 
-      def start_event
-        span = tracer.start_span(EVENT_SPAN_PLACEHOLDER_NAME)
+      # `opentelemetry_kind` (e.g. `:client` for an outgoing HTTP request) is set
+      # at span creation because OTel span kind is immutable afterwards. `nil`
+      # leaves the SDK default (INTERNAL).
+      def start_event(opentelemetry_kind: nil)
+        span = tracer.start_span(EVENT_SPAN_PLACEHOLDER_NAME, :kind => opentelemetry_kind)
         token = ::OpenTelemetry::Context.attach(
           ::OpenTelemetry::Trace.context_with_span(span)
         )
@@ -89,9 +101,15 @@ module Appsignal
         span.finish
       end
 
-      def record_event(name, title, body, body_format, duration)
+      # `opentelemetry_kind` is set at span creation (kind is immutable in OTel),
+      # mirroring `start_event`. `nil` leaves the SDK default (INTERNAL).
+      def record_event(name, title, body, body_format, duration, opentelemetry_kind: nil) # rubocop:disable Metrics/ParameterLists
         start_time = Time.now - (duration / 1_000_000_000.0)
-        span = tracer.start_span(EVENT_SPAN_PLACEHOLDER_NAME, :start_timestamp => start_time)
+        span = tracer.start_span(
+          EVENT_SPAN_PLACEHOLDER_NAME,
+          :start_timestamp => start_time,
+          :kind => opentelemetry_kind
+        )
         write_event_name_attributes(span, name, title)
         write_event_body_attributes(span, body, body_format)
         span.finish
@@ -112,7 +130,7 @@ module Appsignal
         # the collector uses the attribute for the namespace and the kind only
         # to pick the subtrace root, so this is fine for the rare late change.
         @namespace = namespace
-        @span.set_attribute("appsignal.namespace", namespace)
+        @span.set_attribute("appsignal.namespace", display_namespace(namespace))
       end
 
       # Queue start has no OTel-native home, so surface it two ways: an
@@ -137,16 +155,12 @@ module Appsignal
         @span.set_attribute("appsignal.tag.#{key}", value)
       end
 
-      # Routes each sample-data category to the attribute the collector and the
-      # server's trace UI recognize. The JSON-blob categories (params, session
-      # data, custom data) are serialized as JSON strings; the collector
-      # re-parses and filters them. `environment` is handled in a later branch.
-      # `error_causes` and `breadcrumbs` are intentionally dropped here: causes
-      # ride on the exception event (see #set_error) and breadcrumbs are emitted
-      # per-call as span events on the current span (see #add_breadcrumb), so
-      # flushing either as sample data would duplicate them on the root span. Any
-      # other (unknown) category is passed through as a JSON `appsignal.<key>`
-      # attribute so no data is lost.
+      # Routes each sample-data category to the attribute the collector reads.
+      # The JSON-blob categories (params, session, custom data) are serialized as
+      # JSON; `environment` becomes request-header attributes; tags fan out to
+      # `appsignal.tag.*`. Unknown keys pass through as `appsignal.<key>` JSON so
+      # nothing is lost. Breadcrumbs never reach here (the backend emits them as
+      # span events); causes ride on the exception event (see #set_error).
       def set_sample_data(key, data)
         case key
         when "params"
@@ -157,39 +171,23 @@ module Appsignal
           @span.set_attribute("appsignal.custom_data", JSON.generate(data))
         when "environment"
           write_request_headers(data)
-        when "breadcrumbs"
-          # No-op: breadcrumbs are emitted as `appsignal.breadcrumb` span events
-          # on the current span at add time (see #add_breadcrumb). Flushing them
-          # here would re-emit them on the already-finished root span.
         when "tags"
           write_tags(data)
-        when "error_causes"
-          # No-op: causes are emitted as the exception event's
-          # `appsignal.error_causes` attribute (see #set_error), not sample data.
         else
           @span.set_attribute("appsignal.#{key}", JSON.generate(data))
         end
       end
 
-      # Records the error as an OpenTelemetry `exception` span-event on the
-      # span that is current *now* -- which may be an event span, not the root --
-      # so the error attaches to the operation that raised it. The Transaction
-      # records each error at the moment it is added, so the current span is the
-      # one active at that point.
-      #
-      # `appsignal.alert_this_error` makes the collector report the exception
-      # even when it is on a non-root span: the collector reports every exception
-      # on the root span, but only flagged ones on child spans. The collector
-      # computes `appsignal.error_digest` itself, so we don't set it here.
-      #
-      # Causes are emitted as a single `appsignal.error_causes` JSON attribute on
-      # the exception event (not on the span): separate cause events would each
-      # be stamped with a digest and become their own incident. The processor
-      # reads `appsignal.error_causes` off the event and expands it into cause
-      # subdata. The JSON keys (`name`/`message`/`lines`) match the processor's
-      # `ErrorSubCause` struct.
-      def set_error(class_name, message, backtrace, causes)
-        span = ::OpenTelemetry::Trace.current_span
+      # Records the error as an `exception` event on AppSignal's current span --
+      # the open event span, or the root -- so it attaches to the operation that
+      # raised it. Uses AppSignal's own span, not the OTel current span, which
+      # may belong to another instrumentation. `appsignal.alert_this_error` tells
+      # the collector to report it even on a child span; the collector computes
+      # the digest. Causes ride on one `appsignal.error_causes` JSON attribute
+      # (keys match the processor's `ErrorSubCause`); separate cause events would
+      # each become their own incident.
+      def set_error(class_name, message, backtrace, causes, _root_cause_missing)
+        span = current_span
 
         attributes = {
           "exception.type" => class_name,
@@ -204,7 +202,7 @@ module Appsignal
               {
                 "name" => cause[:name],
                 "message" => cause[:message],
-                "lines" => cause[:lines] || []
+                "lines" => cause[:backtrace] || []
               }
             end
           )
@@ -214,12 +212,12 @@ module Appsignal
         span.status = ::OpenTelemetry::Trace::Status.error
       end
 
-      # Emits a breadcrumb as an `appsignal.breadcrumb` span event on the span
-      # that is current *now* -- the event span active when the breadcrumb was
-      # added, falling back to the root span when none is open. Breadcrumbs are
-      # emitted immediately (not flushed at completion) because by completion the
-      # event span has finished, and the OTel SDK drops events added to an ended
-      # span.
+      # Emits a breadcrumb as an `appsignal.breadcrumb` span event on AppSignal's
+      # current span -- the open event span, falling back to the root -- not the
+      # OTel current span, which may belong to another instrumentation.
+      # Breadcrumbs are emitted immediately (not flushed at completion) because by
+      # completion the event span has finished, and the OTel SDK drops events
+      # added to an ended span.
       #
       # The breadcrumb's recorded time becomes the event timestamp (events carry
       # their own time), so it is not duplicated as an attribute;
@@ -232,7 +230,7 @@ module Appsignal
         return if @breadcrumb_count >= Appsignal::Transaction::BREADCRUMB_LIMIT
 
         @breadcrumb_count += 1
-        ::OpenTelemetry::Trace.current_span.add_event(
+        current_span.add_event(
           "appsignal.breadcrumb",
           :timestamp => Time.at(breadcrumb[:time]),
           :attributes => {
@@ -274,34 +272,17 @@ module Appsignal
         teardown
       end
 
-      def duplicate(new_transaction_id)
-        self.class.new(new_transaction_id, @namespace)
-      end
-
-      # Multiple errors are recorded as multiple `exception` events on the one
-      # root span (each its own incident), so the Transaction does not need to
-      # duplicate itself per error.
-      def supports_multiple_errors?
+      # Each error is recorded eagerly as its own `exception` event on the span
+      # current when it was added, so the Transaction never duplicates itself --
+      # which is why `duplicate` is left unimplemented (see BaseBackend).
+      def records_errors_eagerly?
         true
       end
 
-      # Returned so `Transaction#to_h` (which does `JSON.parse(@backend.to_json)`)
-      # produces an empty Hash instead of raising. The existing agent-mode
-      # transaction matchers all read from `to_h`; in collector mode they
-      # will be replaced by OTel-based assertions in subsequent steps.
+      # Returned so `Transaction#to_h` (`JSON.parse(@backend.to_json)`) yields an
+      # empty Hash. Collector mode asserts on emitted spans, not `to_h`.
       def to_json # rubocop:disable Lint/ToJSON
         "{}"
-      end
-
-      # Test-mode introspection parity with `ExtensionBackend`. Returns `nil`
-      # for now since `set_queue_start` is a no-op; `_completed?` toggles on
-      # `complete` so `be_completed` keeps working.
-      def queue_start
-        nil
-      end
-
-      def _completed?
-        @completed
       end
 
       private
@@ -333,12 +314,13 @@ module Appsignal
         duration_ms = (@start_time.to_f * 1000) - @queue_start
         return if duration_ms.negative?
 
+        namespace = display_namespace(@namespace)
         Appsignal::Metrics::OpenTelemetryBackend.add_distribution_value(
-          "transaction_queue_duration", duration_ms, :namespace => @namespace
+          "transaction_queue_duration", duration_ms, :namespace => namespace
         )
         Appsignal::Metrics::OpenTelemetryBackend.add_distribution_value(
           "transaction_queue_duration", duration_ms,
-          :namespace => @namespace, :hostname => hostname
+          :namespace => namespace, :hostname => hostname
         )
       end
 
@@ -350,8 +332,19 @@ module Appsignal
         ::OpenTelemetry.tracer_provider.tracer(TRACER_NAME, Appsignal::VERSION)
       end
 
+      # The open event span, or the root span when no event is open. Not the OTel
+      # current span, which may belong to another instrumentation.
+      def current_span
+        span, _token = @event_stack.last
+        span || @span
+      end
+
       def placeholder_span_name(namespace)
         "appsignal.transaction #{namespace}"
+      end
+
+      def display_namespace(namespace)
+        DISPLAY_NAMESPACE.fetch(namespace, namespace)
       end
 
       # The collector exposes three params channels (query parameters, request
