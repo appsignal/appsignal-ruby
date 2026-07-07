@@ -34,6 +34,7 @@ describe Appsignal::Hooks::ExconHook do
         end
 
         it "in agent mode", :agent_mode do
+          start_agent
           transaction = http_request_transaction
           set_current_transaction(transaction)
           perform
@@ -46,8 +47,8 @@ describe Appsignal::Hooks::ExconHook do
         end
 
         it "in collector mode", :collector_mode do
-          transaction = http_request_transaction
-          set_current_transaction(transaction)
+          start_collector_agent
+          set_current_transaction(http_request_transaction)
           perform
           Appsignal::Transaction.complete_current!
 
@@ -67,6 +68,7 @@ describe Appsignal::Hooks::ExconHook do
         end
 
         it "in agent mode", :agent_mode do
+          start_agent
           transaction = http_request_transaction
           set_current_transaction(transaction)
           perform
@@ -79,8 +81,8 @@ describe Appsignal::Hooks::ExconHook do
         end
 
         it "in collector mode", :collector_mode do
-          transaction = http_request_transaction
-          set_current_transaction(transaction)
+          start_collector_agent
+          set_current_transaction(http_request_transaction)
           perform
           Appsignal::Transaction.complete_current!
 

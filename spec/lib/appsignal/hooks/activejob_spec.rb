@@ -1136,6 +1136,8 @@ if DependencyHelper.active_job_present?
     end
 
     it "in agent mode", :agent_mode do
+      start_agent
+
       expect(Appsignal).to receive(:increment_counter)
         .with("active_job_queue_job_count", 1, { :queue => "default", :status => :processed })
 
@@ -1143,6 +1145,8 @@ if DependencyHelper.active_job_present?
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
+
       perform
 
       snapshot = metric_snapshot("active_job_queue_job_count")
@@ -1175,6 +1179,8 @@ if DependencyHelper.active_job_present?
     end
 
     it "in agent mode", :agent_mode do
+      start_agent
+
       allow(Appsignal).to receive(:increment_counter) # the `processed` call
       expect(Appsignal).to receive(:increment_counter)
         .with("active_job_queue_job_count", 1, { :queue => "default", :status => :failed })
@@ -1183,6 +1189,8 @@ if DependencyHelper.active_job_present?
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
+
       perform
 
       snapshot = metric_snapshot("active_job_queue_job_count")
@@ -1212,6 +1220,8 @@ if DependencyHelper.active_job_present?
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         allow(Appsignal).to receive(:increment_counter) # the queue_job_count call
         expect(Appsignal).to receive(:increment_counter).with(
           "active_job_queue_priority_job_count",
@@ -1223,6 +1233,8 @@ if DependencyHelper.active_job_present?
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
 
         snapshot = metric_snapshot("active_job_queue_priority_job_count")
@@ -1269,6 +1281,8 @@ if DependencyHelper.active_job_present?
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         allow(Appsignal).to receive(:add_distribution_value)
 
         perform
@@ -1279,6 +1293,8 @@ if DependencyHelper.active_job_present?
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
 
         snapshot = metric_snapshot("active_job_queue_time")

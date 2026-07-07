@@ -21,6 +21,7 @@ describe Appsignal::Hooks::SequelHook do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
         transaction = http_request_transaction
         set_current_transaction(transaction)
         perform
@@ -34,6 +35,7 @@ describe Appsignal::Hooks::SequelHook do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
         transaction = http_request_transaction
         set_current_transaction(transaction)
         perform

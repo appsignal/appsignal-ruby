@@ -290,6 +290,7 @@ matrix:
           - "3.4.1"
           - "3.3.4"
           - "3.2.5"
+    - gem: "mongo"
     - gem: "resque-2"
     - gem: "resque-3"
       only:

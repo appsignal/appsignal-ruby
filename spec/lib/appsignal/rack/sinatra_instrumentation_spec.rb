@@ -110,12 +110,14 @@ if DependencyHelper.sinatra_present?
             end
 
             it "in agent mode", :agent_mode do
+              start_agent(**start_agent_args)
               expect { perform }.to(change { created_transactions.count }.by(1))
 
               expect(last_transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
             end
 
             it "in collector mode", :collector_mode do
+              start_collector_agent
               expect { perform }.to(change { created_transactions.count }.by(1))
 
               expect(root_span.attributes["appsignal.namespace"])
@@ -130,12 +132,14 @@ if DependencyHelper.sinatra_present?
             end
 
             it "in agent mode", :agent_mode do
+              start_agent(**start_agent_args)
               perform
 
               expect(last_transaction).to include_event("name" => "process_action.sinatra")
             end
 
             it "in collector mode", :collector_mode do
+              start_collector_agent
               perform
 
               span = event_spans.find { |s| s.name == "process_action.sinatra" }
@@ -155,12 +159,14 @@ if DependencyHelper.sinatra_present?
             end
 
             it "in agent mode", :agent_mode do
+              start_agent(**start_agent_args)
               expect { perform }.to(change { created_transactions.count }.by(1))
 
               expect(last_transaction).to have_namespace(Appsignal::Transaction::HTTP_REQUEST)
             end
 
             it "in collector mode", :collector_mode do
+              start_collector_agent
               expect { perform }.to(change { created_transactions.count }.by(1))
 
               expect(root_span.attributes["appsignal.namespace"])
@@ -177,12 +183,14 @@ if DependencyHelper.sinatra_present?
               end
 
               it "in agent mode", :agent_mode do
+                start_agent(**start_agent_args)
                 perform
 
                 expect(last_transaction).to have_error("ExampleException", "error message")
               end
 
               it "in collector mode", :collector_mode do
+                start_collector_agent
                 perform
 
                 event = root_span.events.find { |e| e.name == "exception" }
@@ -205,12 +213,14 @@ if DependencyHelper.sinatra_present?
               end
 
               it "in agent mode", :agent_mode do
+                start_agent(**start_agent_args)
                 perform
 
                 expect(last_transaction).to_not have_error
               end
 
               it "in collector mode", :collector_mode do
+                start_collector_agent
                 perform
 
                 expect(exception_events).to be_empty
@@ -232,12 +242,14 @@ if DependencyHelper.sinatra_present?
               end
 
               it "in agent mode", :agent_mode do
+                start_agent(**start_agent_args)
                 perform
 
                 expect(last_transaction).to_not have_error
               end
 
               it "in collector mode", :collector_mode do
+                start_collector_agent
                 perform
 
                 expect(exception_events).to be_empty
@@ -253,12 +265,14 @@ if DependencyHelper.sinatra_present?
             end
 
             it "in agent mode", :agent_mode do
+              start_agent(**start_agent_args)
               perform
 
               expect(last_transaction).to have_action("GET /path")
             end
 
             it "in collector mode", :collector_mode do
+              start_collector_agent
               perform
 
               expect(root_span.name).to eq("GET /path")
@@ -277,12 +291,14 @@ if DependencyHelper.sinatra_present?
               end
 
               it "in agent mode", :agent_mode do
+                start_agent(**start_agent_args)
                 perform
 
                 expect(last_transaction).to_not have_action
               end
 
               it "in collector mode", :collector_mode do
+                start_collector_agent
                 perform
 
                 expect(root_span.attributes).to_not have_key("appsignal.action_name")
@@ -299,12 +315,14 @@ if DependencyHelper.sinatra_present?
               end
 
               it "in agent mode", :agent_mode do
+                start_agent(**start_agent_args)
                 perform
 
                 expect(last_transaction).to have_action("GET /api/path")
               end
 
               it "in collector mode", :collector_mode do
+                start_collector_agent
                 perform
 
                 expect(root_span.name).to eq("GET /api/path")
@@ -323,12 +341,14 @@ if DependencyHelper.sinatra_present?
                 end
 
                 it "in agent mode", :agent_mode do
+                  start_agent(**start_agent_args)
                   perform
 
                   expect(last_transaction).to_not have_action
                 end
 
                 it "in collector mode", :collector_mode do
+                  start_collector_agent
                   perform
 
                   expect(root_span.attributes).to_not have_key("appsignal.action_name")

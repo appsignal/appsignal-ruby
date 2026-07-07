@@ -9,17 +9,20 @@ describe Appsignal::Integrations::NetHttpIntegration do
     end
 
     it "in agent mode", :agent_mode do
+      start_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       perform
 
       expect(transaction).to include_event(
         "name" => "request.net_http",
-        "title" => "GET http://www.google.com"
+        "title" => "GET http://www.google.com",
+        "body" => ""
       )
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       perform
@@ -45,17 +48,20 @@ describe Appsignal::Integrations::NetHttpIntegration do
     end
 
     it "in agent mode", :agent_mode do
+      start_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       perform
 
       expect(transaction).to include_event(
         "name" => "request.net_http",
-        "title" => "GET https://www.google.com"
+        "title" => "GET https://www.google.com",
+        "body" => ""
       )
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       perform

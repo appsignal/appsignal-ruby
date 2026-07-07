@@ -5,6 +5,7 @@ shared_examples "activesupport instrument override" do
     end
 
     it "in agent mode", :agent_mode do
+      start_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -20,6 +21,7 @@ shared_examples "activesupport instrument override" do
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -46,6 +48,7 @@ shared_examples "activesupport instrument override" do
     end
 
     it "in agent mode", :agent_mode do
+      start_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -61,6 +64,7 @@ shared_examples "activesupport instrument override" do
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -87,6 +91,7 @@ shared_examples "activesupport instrument override" do
     end
 
     it "in agent mode", :agent_mode do
+      start_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -103,6 +108,7 @@ shared_examples "activesupport instrument override" do
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -123,6 +129,7 @@ shared_examples "activesupport instrument override" do
     end
 
     it "in agent mode", :agent_mode do
+      start_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -132,6 +139,7 @@ shared_examples "activesupport instrument override" do
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -153,6 +161,7 @@ shared_examples "activesupport instrument override" do
     end
 
     it "in agent mode", :agent_mode do
+      start_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -169,6 +178,7 @@ shared_examples "activesupport instrument override" do
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -195,6 +205,7 @@ shared_examples "activesupport instrument override" do
     end
 
     it "in agent mode", :agent_mode do
+      start_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -211,6 +222,7 @@ shared_examples "activesupport instrument override" do
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -237,6 +249,7 @@ shared_examples "activesupport instrument override" do
     end
 
     it "in agent mode", :agent_mode do
+      start_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
@@ -248,6 +261,7 @@ shared_examples "activesupport instrument override" do
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier

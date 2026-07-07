@@ -1040,6 +1040,8 @@ describe Appsignal::Rack::EventHandler, "response status counter" do
     end
 
     it "in agent mode", :agent_mode do
+      start_agent
+
       expect(Appsignal).to receive(:increment_counter)
         .with(:response_status, 1, :status => 200, :namespace => :web)
 
@@ -1047,6 +1049,8 @@ describe Appsignal::Rack::EventHandler, "response status counter" do
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
+
       perform
 
       snapshot = metric_snapshot("response_status")
@@ -1069,6 +1073,8 @@ describe Appsignal::Rack::EventHandler, "response status counter" do
     end
 
     it "in agent mode", :agent_mode do
+      start_agent
+
       expect(Appsignal).to receive(:increment_counter)
         .with(:response_status, 1, :status => 500, :namespace => :web)
 
@@ -1076,6 +1082,8 @@ describe Appsignal::Rack::EventHandler, "response status counter" do
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
+
       perform
 
       snapshot = metric_snapshot("response_status")

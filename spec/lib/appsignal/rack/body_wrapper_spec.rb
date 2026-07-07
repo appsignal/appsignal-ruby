@@ -87,6 +87,8 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
 
         expect(transaction).to include_event(
@@ -96,6 +98,8 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
 
         expect_collector_event(
@@ -117,12 +121,16 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
 
         expect(transaction).to_not include_event("name" => "process_response_body.rack")
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         transaction.complete
 
@@ -152,12 +160,16 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
 
         expect(transaction).to have_error("ExampleException", "error message")
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
 
         expect_collector_error("ExampleException", "error message")
@@ -176,11 +188,15 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
@@ -198,11 +214,15 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
@@ -221,11 +241,15 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
@@ -244,11 +268,15 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
@@ -267,11 +295,15 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
@@ -290,11 +322,15 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
@@ -311,12 +347,16 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
 
         expect(transaction).to include_event("name" => "close_response_body.rack")
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
 
         expect_collector_event("close_response_body.rack")
@@ -335,12 +375,16 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
 
         expect(transaction).to have_error("ExampleException", "error message")
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
 
         expect_collector_error("ExampleException", "error message")
@@ -357,11 +401,15 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
@@ -377,11 +425,15 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
@@ -398,11 +450,15 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
@@ -419,11 +475,15 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
@@ -468,6 +528,8 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
 
         expect(transaction).to include_event(
@@ -477,6 +539,8 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
 
         expect_collector_event(
@@ -497,12 +561,16 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
 
         expect(transaction).to have_error("ExampleException", "error message")
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
 
         expect_collector_error("ExampleException", "error message")
@@ -520,11 +588,15 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
@@ -541,11 +613,15 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
@@ -564,11 +640,15 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
@@ -587,11 +667,15 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
@@ -606,6 +690,8 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
 
         expect(transaction).to include_event(
@@ -615,6 +701,8 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
 
         expect_collector_event(
@@ -638,12 +726,16 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
 
         expect(transaction).to have_error("ExampleException", "error message")
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
 
         expect_collector_error("ExampleException", "error message")
@@ -665,11 +757,15 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
@@ -690,11 +786,15 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
@@ -722,6 +822,8 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
 
         expect(transaction).to include_event(
@@ -731,6 +833,8 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
 
         expect_collector_event(
@@ -751,12 +855,16 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
 
         expect(transaction).to have_error("ExampleException", "error message")
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
 
         expect_collector_error("ExampleException", "error message")
@@ -774,12 +882,16 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
 
         expect(transaction).to have_error("ExampleException", "error message")
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
 
         expect_collector_error("ExampleException", "error message")
@@ -797,11 +909,15 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
@@ -818,11 +934,15 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
@@ -840,11 +960,15 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
@@ -862,11 +986,15 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
@@ -884,11 +1012,15 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
@@ -906,11 +1038,15 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
@@ -925,6 +1061,8 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
 
         expect(transaction).to include_event(
@@ -934,6 +1072,8 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
 
         expect_collector_event(
@@ -966,6 +1106,8 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
 
         expect(transaction).to include_event(
@@ -975,6 +1117,8 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
 
         expect_collector_event(
@@ -999,12 +1143,16 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
 
         expect(transaction).to have_error("ExampleException", "error message")
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
 
         expect_collector_error("ExampleException", "error message")
@@ -1025,11 +1173,15 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
@@ -1049,11 +1201,15 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
@@ -1075,11 +1231,15 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end
@@ -1101,11 +1261,15 @@ describe Appsignal::Rack::BodyWrapper do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
+
         perform
         expect(transaction).to_not have_error
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
+
         perform
         expect_collector_no_error
       end

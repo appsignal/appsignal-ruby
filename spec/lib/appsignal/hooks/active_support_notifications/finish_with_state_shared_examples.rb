@@ -2,13 +2,18 @@ shared_examples "activesupport finish_with_state override" do
   let(:instrumenter) { as.instrumenter }
 
   describe "a finish_with_state event" do
+    def perform
+      listeners_state = instrumenter.start("sql.active_record", {})
+      instrumenter.finish_with_state(listeners_state, "sql.active_record", :sql => "SQL")
+    end
+
     it "in agent mode", :agent_mode do
+      start_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
 
-      listeners_state = instrumenter.start("sql.active_record", {})
-      instrumenter.finish_with_state(listeners_state, "sql.active_record", :sql => "SQL")
+      perform
 
       expect(transaction).to include_event(
         "body" => "SQL",
@@ -20,14 +25,15 @@ shared_examples "activesupport finish_with_state override" do
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
 
-      listeners_state = instrumenter.start("sql.active_record", {})
-      instrumenter.finish_with_state(listeners_state, "sql.active_record", :sql => "SQL")
+      perform
       Appsignal::Transaction.complete_current!
 
+      expect(event_spans.size).to eq(1)
       span = event_spans.find { |s| s.name == "sql.active_record" }
       expect(span).not_to be_nil
       expect(span.parent_span_id).to eq(root_span.span_id)
@@ -39,24 +45,29 @@ shared_examples "activesupport finish_with_state override" do
   end
 
   describe "an event whose name starts with a bang" do
+    def perform
+      listeners_state = instrumenter.start("!sql.active_record", {})
+      instrumenter.finish_with_state(listeners_state, "!sql.active_record", :sql => "SQL")
+    end
+
     it "in agent mode", :agent_mode do
+      start_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
 
-      listeners_state = instrumenter.start("!sql.active_record", {})
-      instrumenter.finish_with_state(listeners_state, "!sql.active_record", :sql => "SQL")
+      perform
 
       expect(transaction).to_not include_events
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       transaction = http_request_transaction
       set_current_transaction(transaction)
       as.notifier = notifier
 
-      listeners_state = instrumenter.start("!sql.active_record", {})
-      instrumenter.finish_with_state(listeners_state, "!sql.active_record", :sql => "SQL")
+      perform
       Appsignal::Transaction.complete_current!
 
       expect(event_spans).to be_empty

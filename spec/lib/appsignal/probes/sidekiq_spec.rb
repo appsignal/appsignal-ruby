@@ -206,6 +206,7 @@ describe Appsignal::Probes::SidekiqProbe do
     end
 
     it "loads Sidekiq::API", :agent_mode do
+      start_agent
       with_sidekiq!
       # Hide the Sidekiq constant if it was already loaded. It will be
       # redefined by loading "sidekiq/api" in the probe.
@@ -217,6 +218,7 @@ describe Appsignal::Probes::SidekiqProbe do
     end
 
     it "logs config on initialize", :agent_mode do
+      start_agent
       with_sidekiq!
       log = capture_logs { probe }
       expect(log).to contains_log(:debug, "Initializing Sidekiq probe\n")
@@ -226,6 +228,7 @@ describe Appsignal::Probes::SidekiqProbe do
       before { with_sidekiq7! }
 
       it "logs used hostname on call once", :agent_mode do
+        start_agent
         log = capture_logs { probe.call }
         expect(log).to contains_log(
           :debug,
@@ -244,11 +247,13 @@ describe Appsignal::Probes::SidekiqProbe do
         end
 
         it "in agent mode", :agent_mode do
+          start_agent
           expect_all_custom_gauges
           perform
         end
 
         it "in collector mode", :collector_mode do
+          start_collector_agent
           perform
           expect_all_custom_gauge_snapshots
         end
@@ -265,6 +270,7 @@ describe Appsignal::Probes::SidekiqProbe do
           end
 
           it "doesn't create metrics for nil values in agent mode", :agent_mode do
+            start_agent
             expect_gauge("connection_count").never
             expect_gauge("memory_usage").never
             expect_gauge("memory_usage_rss").never
@@ -272,6 +278,7 @@ describe Appsignal::Probes::SidekiqProbe do
           end
 
           it "doesn't create metrics for nil values in collector mode", :collector_mode do
+            start_collector_agent
             perform
             names = metric_snapshots.map(&:name)
             expect(names).not_to include("sidekiq_connection_count")
@@ -286,6 +293,7 @@ describe Appsignal::Probes::SidekiqProbe do
       before { with_sidekiq6! }
 
       it "logs used hostname on call once", :agent_mode do
+        start_agent
         log = capture_logs { probe.call }
         expect(log).to contains_log(
           :debug,
@@ -304,11 +312,13 @@ describe Appsignal::Probes::SidekiqProbe do
         end
 
         it "in agent mode", :agent_mode do
+          start_agent
           expect_all_custom_gauges
           perform
         end
 
         it "in collector mode", :collector_mode do
+          start_collector_agent
           perform
           expect_all_custom_gauge_snapshots
         end
@@ -321,6 +331,7 @@ describe Appsignal::Probes::SidekiqProbe do
 
         describe "the redis info gauges" do
           it "does not collect redis metrics in agent mode", :agent_mode do
+            start_agent
             expect_gauge("connection_count", 2).never
             expect_gauge("memory_usage", 1024).never
             expect_gauge("memory_usage_rss", 512).never
@@ -328,6 +339,7 @@ describe Appsignal::Probes::SidekiqProbe do
           end
 
           it "does not collect redis metrics in collector mode", :collector_mode do
+            start_collector_agent
             probe.call
             names = metric_snapshots.map(&:name)
             expect(names).not_to include("sidekiq_connection_count")
@@ -343,6 +355,7 @@ describe Appsignal::Probes::SidekiqProbe do
       let(:probe) { described_class.new(:hostname => redis_hostname) }
 
       it "uses the redis hostname for the hostname tag", :agent_mode do
+        start_agent
         with_sidekiq!
 
         allow(Appsignal).to receive(:set_gauge).and_call_original
@@ -361,6 +374,7 @@ describe Appsignal::Probes::SidekiqProbe do
       end
 
       it "tags the emitted gauges with the configured hostname", :collector_mode do
+        start_collector_agent
         with_sidekiq!
 
         probe.call

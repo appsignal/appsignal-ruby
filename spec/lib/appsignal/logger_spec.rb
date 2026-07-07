@@ -1,6 +1,13 @@
 shared_examples "tagged logging" do
   describe "with tags from logger.tagged" do
+    def perform
+      logger.tagged("My tag", "My other tag") do
+        logger.info("Some message")
+      end
+    end
+
     it "in agent mode", :agent_mode do
+      start_agent
       expect(Appsignal::Extension).to receive(:log)
         .with(
           "group",
@@ -9,13 +16,11 @@ shared_examples "tagged logging" do
           "[My tag] [My other tag] Some message\n",
           Appsignal::Utils::Data.generate({})
         )
-
-      logger.tagged("My tag", "My other tag") do
-        logger.info("Some message")
-      end
+      perform
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
         .with(
           "group",
@@ -24,15 +29,21 @@ shared_examples "tagged logging" do
           "[My tag] [My other tag] Some message\n",
           {}
         )
-
-      logger.tagged("My tag", "My other tag") do
-        logger.info("Some message")
-      end
+      perform
     end
   end
 
   describe "with nested tags from logger.tagged" do
+    def perform
+      logger.tagged("My tag", "My other tag") do
+        logger.tagged("Nested tag", "Nested other tag") do
+          logger.info("Some message")
+        end
+      end
+    end
+
     it "in agent mode", :agent_mode do
+      start_agent
       expect(Appsignal::Extension).to receive(:log)
         .with(
           "group",
@@ -41,15 +52,11 @@ shared_examples "tagged logging" do
           "[My tag] [My other tag] [Nested tag] [Nested other tag] Some message\n",
           Appsignal::Utils::Data.generate({})
         )
-
-      logger.tagged("My tag", "My other tag") do
-        logger.tagged("Nested tag", "Nested other tag") do
-          logger.info("Some message")
-        end
-      end
+      perform
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
         .with(
           "group",
@@ -58,17 +65,13 @@ shared_examples "tagged logging" do
           "[My tag] [My other tag] [Nested tag] [Nested other tag] Some message\n",
           {}
         )
-
-      logger.tagged("My tag", "My other tag") do
-        logger.tagged("Nested tag", "Nested other tag") do
-          logger.info("Some message")
-        end
-      end
+      perform
     end
   end
 
   describe "with tags from Rails.application.config.log_tags" do
     it "in agent mode", :agent_mode do
+      start_agent
       allow(Appsignal::Extension).to receive(:log)
 
       logger.push_tags(["Request tag", "Second tag"])
@@ -105,6 +108,7 @@ shared_examples "tagged logging" do
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       allow(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
 
       logger.push_tags(["Request tag", "Second tag"])
@@ -142,11 +146,15 @@ shared_examples "tagged logging" do
   end
 
   describe "with tags from Rails 8 application.config.log_tags" do
-    it "in agent mode", :agent_mode do
-      allow(Appsignal::Extension).to receive(:log)
-
+    def perform
       logger.push_tags("Request tag", "Second tag")
       logger.tagged("First message", "My other tag") { logger.info("Some message") }
+    end
+
+    it "in agent mode", :agent_mode do
+      start_agent
+      allow(Appsignal::Extension).to receive(:log)
+      perform
       expect(Appsignal::Extension).to have_received(:log)
         .with(
           "group",
@@ -158,10 +166,9 @@ shared_examples "tagged logging" do
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       allow(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
-
-      logger.push_tags("Request tag", "Second tag")
-      logger.tagged("First message", "My other tag") { logger.info("Some message") }
+      perform
       expect(Appsignal::Logger::OpenTelemetryBackend).to have_received(:emit)
         .with(
           "group",
@@ -175,6 +182,7 @@ shared_examples "tagged logging" do
 
   describe "clearing all tags with clear_tags!" do
     it "in agent mode", :agent_mode do
+      start_agent
       allow(Appsignal::Extension).to receive(:log)
 
       logger.push_tags(["Request tag", "Second tag"])
@@ -201,6 +209,7 @@ shared_examples "tagged logging" do
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       allow(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
 
       logger.push_tags(["Request tag", "Second tag"])
@@ -228,7 +237,14 @@ shared_examples "tagged logging" do
   end
 
   describe "with tags passed as an array" do
+    def perform
+      logger.tagged(["My tag", "My other tag"]) do
+        logger.info("Some message")
+      end
+    end
+
     it "in agent mode", :agent_mode do
+      start_agent
       expect(Appsignal::Extension).to receive(:log)
         .with(
           "group",
@@ -237,13 +253,11 @@ shared_examples "tagged logging" do
           "[My tag] [My other tag] Some message\n",
           Appsignal::Utils::Data.generate({})
         )
-
-      logger.tagged(["My tag", "My other tag"]) do
-        logger.info("Some message")
-      end
+      perform
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
         .with(
           "group",
@@ -252,10 +266,7 @@ shared_examples "tagged logging" do
           "[My tag] [My other tag] Some message\n",
           {}
         )
-
-      logger.tagged(["My tag", "My other tag"]) do
-        logger.info("Some message")
-      end
+      perform
     end
   end
 
@@ -266,7 +277,12 @@ shared_examples "tagged logging" do
   if !DependencyHelper.rails_present? || DependencyHelper.rails7_present?
     describe "when calling #tagged without a block" do
       describe "returns a new logger with the tags added" do
+        def perform
+          logger.tagged("My tag", "My other tag").info("Some message")
+        end
+
         it "in agent mode", :agent_mode do
+          start_agent
           expect(Appsignal::Extension).to receive(:log)
             .with(
               "group",
@@ -275,11 +291,11 @@ shared_examples "tagged logging" do
               "[My tag] [My other tag] Some message\n",
               Appsignal::Utils::Data.generate({})
             )
-
-          logger.tagged("My tag", "My other tag").info("Some message")
+          perform
         end
 
         it "in collector mode", :collector_mode do
+          start_collector_agent
           expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
             .with(
               "group",
@@ -288,13 +304,13 @@ shared_examples "tagged logging" do
               "[My tag] [My other tag] Some message\n",
               {}
             )
-
-          logger.tagged("My tag", "My other tag").info("Some message")
+          perform
         end
       end
 
       describe "does not modify the original logger" do
         it "in agent mode", :agent_mode do
+          start_agent
           expect(Appsignal::Extension).to receive(:log)
             .with(
               "group",
@@ -320,6 +336,7 @@ shared_examples "tagged logging" do
         end
 
         it "in collector mode", :collector_mode do
+          start_collector_agent
           expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
             .with(
               "group",
@@ -346,7 +363,12 @@ shared_examples "tagged logging" do
       end
 
       describe "can be chained" do
+        def perform
+          logger.tagged("My tag", "My other tag").tagged("My third tag").info("Some message")
+        end
+
         it "in agent mode", :agent_mode do
+          start_agent
           expect(Appsignal::Extension).to receive(:log)
             .with(
               "group",
@@ -355,11 +377,11 @@ shared_examples "tagged logging" do
               "[My tag] [My other tag] [My third tag] Some message\n",
               Appsignal::Utils::Data.generate({})
             )
-
-          logger.tagged("My tag", "My other tag").tagged("My third tag").info("Some message")
+          perform
         end
 
         it "in collector mode", :collector_mode do
+          start_collector_agent
           expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
             .with(
               "group",
@@ -368,22 +390,12 @@ shared_examples "tagged logging" do
               "[My tag] [My other tag] [My third tag] Some message\n",
               {}
             )
-
-          logger.tagged("My tag", "My other tag").tagged("My third tag").info("Some message")
+          perform
         end
       end
 
       describe "can be chained before a block invocation" do
-        it "in agent mode", :agent_mode do
-          expect(Appsignal::Extension).to receive(:log)
-            .with(
-              "group",
-              3,
-              3,
-              "[My tag] [My other tag] [My third tag] Some message\n",
-              Appsignal::Utils::Data.generate({})
-            )
-
+        def perform
           # Use the logger passed to the block: the logger returned from
           # the first #tagged invocation is a new instance.
           logger.tagged("My tag", "My other tag").tagged("My third tag") do |logger|
@@ -391,24 +403,8 @@ shared_examples "tagged logging" do
           end
         end
 
-        it "in collector mode", :collector_mode do
-          expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
-            .with(
-              "group",
-              ::Logger::INFO,
-              Appsignal::Logger::AUTODETECT,
-              "[My tag] [My other tag] [My third tag] Some message\n",
-              {}
-            )
-
-          logger.tagged("My tag", "My other tag").tagged("My third tag") do |logger|
-            logger.info("Some message")
-          end
-        end
-      end
-
-      describe "can be chained after a block invocation" do
         it "in agent mode", :agent_mode do
+          start_agent
           expect(Appsignal::Extension).to receive(:log)
             .with(
               "group",
@@ -417,13 +413,11 @@ shared_examples "tagged logging" do
               "[My tag] [My other tag] [My third tag] Some message\n",
               Appsignal::Utils::Data.generate({})
             )
-
-          logger.tagged("My tag", "My other tag") do
-            logger.tagged("My third tag").info("Some message")
-          end
+          perform
         end
 
         it "in collector mode", :collector_mode do
+          start_collector_agent
           expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
             .with(
               "group",
@@ -432,10 +426,41 @@ shared_examples "tagged logging" do
               "[My tag] [My other tag] [My third tag] Some message\n",
               {}
             )
+          perform
+        end
+      end
 
+      describe "can be chained after a block invocation" do
+        def perform
           logger.tagged("My tag", "My other tag") do
             logger.tagged("My third tag").info("Some message")
           end
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent
+          expect(Appsignal::Extension).to receive(:log)
+            .with(
+              "group",
+              3,
+              3,
+              "[My tag] [My other tag] [My third tag] Some message\n",
+              Appsignal::Utils::Data.generate({})
+            )
+          perform
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
+            .with(
+              "group",
+              ::Logger::INFO,
+              Appsignal::Logger::AUTODETECT,
+              "[My tag] [My other tag] [My third tag] Some message\n",
+              {}
+            )
+          perform
         end
       end
     end
@@ -488,70 +513,92 @@ describe Appsignal::Logger do
 
   describe "#add" do
     describe "with a level and message" do
-      it "in agent mode", :agent_mode do
-        expect(Appsignal::Extension).to receive(:log)
-          .with("group", 3, 3, "Log message", instance_of(Appsignal::Extension::Data))
+      def perform
         logger.add(::Logger::INFO, "Log message")
       end
 
+      it "in agent mode", :agent_mode do
+        start_agent
+        expect(Appsignal::Extension).to receive(:log)
+          .with("group", 3, 3, "Log message", instance_of(Appsignal::Extension::Data))
+        perform
+      end
+
       it "in collector mode", :collector_mode do
+        start_collector_agent
         expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
           .with("group", ::Logger::INFO, Appsignal::Logger::AUTODETECT, "Log message", {})
-        logger.add(::Logger::INFO, "Log message")
+        perform
       end
     end
 
     describe "with a non-string message" do
+      def perform
+        logger.add(::Logger::INFO, 123)
+        logger.add(::Logger::INFO, {})
+        logger.add(::Logger::INFO, [])
+      end
+
       it "in agent mode", :agent_mode do
+        start_agent
         expect(Appsignal::Extension).to receive(:log)
           .with("group", 3, 3, "123", instance_of(Appsignal::Extension::Data))
         expect(Appsignal::Extension).to receive(:log)
           .with("group", 3, 3, "{}", instance_of(Appsignal::Extension::Data))
         expect(Appsignal::Extension).to receive(:log)
           .with("group", 3, 3, "[]", instance_of(Appsignal::Extension::Data))
-        logger.add(::Logger::INFO, 123)
-        logger.add(::Logger::INFO, {})
-        logger.add(::Logger::INFO, [])
+        perform
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
         expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
           .with("group", ::Logger::INFO, Appsignal::Logger::AUTODETECT, "123", {})
         expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
           .with("group", ::Logger::INFO, Appsignal::Logger::AUTODETECT, "{}", {})
         expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
           .with("group", ::Logger::INFO, Appsignal::Logger::AUTODETECT, "[]", {})
-        logger.add(::Logger::INFO, 123)
-        logger.add(::Logger::INFO, {})
-        logger.add(::Logger::INFO, [])
+        perform
       end
     end
 
     describe "with a block" do
-      it "in agent mode", :agent_mode do
-        expect(Appsignal::Extension).to receive(:log)
-          .with("group", 3, 3, "Log message", instance_of(Appsignal::Extension::Data))
+      def perform
         logger.add(::Logger::INFO) { "Log message" }
       end
 
+      it "in agent mode", :agent_mode do
+        start_agent
+        expect(Appsignal::Extension).to receive(:log)
+          .with("group", 3, 3, "Log message", instance_of(Appsignal::Extension::Data))
+        perform
+      end
+
       it "in collector mode", :collector_mode do
+        start_collector_agent
         expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
           .with("group", ::Logger::INFO, Appsignal::Logger::AUTODETECT, "Log message", {})
-        logger.add(::Logger::INFO) { "Log message" }
+        perform
       end
     end
 
     describe "with a level, message and group" do
-      it "in agent mode", :agent_mode do
-        expect(Appsignal::Extension).to receive(:log)
-          .with("other_group", 3, 3, "Log message", instance_of(Appsignal::Extension::Data))
+      def perform
         logger.add(::Logger::INFO, "Log message", "other_group")
       end
 
+      it "in agent mode", :agent_mode do
+        start_agent
+        expect(Appsignal::Extension).to receive(:log)
+          .with("other_group", 3, 3, "Log message", instance_of(Appsignal::Extension::Data))
+        perform
+      end
+
       it "in collector mode", :collector_mode do
+        start_collector_agent
         expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
           .with("other_group", ::Logger::INFO, Appsignal::Logger::AUTODETECT, "Log message", {})
-        logger.add(::Logger::INFO, "Log message", "other_group")
+        perform
       end
     end
 
@@ -559,14 +606,20 @@ describe Appsignal::Logger do
       let(:logger) { Appsignal::Logger.new("group", :level => ::Logger::INFO) }
 
       describe "when the call's level is too low" do
-        it "in agent mode", :agent_mode do
-          expect(Appsignal::Extension).not_to receive(:log)
+        def perform
           logger.add(::Logger::DEBUG, "Log message")
         end
 
+        it "in agent mode", :agent_mode do
+          start_agent
+          expect(Appsignal::Extension).not_to receive(:log)
+          perform
+        end
+
         it "in collector mode", :collector_mode do
+          start_collector_agent
           expect(Appsignal::Logger::OpenTelemetryBackend).not_to receive(:emit)
-          logger.add(::Logger::DEBUG, "Log message")
+          perform
         end
       end
     end
@@ -574,48 +627,66 @@ describe Appsignal::Logger do
     describe "with the PLAINTEXT format set" do
       let(:logger) { Appsignal::Logger.new("group", :format => Appsignal::Logger::PLAINTEXT) }
 
-      it "in agent mode", :agent_mode do
-        expect(Appsignal::Extension).to receive(:log)
-          .with("group", 3, 0, "Log message", instance_of(Appsignal::Extension::Data))
+      def perform
         logger.add(::Logger::INFO, "Log message")
       end
 
+      it "in agent mode", :agent_mode do
+        start_agent
+        expect(Appsignal::Extension).to receive(:log)
+          .with("group", 3, 0, "Log message", instance_of(Appsignal::Extension::Data))
+        perform
+      end
+
       it "in collector mode", :collector_mode do
+        start_collector_agent
         expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
           .with("group", ::Logger::INFO, Appsignal::Logger::PLAINTEXT, "Log message", {})
-        logger.add(::Logger::INFO, "Log message")
+        perform
       end
     end
 
     describe "with the logfmt format set" do
       let(:logger) { Appsignal::Logger.new("group", :format => Appsignal::Logger::LOGFMT) }
 
-      it "in agent mode", :agent_mode do
-        expect(Appsignal::Extension).to receive(:log)
-          .with("group", 3, 1, "Log message", instance_of(Appsignal::Extension::Data))
+      def perform
         logger.add(::Logger::INFO, "Log message")
       end
 
+      it "in agent mode", :agent_mode do
+        start_agent
+        expect(Appsignal::Extension).to receive(:log)
+          .with("group", 3, 1, "Log message", instance_of(Appsignal::Extension::Data))
+        perform
+      end
+
       it "in collector mode", :collector_mode do
+        start_collector_agent
         expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
           .with("group", ::Logger::INFO, Appsignal::Logger::LOGFMT, "Log message", {})
-        logger.add(::Logger::INFO, "Log message")
+        perform
       end
     end
 
     describe "with the JSON format set" do
       let(:logger) { Appsignal::Logger.new("group", :format => Appsignal::Logger::JSON) }
 
-      it "in agent mode", :agent_mode do
-        expect(Appsignal::Extension).to receive(:log)
-          .with("group", 3, 2, "Log message", instance_of(Appsignal::Extension::Data))
+      def perform
         logger.add(::Logger::INFO, "Log message")
       end
 
+      it "in agent mode", :agent_mode do
+        start_agent
+        expect(Appsignal::Extension).to receive(:log)
+          .with("group", 3, 2, "Log message", instance_of(Appsignal::Extension::Data))
+        perform
+      end
+
       it "in collector mode", :collector_mode do
+        start_collector_agent
         expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
           .with("group", ::Logger::INFO, Appsignal::Logger::JSON, "Log message", {})
-        logger.add(::Logger::INFO, "Log message")
+        perform
       end
     end
 
@@ -627,7 +698,12 @@ describe Appsignal::Logger do
       end
 
       describe "logs with a level, message and group" do
+        def perform
+          logger.add(::Logger::INFO, "Log message", "other_group")
+        end
+
         it "in agent mode", :agent_mode do
+          start_agent
           expect(Appsignal::Extension).to receive(:log).with(
             "other_group",
             3,
@@ -635,10 +711,11 @@ describe Appsignal::Logger do
             "formatted: 'Log message'",
             instance_of(Appsignal::Extension::Data)
           )
-          logger.add(::Logger::INFO, "Log message", "other_group")
+          perform
         end
 
         it "in collector mode", :collector_mode do
+          start_collector_agent
           expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit).with(
             "other_group",
             ::Logger::INFO,
@@ -646,12 +723,17 @@ describe Appsignal::Logger do
             "formatted: 'Log message'",
             {}
           )
-          logger.add(::Logger::INFO, "Log message", "other_group")
+          perform
         end
       end
 
       describe "calls the formatter with the original message" do
+        def perform
+          logger.add(::Logger::INFO, { :a => "b" })
+        end
+
         it "in agent mode", :agent_mode do
+          start_agent
           expect(Appsignal::Extension).to receive(:log)
             .with(
               "group",
@@ -663,10 +745,11 @@ describe Appsignal::Logger do
           expect(logger.formatter).to receive(:call)
             .with(::Logger::INFO, instance_of(Time), "group", { :a => "b" })
             .and_call_original
-          logger.add(::Logger::INFO, { :a => "b" })
+          perform
         end
 
         it "in collector mode", :collector_mode do
+          start_collector_agent
           expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
             .with(
               "group",
@@ -678,27 +761,33 @@ describe Appsignal::Logger do
           expect(logger.formatter).to receive(:call)
             .with(::Logger::INFO, instance_of(Time), "group", { :a => "b" })
             .and_call_original
-          logger.add(::Logger::INFO, { :a => "b" })
+          perform
         end
       end
 
       describe "calls #to_s on the formatter output if it is not a string" do
+        def perform
+          logger.add(::Logger::INFO, 123)
+        end
+
         it "in agent mode", :agent_mode do
+          start_agent
           expect(Appsignal::Extension).to receive(:log)
             .with("group", 3, 3, "123", instance_of(Appsignal::Extension::Data))
           expect(logger.formatter).to receive(:call)
             .with(::Logger::INFO, instance_of(Time), "group", 123)
             .and_return(123)
-          logger.add(::Logger::INFO, 123)
+          perform
         end
 
         it "in collector mode", :collector_mode do
+          start_collector_agent
           expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
             .with("group", ::Logger::INFO, Appsignal::Logger::AUTODETECT, "123", {})
           expect(logger.formatter).to receive(:call)
             .with(::Logger::INFO, instance_of(Time), "group", 123)
             .and_return(123)
-          logger.add(::Logger::INFO, 123)
+          perform
         end
       end
     end
@@ -714,33 +803,45 @@ describe Appsignal::Logger do
     end
 
     describe "silences the logger up to, but not including, the given level" do
+      def perform
+        logger.silence(::Logger::WARN) do
+          logger.info("Log message")
+          logger.warn("Log message")
+        end
+      end
+
       it "in agent mode", :agent_mode do
+        start_agent
         expect(Appsignal::Extension).not_to receive(:log)
           .with("group", 3, 3, "Log message", instance_of(Appsignal::Extension::Data))
         expect(Appsignal::Extension).to receive(:log)
           .with("group", 5, 3, "Log message", instance_of(Appsignal::Extension::Data))
-
-        logger.silence(::Logger::WARN) do
-          logger.info("Log message")
-          logger.warn("Log message")
-        end
+        perform
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
         expect(Appsignal::Logger::OpenTelemetryBackend).not_to receive(:emit)
           .with("group", ::Logger::INFO, Appsignal::Logger::AUTODETECT, "Log message", {})
         expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
           .with("group", ::Logger::WARN, Appsignal::Logger::AUTODETECT, "Log message", {})
-
-        logger.silence(::Logger::WARN) do
-          logger.info("Log message")
-          logger.warn("Log message")
-        end
+        perform
       end
     end
 
     describe "silences the logger to error level by default" do
+      def perform
+        logger.silence do
+          logger.debug("Log message")
+          logger.info("Log message")
+          logger.warn("Log message")
+          logger.error("Log message")
+          logger.fatal("Log message")
+        end
+      end
+
       it "in agent mode", :agent_mode do
+        start_agent
         [2, 3, 5].each do |severity|
           expect(Appsignal::Extension).not_to receive(:log)
             .with("group", severity, 3, "Log message", instance_of(Appsignal::Extension::Data))
@@ -749,17 +850,11 @@ describe Appsignal::Logger do
           expect(Appsignal::Extension).to receive(:log)
             .with("group", severity, 3, "Log message", instance_of(Appsignal::Extension::Data))
         end
-
-        logger.silence do
-          logger.debug("Log message")
-          logger.info("Log message")
-          logger.warn("Log message")
-          logger.error("Log message")
-          logger.fatal("Log message")
-        end
+        perform
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
         [::Logger::DEBUG, ::Logger::INFO, ::Logger::WARN].each do |severity|
           expect(Appsignal::Logger::OpenTelemetryBackend).not_to receive(:emit)
             .with("group", severity, Appsignal::Logger::AUTODETECT, "Log message", {})
@@ -768,98 +863,81 @@ describe Appsignal::Logger do
           expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
             .with("group", severity, Appsignal::Logger::AUTODETECT, "Log message", {})
         end
-
-        logger.silence do
-          logger.debug("Log message")
-          logger.info("Log message")
-          logger.warn("Log message")
-          logger.error("Log message")
-          logger.fatal("Log message")
-        end
+        perform
       end
     end
   end
 
   describe "#broadcast_to" do
     describe "broadcasts the message to the given logger" do
-      it "in agent mode", :agent_mode do
-        other_device = StringIO.new
-        other_logger = ::Logger.new(other_device)
-        logger.broadcast_to(other_logger)
+      let(:other_device) { StringIO.new }
+      let(:other_logger) { ::Logger.new(other_device) }
+      before { logger.broadcast_to(other_logger) }
 
-        expect(Appsignal::Extension).to receive(:log)
-          .with("group", 3, 3, "Log message", instance_of(Appsignal::Extension::Data))
-
+      def perform
         logger.info("Log message")
-
         expect(other_device.string).to include("INFO -- group: Log message")
       end
 
-      it "in collector mode", :collector_mode do
-        other_device = StringIO.new
-        other_logger = ::Logger.new(other_device)
-        logger.broadcast_to(other_logger)
+      it "in agent mode", :agent_mode do
+        start_agent
+        expect(Appsignal::Extension).to receive(:log)
+          .with("group", 3, 3, "Log message", instance_of(Appsignal::Extension::Data))
+        perform
+      end
 
+      it "in collector mode", :collector_mode do
+        start_collector_agent
         expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
           .with("group", ::Logger::INFO, Appsignal::Logger::AUTODETECT, "Log message", {})
-
-        logger.info("Log message")
-
-        expect(other_device.string).to include("INFO -- group: Log message")
+        perform
       end
     end
 
     describe "broadcasts the message to the given logger when it's below the log level" do
-      it "in agent mode", :agent_mode do
-        logger = Appsignal::Logger.new("group", :level => ::Logger::INFO)
-        other_device = StringIO.new
-        other_logger = ::Logger.new(other_device)
-        logger.broadcast_to(other_logger)
+      let(:logger) { Appsignal::Logger.new("group", :level => ::Logger::INFO) }
+      let(:other_device) { StringIO.new }
+      let(:other_logger) { ::Logger.new(other_device) }
+      before { logger.broadcast_to(other_logger) }
 
-        expect(Appsignal::Extension).not_to receive(:log)
-
+      def perform
         logger.debug("Log message")
-
         expect(other_device.string).to include("DEBUG -- group: Log message")
       end
 
+      it "in agent mode", :agent_mode do
+        start_agent
+        expect(Appsignal::Extension).not_to receive(:log)
+        perform
+      end
+
       it "in collector mode", :collector_mode do
-        logger = Appsignal::Logger.new("group", :level => ::Logger::INFO)
-        other_device = StringIO.new
-        other_logger = ::Logger.new(other_device)
-        logger.broadcast_to(other_logger)
-
+        start_collector_agent
         expect(Appsignal::Logger::OpenTelemetryBackend).not_to receive(:emit)
-
-        logger.debug("Log message")
-
-        expect(other_device.string).to include("DEBUG -- group: Log message")
+        perform
       end
     end
 
     describe "does not broadcast the message to the given logger when silenced" do
-      it "in agent mode", :agent_mode do
-        other_device = StringIO.new
-        other_logger = ::Logger.new(other_device)
-        logger.broadcast_to(other_logger)
+      let(:other_device) { StringIO.new }
+      let(:other_logger) { ::Logger.new(other_device) }
+      before { logger.broadcast_to(other_logger) }
 
-        expect(Appsignal::Extension).not_to receive(:log)
-
+      def perform
         logger.silence { logger.info("Log message") }
-
         expect(other_device.string).to eq("")
       end
 
+      it "in agent mode", :agent_mode do
+        start_agent
+        expect(Appsignal::Extension).not_to receive(:log)
+        perform
+      end
+
       it "in collector mode", :collector_mode do
-        other_device = StringIO.new
-        other_logger = ::Logger.new(other_device)
-        logger.broadcast_to(other_logger)
-
+        start_collector_agent
         expect(Appsignal::Logger::OpenTelemetryBackend).not_to receive(:emit)
-
-        logger.silence { logger.info("Log message") }
-
-        expect(other_device.string).to eq("")
+        perform
       end
     end
 
@@ -881,7 +959,8 @@ describe Appsignal::Logger do
       describe "does not raise an error when a broadcasted logger does not support formatter=" do
         it_in_both_modes do
           logger_without_formatter = double("logger without formatter")
-          allow(logger_without_formatter).to receive(:respond_to?).with(:formatter=).and_return(false)
+          allow(logger_without_formatter).to receive(:respond_to?)
+            .with(:formatter=).and_return(false)
           allow(logger_without_formatter).to receive(:add)
 
           logger.broadcast_to(logger_without_formatter)
@@ -905,7 +984,15 @@ describe Appsignal::Logger do
         end
 
         describe "broadcasts a tagged message to the given logger" do
+          def perform
+            logger.tagged("My tag", "My other tag") do
+              logger.info("Some message")
+            end
+            expect(other_stream.string).to eq("[My tag] [My other tag] Some message\n")
+          end
+
           it "in agent mode", :agent_mode do
+            start_agent
             expect(Appsignal::Extension).to receive(:log)
               .with(
                 "group",
@@ -914,15 +1001,11 @@ describe Appsignal::Logger do
                 "[My tag] [My other tag] Some message\n",
                 Appsignal::Utils::Data.generate({})
               )
-
-            logger.tagged("My tag", "My other tag") do
-              logger.info("Some message")
-            end
-
-            expect(other_stream.string).to eq("[My tag] [My other tag] Some message\n")
+            perform
           end
 
           it "in collector mode", :collector_mode do
+            start_collector_agent
             expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
               .with(
                 "group",
@@ -931,12 +1014,7 @@ describe Appsignal::Logger do
                 "[My tag] [My other tag] Some message\n",
                 {}
               )
-
-            logger.tagged("My tag", "My other tag") do
-              logger.info("Some message")
-            end
-
-            expect(other_stream.string).to eq("[My tag] [My other tag] Some message\n")
+            perform
           end
         end
       end
@@ -954,17 +1032,28 @@ describe Appsignal::Logger do
 
     describe "##{method}" do
       describe "with a message and attributes" do
+        # `define_method` (rather than `def`) so the block captures the
+        # enclosing closure -- `method` is a block-local of the
+        # `.each do |permutation|` loop and isn't visible from `def`.
+        define_method(:perform) do
+          logger.send(method, "Log message", :attribute => "value")
+        end
+
         it "in agent mode", :agent_mode do
+          start_agent
           expect(Appsignal::Utils::Data).to receive(:generate)
             .with({ :attribute => "value" })
             .and_call_original
           expect(Appsignal::Extension).to receive(:log)
-            .with("group", extension_level, 3, "Log message", instance_of(Appsignal::Extension::Data))
-
-          logger.send(method, "Log message", :attribute => "value")
+            .with(
+              "group", extension_level, 3, "Log message",
+              instance_of(Appsignal::Extension::Data)
+            )
+          perform
         end
 
         it "in collector mode", :collector_mode do
+          start_collector_agent
           expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
             .with(
               "group",
@@ -973,39 +1062,49 @@ describe Appsignal::Logger do
               "Log message",
               { :attribute => "value" }
             )
-
-          logger.send(method, "Log message", :attribute => "value")
+          perform
         end
       end
 
       describe "with a block" do
+        define_method(:perform) do
+          logger.send(method) { "Log message" }
+        end
+
         it "in agent mode", :agent_mode do
+          start_agent
           expect(Appsignal::Utils::Data).to receive(:generate)
             .with({})
             .and_call_original
           expect(Appsignal::Extension).to receive(:log)
-            .with("group", extension_level, 3, "Log message", instance_of(Appsignal::Extension::Data))
-
-          logger.send(method) { "Log message" }
+            .with(
+              "group", extension_level, 3, "Log message",
+              instance_of(Appsignal::Extension::Data)
+            )
+          perform
         end
 
         it "in collector mode", :collector_mode do
+          start_collector_agent
           expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
             .with("group", logger_level, Appsignal::Logger::AUTODETECT, "Log message", {})
-
-          logger.send(method) { "Log message" }
+          perform
         end
       end
 
       describe "with a nil message" do
+        define_method(:perform) { logger.send(method) }
+
         it "in agent mode", :agent_mode do
+          start_agent
           expect(Appsignal::Extension).not_to receive(:log)
-          logger.send(method)
+          perform
         end
 
         it "in collector mode", :collector_mode do
+          start_collector_agent
           expect(Appsignal::Logger::OpenTelemetryBackend).not_to receive(:emit)
-          logger.send(method)
+          perform
         end
       end
 
@@ -1014,14 +1113,18 @@ describe Appsignal::Logger do
           let(:logger) { Appsignal::Logger.new("group", :level => higher_level) }
 
           describe "skips logging when the level is too low" do
+            define_method(:perform) { logger.send(method, "Log message") }
+
             it "in agent mode", :agent_mode do
+              start_agent
               expect(Appsignal::Extension).not_to receive(:log)
-              logger.send(method, "Log message")
+              perform
             end
 
             it "in collector mode", :collector_mode do
+              start_collector_agent
               expect(Appsignal::Logger::OpenTelemetryBackend).not_to receive(:emit)
-              logger.send(method, "Log message")
+              perform
             end
           end
         end
@@ -1041,7 +1144,10 @@ describe Appsignal::Logger do
         after { Timecop.return }
 
         describe "logs the formatted message" do
+          define_method(:perform) { logger.send(method, "Log message") }
+
           it "in agent mode", :agent_mode do
+            start_agent
             expect(Appsignal::Extension).to receive(:log)
               .with(
                 "group",
@@ -1050,10 +1156,11 @@ describe Appsignal::Logger do
                 "formatted: 2023-01-01T00:00:00.000000 'Log message'",
                 instance_of(Appsignal::Extension::Data)
               )
-            logger.send(method, "Log message")
+            perform
           end
 
           it "in collector mode", :collector_mode do
+            start_collector_agent
             expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
               .with(
                 "group",
@@ -1062,7 +1169,7 @@ describe Appsignal::Logger do
                 "formatted: 2023-01-01T00:00:00.000000 'Log message'",
                 {}
               )
-            logger.send(method, "Log message")
+            perform
           end
         end
       end
@@ -1070,20 +1177,26 @@ describe Appsignal::Logger do
   end
 
   describe "a logger with default attributes" do
-    describe "adds the attributes when a message is logged" do
-      it "in agent mode", :agent_mode do
-        logger = Appsignal::Logger.new("group", :attributes => { :some_key => "some_value" })
+    let(:logger) { Appsignal::Logger.new("group", :attributes => { :some_key => "some_value" }) }
 
-        expect(Appsignal::Extension).to receive(:log).with(
-          "group", 6, 3, "Some message",
-          Appsignal::Utils::Data.generate({ :other_key => "other_value", :some_key => "some_value" })
-        )
+    describe "adds the attributes when a message is logged" do
+      def perform
         logger.error("Some message", { :other_key => "other_value" })
       end
 
-      it "in collector mode", :collector_mode do
-        logger = Appsignal::Logger.new("group", :attributes => { :some_key => "some_value" })
+      it "in agent mode", :agent_mode do
+        start_agent
+        expect(Appsignal::Extension).to receive(:log).with(
+          "group", 6, 3, "Some message",
+          Appsignal::Utils::Data.generate(
+            { :other_key => "other_value", :some_key => "some_value" }
+          )
+        )
+        perform
+      end
 
+      it "in collector mode", :collector_mode do
+        start_collector_agent
         expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit).with(
           "group",
           ::Logger::ERROR,
@@ -1091,7 +1204,7 @@ describe Appsignal::Logger do
           "Some message",
           { :other_key => "other_value", :some_key => "some_value" }
         )
-        logger.error("Some message", { :other_key => "other_value" })
+        perform
       end
     end
 
@@ -1109,19 +1222,21 @@ describe Appsignal::Logger do
     end
 
     describe "prioritises line attributes over default attributes" do
-      it "in agent mode", :agent_mode do
-        logger = Appsignal::Logger.new("group", :attributes => { :some_key => "some_value" })
+      def perform
+        logger.error("Some message", { :some_key => "other_value" })
+      end
 
+      it "in agent mode", :agent_mode do
+        start_agent
         expect(Appsignal::Extension).to receive(:log).with(
           "group", 6, 3, "Some message",
           Appsignal::Utils::Data.generate({ :some_key => "other_value" })
         )
-        logger.error("Some message", { :some_key => "other_value" })
+        perform
       end
 
       it "in collector mode", :collector_mode do
-        logger = Appsignal::Logger.new("group", :attributes => { :some_key => "some_value" })
-
+        start_collector_agent
         expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit).with(
           "group",
           ::Logger::ERROR,
@@ -1129,24 +1244,26 @@ describe Appsignal::Logger do
           "Some message",
           { :some_key => "other_value" }
         )
-        logger.error("Some message", { :some_key => "other_value" })
+        perform
       end
     end
 
     describe "adds the default attributes when #add is called" do
-      it "in agent mode", :agent_mode do
-        logger = Appsignal::Logger.new("group", :attributes => { :some_key => "some_value" })
+      def perform
+        logger.add(::Logger::INFO, "Log message")
+      end
 
+      it "in agent mode", :agent_mode do
+        start_agent
         expect(Appsignal::Extension).to receive(:log).with(
           "group", 3, 3, "Log message",
           Appsignal::Utils::Data.generate({ :some_key => "some_value" })
         )
-        logger.add(::Logger::INFO, "Log message")
+        perform
       end
 
       it "in collector mode", :collector_mode do
-        logger = Appsignal::Logger.new("group", :attributes => { :some_key => "some_value" })
-
+        start_collector_agent
         expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit).with(
           "group",
           ::Logger::INFO,
@@ -1154,7 +1271,7 @@ describe Appsignal::Logger do
           "Log message",
           { :some_key => "some_value" }
         )
-        logger.add(::Logger::INFO, "Log message")
+        perform
       end
     end
   end
@@ -1162,16 +1279,19 @@ describe Appsignal::Logger do
   describe "#error with exception object" do
     describe "logs the exception class and its message" do
       let(:error) do
-        begin
-          raise ExampleStandardError, "oh no!"
-        rescue => e
-          # Re-raise capture so the exception carries a backtrace, letting
-          # us assert that its first line is part of the logged string.
-          e
-        end
+        raise ExampleStandardError, "oh no!"
+      rescue => e
+        # Re-raise capture so the exception carries a backtrace, letting
+        # us assert that its first line is part of the logged string.
+        e
+      end
+
+      def perform
+        logger.error(error)
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
         expect(Appsignal::Extension).to receive(:log)
           .with(
             "group",
@@ -1180,10 +1300,11 @@ describe Appsignal::Logger do
             a_string_matching(/ExampleStandardError: oh no! \(.*logger_spec.rb.*\)/),
             instance_of(Appsignal::Extension::Data)
           )
-        logger.error(error)
+        perform
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
         expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
           .with(
             "group",
@@ -1192,29 +1313,31 @@ describe Appsignal::Logger do
             a_string_matching(/ExampleStandardError: oh no! \(.*logger_spec.rb.*\)/),
             {}
           )
-        logger.error(error)
+        perform
       end
     end
   end
 
   describe "#<<" do
     describe "writes an info message and returns the number of characters written" do
-      it "in agent mode", :agent_mode do
-        expect(Appsignal::Extension).to receive(:log)
-          .with("group", 3, 3, "hello there", instance_of(Appsignal::Extension::Data))
-
+      def perform
         message = "hello there"
         result = logger << message
         expect(result).to eq(message.length)
       end
 
+      it "in agent mode", :agent_mode do
+        start_agent
+        expect(Appsignal::Extension).to receive(:log)
+          .with("group", 3, 3, "hello there", instance_of(Appsignal::Extension::Data))
+        perform
+      end
+
       it "in collector mode", :collector_mode do
+        start_collector_agent
         expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
           .with("group", ::Logger::INFO, Appsignal::Logger::AUTODETECT, "hello there", {})
-
-        message = "hello there"
-        result = logger << message
-        expect(result).to eq(message.length)
+        perform
       end
     end
 
@@ -1229,18 +1352,24 @@ describe Appsignal::Logger do
       # normally bypass the formatter for `<<`. We recommend against setting
       # a formatter on the AppSignal logger.
       describe "logs a formatted message" do
-        it "in agent mode", :agent_mode do
-          expect(Appsignal::Extension).to receive(:log).with(
-            "group", 3, 3, "formatted: 'Log message'", instance_of(Appsignal::Extension::Data)
-          )
+        def perform
           logger << "Log message"
         end
 
+        it "in agent mode", :agent_mode do
+          start_agent
+          expect(Appsignal::Extension).to receive(:log).with(
+            "group", 3, 3, "formatted: 'Log message'", instance_of(Appsignal::Extension::Data)
+          )
+          perform
+        end
+
         it "in collector mode", :collector_mode do
+          start_collector_agent
           expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit).with(
             "group", ::Logger::INFO, Appsignal::Logger::AUTODETECT, "formatted: 'Log message'", {}
           )
-          logger << "Log message"
+          perform
         end
       end
     end

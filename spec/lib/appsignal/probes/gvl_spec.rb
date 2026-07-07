@@ -65,6 +65,7 @@ describe Appsignal::Probes::GvlProbe do
     end
 
     it "in agent mode", :agent_mode do
+      start_agent
       # The two-entry match also proves the first call emits nothing: a gauge
       # on the first call would add a third entry.
       perform(probe)
@@ -80,6 +81,7 @@ describe Appsignal::Probes::GvlProbe do
     end
 
     it "in collector mode", :collector_mode do
+      start_collector_agent
       perform(collector_probe)
 
       # The probe emits the gauge twice: once tagged with the process, once
@@ -150,6 +152,7 @@ describe Appsignal::Probes::GvlProbe do
       end
 
       it "in agent mode", :agent_mode do
+        start_agent
         perform(probe)
 
         expect(gauges_for("gvl_waiting_threads")).to eq [
@@ -163,6 +166,7 @@ describe Appsignal::Probes::GvlProbe do
       end
 
       it "in collector mode", :collector_mode do
+        start_collector_agent
         perform(collector_probe)
 
         expect_dual_gauge_points("gvl_waiting_threads", 3, :process_name => "rspec")

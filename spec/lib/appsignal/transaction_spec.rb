@@ -2840,6 +2840,34 @@ describe Appsignal::Transaction do
     end
   end
 
+  describe "when metadata and a tag share a key (collector mode)" do
+    # In collector mode both metadata and tags are emitted as `appsignal.tag.*`
+    # span attributes, so a shared key collides on one attribute. `set_metadata`
+    # writes the attribute immediately, while tags are flushed at `complete` (via
+    # the sample data), so the tag is written last and wins -- regardless of the
+    # order the two were set in. (In agent mode they are stored separately and
+    # never collide, so this is collector-specific.)
+    it "the tag value wins", :collector_mode do
+      start_collector_agent
+      transaction = http_request_transaction
+      transaction.add_tags("shared" => "from_tag")
+      transaction.set_metadata("shared", "from_metadata")
+      transaction.complete
+
+      expect(root_span.attributes["appsignal.tag.shared"]).to eq("from_tag")
+    end
+
+    it "the tag value wins even when the tag is added after the metadata", :collector_mode do
+      start_collector_agent
+      transaction = http_request_transaction
+      transaction.set_metadata("shared", "from_metadata")
+      transaction.add_tags("shared" => "from_tag")
+      transaction.complete
+
+      expect(root_span.attributes["appsignal.tag.shared"]).to eq("from_tag")
+    end
+  end
+
   describe "storing sample data" do
     let(:transaction) { new_transaction }
 
