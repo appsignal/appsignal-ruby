@@ -442,14 +442,6 @@ describe Appsignal::Rack::EventHandler do
         expect(last_transaction).to include_tags("response_status" => 200)
       end
 
-      it "increments the response status counter for response status" do
-        expect(Appsignal).to receive(:increment_counter)
-          .with(:response_status, 1, :status => 200, :namespace => :web)
-
-        on_start
-        on_finish
-      end
-
       context "with an error previously recorded by on_error" do
         it "sets response status from the response as a tag" do
           on_start
@@ -482,5 +474,51 @@ describe Appsignal::Rack::EventHandler do
         "Error occurred in Appsignal::Rack::EventHandler#on_finish: ExampleStandardError: oh no"
       )
     end
+  end
+end
+
+# Separate top-level describe so it doesn't inherit the parameterized
+# `before { start_agent(:env => appsignal_env) }` above (which would clobber
+# collector mode); `start_agent` comes from the mode contexts. The agent has no
+# in-memory metric readout, so agent mode keeps the `increment_counter` mock
+# while collector mode asserts the counter reaches the OpenTelemetry backend.
+describe Appsignal::Rack::EventHandler, "response status counter" do
+  let(:env) do
+    {
+      "REQUEST_METHOD" => "GET",
+      "PATH_INFO" => "/path",
+      "rack.input" => StringIO.new("")
+    }
+  end
+  let(:request) { Rack::Request.new(env) }
+  let(:response) { Rack::Events::BufferedResponse.new(200, {}, ["body"]) }
+  let(:event_handler_instance) do
+    described_class.new.tap do |handler|
+      handler.using_appsignal_event_middleware = true
+    end
+  end
+
+  def perform
+    event_handler_instance.on_start(request, response)
+    event_handler_instance.on_finish(request, response)
+  end
+
+  it "in agent mode", :agent_mode do
+    expect(Appsignal).to receive(:increment_counter)
+      .with(:response_status, 1, :status => 200, :namespace => :web)
+
+    perform
+  end
+
+  it "in collector mode", :collector_mode do
+    perform
+
+    snapshot = metric_snapshot("response_status")
+    expect(snapshot).not_to be_nil
+    expect(snapshot.data_points.first.value).to eq(1.0)
+    expect(snapshot.data_points.first.attributes).to eq(
+      "status" => 200,
+      "namespace" => "web"
+    )
   end
 end

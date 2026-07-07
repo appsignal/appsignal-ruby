@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "appsignal/metrics/extension_backend"
+require "appsignal/metrics/opentelemetry_backend"
 require "appsignal/logger/extension_backend"
 require "appsignal/logger/opentelemetry_backend"
 
@@ -16,6 +18,14 @@ module Appsignal
   # in by adding one more lookup method here.
   module Backends
     class << self
+        def metrics
+          if collector?
+            Appsignal::Metrics::OpenTelemetryBackend
+          else
+            Appsignal::Metrics::ExtensionBackend
+          end
+        end
+
         def logger
           if collector?
             Appsignal::Logger::OpenTelemetryBackend
