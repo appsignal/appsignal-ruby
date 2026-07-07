@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "logger"
-require "set"
 
 module Appsignal
   # Logger that flushes logs to the AppSignal logging service.
@@ -55,6 +54,8 @@ module Appsignal
     # @!visibility private
     AUTODETECT = 3
     # @!visibility private
+    FORMATS = [PLAINTEXT, LOGFMT, JSON, AUTODETECT].freeze
+    # @!visibility private
     SEVERITY_MAP = {
       DEBUG => 2,
       INFO => 3,
@@ -83,7 +84,7 @@ module Appsignal
       @group = group
       @level = level
       @silenced = false
-      @format = format
+      @format = validated_format(format)
       @mutex = Mutex.new
       @default_attributes = attributes
       @appsignal_attributes = attributes
@@ -145,13 +146,7 @@ module Appsignal
 
       message = formatter.call(severity, Time.now, group, message) if formatter
 
-      Appsignal::Extension.log(
-        group,
-        SEVERITY_MAP.fetch(severity, 0),
-        @format,
-        message.to_s,
-        Appsignal::Utils::Data.generate(appsignal_attributes)
-      )
+      Appsignal::Backends.logger.emit(group, severity, @format, message.to_s, appsignal_attributes)
 
       false
     end
@@ -298,6 +293,15 @@ module Appsignal
       add(severity, message, group, &block)
     ensure
       @appsignal_attributes = default_attributes
+    end
+
+    def validated_format(format)
+      return format if FORMATS.include?(format)
+
+      Appsignal.internal_logger.warn(
+        "Unknown Appsignal::Logger format #{format.inspect}; falling back to AUTODETECT"
+      )
+      AUTODETECT
     end
   end
 end

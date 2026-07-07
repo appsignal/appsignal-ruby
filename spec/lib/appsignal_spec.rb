@@ -2003,38 +2003,6 @@ describe Appsignal do
     end
   end
 
-  context "in collector mode", :if => DependencyHelper.opentelemetry_present? do
-    require "opentelemetry/sdk" if DependencyHelper.opentelemetry_present?
-
-    let(:span_exporter) { ::OpenTelemetry::SDK::Trace::Export::InMemorySpanExporter.new }
-    let(:tracer_provider) do
-      provider = ::OpenTelemetry::SDK::Trace::TracerProvider.new
-      provider.add_span_processor(
-        ::OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(span_exporter)
-      )
-      provider
-    end
-
-    before do
-      start_agent(:options => { :collector_endpoint => "http://127.0.0.1:9090" })
-      ::OpenTelemetry.tracer_provider = tracer_provider
-    end
-
-    # complete_current! clears both the Transaction thread-local AND the
-    # OTel context (the default clear_current_transaction! only clears
-    # the thread-local, which would leave the OTel context attached and
-    # leak into the next test).
-    after { Appsignal::Transaction.complete_current! }
-
-    def root_span
-      span_exporter.finished_spans.find { |s| [:server, :consumer].include?(s.kind) }
-    end
-
-    def event_spans
-      span_exporter.finished_spans.reject { |s| [:server, :consumer].include?(s.kind) }
-    end
-  end
-
   describe "custom metrics" do
     let(:tags) { { :foo => "bar" } }
 
@@ -2219,7 +2187,9 @@ describe Appsignal do
       it "in collector mode", :collector_mode do
         set_current_transaction(transaction)
 
-        Appsignal.instrument("name", "title", "body") { :do_nothing }
+        expect do
+          Appsignal.instrument("name", "title", "body") { throw :foo }
+        end.to throw_symbol(:foo)
         Appsignal::Transaction.complete_current!
 
         expect(event_spans.size).to eq(1)
@@ -2249,9 +2219,7 @@ describe Appsignal do
       it "in collector mode", :collector_mode do
         set_current_transaction(transaction)
 
-        expect do
-          Appsignal.instrument("name", "title", "body") { raise ExampleException, "foo" }
-        end.to raise_error(ExampleException, "foo")
+        Appsignal.instrument("name", "title", "body") { :do_nothing }
         Appsignal::Transaction.complete_current!
 
         expect(event_spans.size).to eq(1)
@@ -2279,8 +2247,8 @@ describe Appsignal do
         set_current_transaction(transaction)
 
         expect do
-          Appsignal.instrument("name", "title", "body") { throw :foo }
-        end.to throw_symbol(:foo)
+          Appsignal.instrument("name", "title", "body") { raise ExampleException, "foo" }
+        end.to raise_error(ExampleException, "foo")
         Appsignal::Transaction.complete_current!
 
         expect(event_spans.size).to eq(1)
