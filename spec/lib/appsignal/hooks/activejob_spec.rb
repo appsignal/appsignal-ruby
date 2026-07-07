@@ -729,4 +729,141 @@ if DependencyHelper.active_job_present?
       )
     end
   end
+
+  # A failing job emits the job count metric a second time, tagged
+  # `status: failed`. Self-contained, same rationale as the describe above.
+  describe "emitting the failed job count metric" do
+    before do
+      ActiveJob::Base.queue_adapter = :inline
+      stub_const("ActiveJobFailingJob", Class.new(ActiveJob::Base) do
+        def perform(*_args)
+          raise "uh oh"
+        end
+      end)
+    end
+
+    def perform
+      ActiveJobFailingJob.perform_later
+    rescue RuntimeError
+      # The inline adapter re-raises the job's error; swallow it so the
+      # example can assert on the metric the hook emits in its `ensure`.
+    end
+
+    it "in agent mode", :agent_mode do
+      allow(Appsignal).to receive(:increment_counter) # the `processed` call
+      expect(Appsignal).to receive(:increment_counter)
+        .with("active_job_queue_job_count", 1, { :queue => "default", :status => :failed })
+
+      perform
+    end
+
+    it "in collector mode", :collector_mode do
+      perform
+
+      snapshot = metric_snapshot("active_job_queue_job_count")
+      expect(snapshot).not_to be_nil
+      failed = snapshot.data_points.find { |point| point.attributes["status"] == "failed" }
+      expect(failed).not_to be_nil
+      expect(failed.value).to eq(1.0)
+      expect(failed.attributes).to include("queue" => "default", "status" => "failed")
+    end
+  end
+
+  # A job with a priority emits an additional `priority_job_count` metric.
+  if DependencyHelper.rails_version >= Gem::Version.new("5.0.0")
+    describe "emitting the priority job count metric" do
+      before do
+        ActiveJob::Base.queue_adapter = :inline
+        stub_const("ActiveJobPriorityJob", Class.new(ActiveJob::Base) do
+          queue_with_priority 10
+
+          def perform(*_args)
+          end
+        end)
+      end
+
+      def perform
+        ActiveJobPriorityJob.perform_later
+      end
+
+      it "in agent mode", :agent_mode do
+        allow(Appsignal).to receive(:increment_counter) # the queue_job_count call
+        expect(Appsignal).to receive(:increment_counter).with(
+          "active_job_queue_priority_job_count",
+          1,
+          { :queue => "default", :priority => 10, :status => :processed }
+        )
+
+        perform
+      end
+
+      it "in collector mode", :collector_mode do
+        perform
+
+        snapshot = metric_snapshot("active_job_queue_priority_job_count")
+        expect(snapshot).not_to be_nil
+        point = snapshot.data_points.first
+        expect(point.value).to eq(1.0)
+        expect(point.attributes).to include(
+          "queue" => "default",
+          "priority" => 10,
+          "status" => "processed"
+        )
+      end
+    end
+  end
+
+  # A job carrying an `enqueued_at` reports its queue time as a distribution.
+  context "with enqueued_at",
+    :skip => DependencyHelper.rails_version < Gem::Version.new("6.0.0") do
+    describe "emitting the queue time metric" do
+      before do
+        stub_const(
+          "ActiveJob::QueueAdapters::AppsignalTestAdapter",
+          Class.new(ActiveJob::QueueAdapters::InlineAdapter) do
+            # Inject an `enqueued_at` an hour before the frozen "now" below.
+            def enqueue(job)
+              ActiveJob::Base.execute(
+                job.serialize.merge("enqueued_at" => "2001-01-01T09:00:00.000000000Z")
+              )
+            end
+          end
+        )
+        stub_const("ActiveJobQueueTimeJob", Class.new(ActiveJob::Base) do
+          self.queue_adapter = :appsignal_test
+
+          def perform(*_args)
+          end
+        end)
+      end
+
+      def perform
+        Timecop.freeze(Time.parse("2001-01-01T10:00:00.000000000Z")) do
+          ActiveJobQueueTimeJob.perform_later
+        end
+      end
+
+      it "in agent mode", :agent_mode do
+        allow(Appsignal).to receive(:add_distribution_value)
+
+        perform
+
+        # One hour of queue time, in milliseconds.
+        expect(Appsignal).to have_received(:add_distribution_value)
+          .with("active_job_queue_time", 3_600_000.0, :queue => "default")
+      end
+
+      it "in collector mode", :collector_mode do
+        perform
+
+        snapshot = metric_snapshot("active_job_queue_time")
+        expect(snapshot).not_to be_nil
+        expect(snapshot.instrument_kind).to eq(:histogram)
+        point = snapshot.data_points.first
+        expect(point.count).to eq(1)
+        expect(point.sum).to eq(3_600_000.0)
+        expect(point.attributes).to include("queue" => "default")
+      end
+    end
+  end
 end
