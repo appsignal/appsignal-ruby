@@ -8,6 +8,7 @@ require "appsignal/logger"
 require "appsignal/utils/stdout_and_logger_message"
 require "appsignal/helpers/instrumentation"
 require "appsignal/helpers/metrics"
+require "appsignal/opentelemetry"
 
 # AppSignal for Ruby gem's main module.
 #
@@ -143,6 +144,8 @@ module Appsignal
           Appsignal::Hooks.load_hooks
           Appsignal::Loaders.start
 
+          Appsignal::OpenTelemetry.configure(config) if config.collector_mode_configured?
+
           if config[:enable_allocation_tracking] && !Appsignal::System.jruby?
             Appsignal::Extension.install_allocation_event_hook
             Appsignal::Environment.report_enabled("allocation_tracking")
@@ -241,6 +244,10 @@ module Appsignal
     # @return [void]
     # @since 1.0.0
     def stop(called_by = nil)
+      # Wrapped in `Thread.new ... .join` so this is safe to call from a
+      # `Signal.trap` block: `Mutex#synchronize` (used by
+      # `CheckIn::Scheduler`) is unsafe in trap handlers, and running on a
+      # separate thread sidesteps that restriction. See PR #1295.
       Thread.new do
         if called_by
           internal_logger.info("Stopping AppSignal (#{called_by})")
@@ -250,6 +257,7 @@ module Appsignal
         Appsignal::Extension.stop
         Appsignal::Probes.stop
         Appsignal::CheckIn.stop
+        Appsignal::OpenTelemetry.shutdown
       end.join
       nil
     end

@@ -867,6 +867,39 @@ describe Appsignal do
         expect(Appsignal.internal_logger.level).to eq Logger::DEBUG
       end
     end
+
+    if DependencyHelper.opentelemetry_present?
+      context "when collector_endpoint is set but the OpenTelemetry SDK fails to boot" do
+        let(:err_stream) { std_stream }
+        let(:stdout_stream) { std_stream }
+
+        before do
+          # Simulate a failure inside `Appsignal::OpenTelemetry.configure` —
+          # e.g. one of the OTel gems can't be loaded. The rescue inside
+          # `configure` should set `started?` to false instead of letting the
+          # error bubble out.
+          allow(Appsignal::OpenTelemetry).to receive(:require)
+            .with("opentelemetry/sdk")
+            .and_raise(LoadError, "fake load failure")
+        end
+
+        it "falls back to the agent backend rather than silently dropping telemetry" do
+          capture_std_streams(stdout_stream, err_stream) do
+            start_agent(:options => { :collector_endpoint => "http://127.0.0.1:9090" })
+          end
+
+          # Config still records the user's intent.
+          expect(Appsignal.config.collector_mode_configured?).to be(true)
+          # But the active predicate is false because the SDK never booted.
+          expect(Appsignal.config.collector_mode?).to be(false)
+          expect(Appsignal::OpenTelemetry.started?).to be(false)
+
+          # Backends fall through to the extension implementations.
+          expect(Appsignal::Backends.metrics).to eq(Appsignal::Metrics::ExtensionBackend)
+          expect(Appsignal::Backends.logger).to eq(Appsignal::Logger::ExtensionBackend)
+        end
+      end
+    end
   end
 
   describe ".load" do
@@ -897,9 +930,25 @@ describe Appsignal do
         Appsignal.start
       end
 
-      it "starts the logger and extension" do
-        expect(Appsignal).to receive(:_start_logger)
-        expect(Appsignal::Extension).to receive(:start)
+      it "starts the logger before restarting the extension" do
+        expect(Appsignal).to receive(:_start_logger).ordered
+        expect(Appsignal::Extension).to receive(:start).ordered
+
+        expect(Appsignal.forked).to be_nil
+      end
+
+      it "does not stop the extension before restarting it" do
+        allow(Appsignal).to receive(:_start_logger)
+        allow(Appsignal::Extension).to receive(:start)
+        expect(Appsignal::Extension).to_not receive(:stop)
+
+        Appsignal.forked
+      end
+
+      it "does not restart minutely probes (probe thread dies on fork by design)" do
+        allow(Appsignal).to receive(:_start_logger)
+        allow(Appsignal::Extension).to receive(:start)
+        expect(Appsignal::Probes).to_not receive(:start)
 
         Appsignal.forked
       end
@@ -933,6 +982,33 @@ describe Appsignal do
     it "calls stop on the check-in scheduler" do
       expect(Appsignal::CheckIn.scheduler).to receive(:stop)
       Appsignal.stop
+    end
+
+    if DependencyHelper.opentelemetry_present?
+      context "in collector mode" do
+        before do
+          Appsignal.clear!
+          start_agent(:options => { :collector_endpoint => "http://127.0.0.1:9090" })
+        end
+
+        it "shuts down the OpenTelemetry providers so buffered telemetry flushes" do
+          expect(::OpenTelemetry.tracer_provider).to receive(:shutdown)
+          expect(::OpenTelemetry.meter_provider).to receive(:shutdown)
+          expect(::OpenTelemetry.logger_provider).to receive(:shutdown)
+          Appsignal.stop
+        end
+      end
+    end
+
+    context "when not in collector mode" do
+      it "calls Appsignal::OpenTelemetry.shutdown, which short-circuits as a no-op" do
+        # `configure` was not called in this spec, so `started?` is false
+        # and `shutdown` returns immediately without touching the API gem's
+        # proxy providers (whose `shutdown` isn't defined until an SDK is
+        # wired up).
+        expect(Appsignal::OpenTelemetry.started?).to be(false)
+        expect { Appsignal.stop }.not_to raise_error
+      end
     end
   end
 
@@ -1492,106 +1568,6 @@ describe Appsignal do
       end
     end
 
-    describe "custom metrics" do
-      let(:tags) { { :foo => "bar" } }
-
-      describe ".set_gauge" do
-        it "should call set_gauge on the extension with a string key and float" do
-          expect(Appsignal::Extension).to receive(:set_gauge)
-            .with("key", 0.1, Appsignal::Extension.data_map_new)
-          Appsignal.set_gauge("key", 0.1)
-        end
-
-        it "should call set_gauge with tags" do
-          expect(Appsignal::Extension).to receive(:set_gauge)
-            .with("key", 0.1, Appsignal::Utils::Data.generate(tags))
-          Appsignal.set_gauge("key", 0.1, tags)
-        end
-
-        it "should call set_gauge on the extension with a symbol key and int" do
-          expect(Appsignal::Extension).to receive(:set_gauge)
-            .with("key", 1.0, Appsignal::Extension.data_map_new)
-          Appsignal.set_gauge(:key, 1)
-        end
-
-        it "should not raise an exception when out of range" do
-          expect(Appsignal::Extension).to receive(:set_gauge).with(
-            "key",
-            10,
-            Appsignal::Extension.data_map_new
-          ).and_raise(RangeError)
-          expect(Appsignal.internal_logger).to receive(:warn)
-            .with("The gauge value '10' for metric 'key' is too big")
-
-          Appsignal.set_gauge("key", 10)
-        end
-      end
-
-      describe ".increment_counter" do
-        it "should call increment_counter on the extension with a string key" do
-          expect(Appsignal::Extension).to receive(:increment_counter)
-            .with("key", 1, Appsignal::Extension.data_map_new)
-          Appsignal.increment_counter("key")
-        end
-
-        it "should call increment_counter with tags" do
-          expect(Appsignal::Extension).to receive(:increment_counter)
-            .with("key", 1, Appsignal::Utils::Data.generate(tags))
-          Appsignal.increment_counter("key", 1, tags)
-        end
-
-        it "should call increment_counter on the extension with a symbol key" do
-          expect(Appsignal::Extension).to receive(:increment_counter)
-            .with("key", 1, Appsignal::Extension.data_map_new)
-          Appsignal.increment_counter(:key)
-        end
-
-        it "should call increment_counter on the extension with a count" do
-          expect(Appsignal::Extension).to receive(:increment_counter)
-            .with("key", 5, Appsignal::Extension.data_map_new)
-          Appsignal.increment_counter("key", 5)
-        end
-
-        it "should not raise an exception when out of range" do
-          expect(Appsignal::Extension).to receive(:increment_counter)
-            .with("key", 10, Appsignal::Extension.data_map_new).and_raise(RangeError)
-          expect(Appsignal.internal_logger).to receive(:warn)
-            .with("The counter value '10' for metric 'key' is too big")
-
-          Appsignal.increment_counter("key", 10)
-        end
-      end
-
-      describe ".add_distribution_value" do
-        it "should call add_distribution_value on the extension with a string key and float" do
-          expect(Appsignal::Extension).to receive(:add_distribution_value)
-            .with("key", 0.1, Appsignal::Extension.data_map_new)
-          Appsignal.add_distribution_value("key", 0.1)
-        end
-
-        it "should call add_distribution_value with tags" do
-          expect(Appsignal::Extension).to receive(:add_distribution_value)
-            .with("key", 0.1, Appsignal::Utils::Data.generate(tags))
-          Appsignal.add_distribution_value("key", 0.1, tags)
-        end
-
-        it "should call add_distribution_value on the extension with a symbol key and int" do
-          expect(Appsignal::Extension).to receive(:add_distribution_value)
-            .with("key", 1.0, Appsignal::Extension.data_map_new)
-          Appsignal.add_distribution_value(:key, 1)
-        end
-
-        it "should not raise an exception when out of range" do
-          expect(Appsignal::Extension).to receive(:add_distribution_value)
-            .with("key", 10, Appsignal::Extension.data_map_new).and_raise(RangeError)
-          expect(Appsignal.internal_logger).to receive(:warn)
-            .with("The distribution value '10' for metric 'key' is too big")
-
-          Appsignal.add_distribution_value("key", 10)
-        end
-      end
-    end
-
     describe ".internal_logger" do
       subject { Appsignal.internal_logger }
 
@@ -2025,25 +2001,305 @@ describe Appsignal do
         end
       end
     end
+  end
 
-    describe ".instrument" do
-      it_behaves_like "instrument helper" do
-        let(:instrumenter) { Appsignal }
-        before { set_current_transaction(transaction) }
+  context "in collector mode", :if => DependencyHelper.opentelemetry_present? do
+    require "opentelemetry/sdk" if DependencyHelper.opentelemetry_present?
+
+    let(:span_exporter) { ::OpenTelemetry::SDK::Trace::Export::InMemorySpanExporter.new }
+    let(:tracer_provider) do
+      provider = ::OpenTelemetry::SDK::Trace::TracerProvider.new
+      provider.add_span_processor(
+        ::OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(span_exporter)
+      )
+      provider
+    end
+
+    before do
+      start_agent(:options => { :collector_endpoint => "http://127.0.0.1:9090" })
+      ::OpenTelemetry.tracer_provider = tracer_provider
+    end
+
+    # complete_current! clears both the Transaction thread-local AND the
+    # OTel context (the default clear_current_transaction! only clears
+    # the thread-local, which would leave the OTel context attached and
+    # leak into the next test).
+    after { Appsignal::Transaction.complete_current! }
+
+    def root_span
+      span_exporter.finished_spans.find { |s| [:server, :consumer].include?(s.kind) }
+    end
+
+    def event_spans
+      span_exporter.finished_spans.reject { |s| [:server, :consumer].include?(s.kind) }
+    end
+  end
+
+  describe "custom metrics" do
+    let(:tags) { { :foo => "bar" } }
+
+    describe ".set_gauge" do
+      describe "with a string key and float value" do
+        it "in agent mode", :agent_mode do
+          expect(Appsignal::Extension).to receive(:set_gauge)
+            .with("key", 0.1, Appsignal::Extension.data_map_new)
+          Appsignal.set_gauge("key", 0.1)
+        end
+      end
+
+      describe "with tags" do
+        it "in agent mode", :agent_mode do
+          expect(Appsignal::Extension).to receive(:set_gauge)
+            .with("key", 0.1, Appsignal::Utils::Data.generate(tags))
+          Appsignal.set_gauge("key", 0.1, tags)
+        end
+
+        it "in collector mode", :collector_mode do
+          allow(Appsignal::Metrics::OpenTelemetryBackend).to receive(:set_gauge)
+          expect(Appsignal::Extension).not_to receive(:set_gauge)
+
+          Appsignal.set_gauge("key", 0.1, tags)
+
+          expect(Appsignal::Metrics::OpenTelemetryBackend).to have_received(:set_gauge)
+            .with("key", 0.1, tags)
+        end
+      end
+
+      describe "with a symbol key and int value" do
+        it "in agent mode", :agent_mode do
+          expect(Appsignal::Extension).to receive(:set_gauge)
+            .with("key", 1.0, Appsignal::Extension.data_map_new)
+          Appsignal.set_gauge(:key, 1)
+        end
+      end
+
+      describe "when the value is out of range" do
+        it "in agent mode", :agent_mode do
+          expect(Appsignal::Extension).to receive(:set_gauge).with(
+            "key",
+            10,
+            Appsignal::Extension.data_map_new
+          ).and_raise(RangeError)
+          expect(Appsignal.internal_logger).to receive(:warn)
+            .with("The gauge value '10' for metric 'key' is too big")
+
+          Appsignal.set_gauge("key", 10)
+        end
       end
     end
 
-    describe ".instrument_sql" do
-      around { |example| keep_transactions { example.run } }
-      before { set_current_transaction(transaction) }
+    describe ".increment_counter" do
+      describe "with a string key" do
+        it "in agent mode", :agent_mode do
+          expect(Appsignal::Extension).to receive(:increment_counter)
+            .with("key", 1, Appsignal::Extension.data_map_new)
+          Appsignal.increment_counter("key")
+        end
+      end
 
-      it "creates an SQL event on the transaction" do
-        result =
-          Appsignal.instrument_sql "name", "title", "body" do
-            "return value"
-          end
+      describe "with tags" do
+        it "in agent mode", :agent_mode do
+          expect(Appsignal::Extension).to receive(:increment_counter)
+            .with("key", 1, Appsignal::Utils::Data.generate(tags))
+          Appsignal.increment_counter("key", 1, tags)
+        end
 
-        expect(result).to eq "return value"
+        it "in collector mode", :collector_mode do
+          allow(Appsignal::Metrics::OpenTelemetryBackend).to receive(:increment_counter)
+          expect(Appsignal::Extension).not_to receive(:increment_counter)
+
+          Appsignal.increment_counter("key", 5, tags)
+
+          expect(Appsignal::Metrics::OpenTelemetryBackend).to have_received(:increment_counter)
+            .with("key", 5, tags)
+        end
+      end
+
+      describe "with a symbol key" do
+        it "in agent mode", :agent_mode do
+          expect(Appsignal::Extension).to receive(:increment_counter)
+            .with("key", 1, Appsignal::Extension.data_map_new)
+          Appsignal.increment_counter(:key)
+        end
+      end
+
+      describe "with a count" do
+        it "in agent mode", :agent_mode do
+          expect(Appsignal::Extension).to receive(:increment_counter)
+            .with("key", 5, Appsignal::Extension.data_map_new)
+          Appsignal.increment_counter("key", 5)
+        end
+      end
+
+      describe "when the value is out of range" do
+        it "in agent mode", :agent_mode do
+          expect(Appsignal::Extension).to receive(:increment_counter)
+            .with("key", 10, Appsignal::Extension.data_map_new).and_raise(RangeError)
+          expect(Appsignal.internal_logger).to receive(:warn)
+            .with("The counter value '10' for metric 'key' is too big")
+
+          Appsignal.increment_counter("key", 10)
+        end
+      end
+    end
+
+    describe ".add_distribution_value" do
+      describe "with a string key and float value" do
+        it "in agent mode", :agent_mode do
+          expect(Appsignal::Extension).to receive(:add_distribution_value)
+            .with("key", 0.1, Appsignal::Extension.data_map_new)
+          Appsignal.add_distribution_value("key", 0.1)
+        end
+      end
+
+      describe "with tags" do
+        it "in agent mode", :agent_mode do
+          expect(Appsignal::Extension).to receive(:add_distribution_value)
+            .with("key", 0.1, Appsignal::Utils::Data.generate(tags))
+          Appsignal.add_distribution_value("key", 0.1, tags)
+        end
+
+        it "in collector mode", :collector_mode do
+          allow(Appsignal::Metrics::OpenTelemetryBackend).to receive(:add_distribution_value)
+          expect(Appsignal::Extension).not_to receive(:add_distribution_value)
+
+          Appsignal.add_distribution_value("key", 0.1, tags)
+
+          expect(Appsignal::Metrics::OpenTelemetryBackend).to have_received(:add_distribution_value)
+            .with("key", 0.1, tags)
+        end
+      end
+
+      describe "with a symbol key and int value" do
+        it "in agent mode", :agent_mode do
+          expect(Appsignal::Extension).to receive(:add_distribution_value)
+            .with("key", 1.0, Appsignal::Extension.data_map_new)
+          Appsignal.add_distribution_value(:key, 1)
+        end
+      end
+
+      describe "when the value is out of range" do
+        it "in agent mode", :agent_mode do
+          expect(Appsignal::Extension).to receive(:add_distribution_value)
+            .with("key", 10, Appsignal::Extension.data_map_new).and_raise(RangeError)
+          expect(Appsignal.internal_logger).to receive(:warn)
+            .with("The distribution value '10' for metric 'key' is too big")
+
+          Appsignal.add_distribution_value("key", 10)
+        end
+      end
+    end
+  end
+
+  describe ".instrument" do
+    describe "block return value" do
+      it_in_both_modes do
+        set_current_transaction(transaction)
+
+        result = Appsignal.instrument("name", "title", "body") { "return value" }
+
+        expect(result).to eq("return value")
+      end
+    end
+
+    describe "recording an event around the block" do
+      it "in agent mode", :agent_mode do
+        set_current_transaction(transaction)
+
+        Appsignal.instrument("name", "title", "body") { :do_nothing }
+
+        expect(transaction).to include_event(
+          "name" => "name",
+          "title" => "title",
+          "body" => "body",
+          "body_format" => Appsignal::EventFormatter::DEFAULT
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        set_current_transaction(transaction)
+
+        Appsignal.instrument("name", "title", "body") { :do_nothing }
+        Appsignal::Transaction.complete_current!
+
+        expect(event_spans.size).to eq(1)
+        span = event_spans.first
+        expect(span.name).to eq("name")
+        expect(span.parent_span_id).to eq(root_span.span_id)
+        expect(span.attributes["appsignal.title"]).to eq("title")
+        expect(span.attributes["appsignal.body"]).to eq("body")
+        expect(span.attributes).not_to have_key("db.query.text")
+        expect(span.attributes).not_to have_key("db.system.name")
+      end
+    end
+
+    describe "when an error is raised in the block" do
+      it "in agent mode", :agent_mode do
+        set_current_transaction(transaction)
+
+        expect do
+          Appsignal.instrument("name", "title", "body") { raise ExampleException, "foo" }
+        end.to raise_error(ExampleException, "foo")
+
+        expect(transaction).to include_event(
+          "name" => "name", "title" => "title", "body" => "body"
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        set_current_transaction(transaction)
+
+        expect do
+          Appsignal.instrument("name", "title", "body") { raise ExampleException, "foo" }
+        end.to raise_error(ExampleException, "foo")
+        Appsignal::Transaction.complete_current!
+
+        expect(event_spans.size).to eq(1)
+        span = event_spans.first
+        expect(span.name).to eq("name")
+        expect(span.attributes["appsignal.title"]).to eq("title")
+        expect(span.attributes["appsignal.body"]).to eq("body")
+      end
+    end
+
+    describe "when a symbol is thrown in the block" do
+      it "in agent mode", :agent_mode do
+        set_current_transaction(transaction)
+
+        expect do
+          Appsignal.instrument("name", "title", "body") { throw :foo }
+        end.to throw_symbol(:foo)
+
+        expect(transaction).to include_event(
+          "name" => "name", "title" => "title", "body" => "body"
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        set_current_transaction(transaction)
+
+        expect do
+          Appsignal.instrument("name", "title", "body") { throw :foo }
+        end.to throw_symbol(:foo)
+        Appsignal::Transaction.complete_current!
+
+        expect(event_spans.size).to eq(1)
+        span = event_spans.first
+        expect(span.name).to eq("name")
+        expect(span.attributes["appsignal.title"]).to eq("title")
+        expect(span.attributes["appsignal.body"]).to eq("body")
+      end
+    end
+  end
+
+  describe ".instrument_sql" do
+    describe "recording a SQL event around the block" do
+      it "in agent mode", :agent_mode do
+        set_current_transaction(transaction)
+
+        result = Appsignal.instrument_sql("name", "title", "body") { "return value" }
+
+        expect(result).to eq("return value")
         expect(transaction).to include_event(
           "name" => "name",
           "title" => "title",
@@ -2051,35 +2307,62 @@ describe Appsignal do
           "body_format" => Appsignal::EventFormatter::SQL_BODY_FORMAT
         )
       end
+
+      it "in collector mode", :collector_mode do
+        set_current_transaction(transaction)
+
+        result = Appsignal.instrument_sql("name", "title", "body") { "return value" }
+        Appsignal::Transaction.complete_current!
+
+        expect(result).to eq("return value")
+        expect(event_spans.size).to eq(1)
+        span = event_spans.first
+        expect(span.name).to eq("name")
+        expect(span.parent_span_id).to eq(root_span.span_id)
+        expect(span.attributes["appsignal.title"]).to eq("title")
+        expect(span.attributes["db.query.text"]).to eq("body")
+        expect(span.attributes["db.system.name"]).to eq("other_sql")
+        expect(span.attributes).not_to have_key("appsignal.body")
+      end
     end
+  end
 
-    describe ".ignore_instrumentation_events" do
-      around { |example| keep_transactions { example.run } }
-      let(:transaction) { http_request_transaction }
+  describe ".ignore_instrumentation_events" do
+    describe "with a current transaction" do
+      it "in agent mode", :agent_mode do
+        set_current_transaction(transaction)
+        expect(transaction).to receive(:pause!).and_call_original
+        expect(transaction).to receive(:resume!).and_call_original
 
-      context "with current transaction" do
-        before { set_current_transaction(transaction) }
-
-        it "does not record events on the transaction" do
-          expect(transaction).to receive(:pause!).and_call_original
-          expect(transaction).to receive(:resume!).and_call_original
-
-          Appsignal.instrument("register.this.event") { :do_nothing }
-          Appsignal.ignore_instrumentation_events do
-            Appsignal.instrument("dont.register.this.event") { :do_nothing }
-          end
-
-          expect(transaction).to include_event("name" => "register.this.event")
-          expect(transaction).to_not include_event("name" => "dont.register.this.event")
+        Appsignal.instrument("register.this.event") { :do_nothing }
+        Appsignal.ignore_instrumentation_events do
+          Appsignal.instrument("dont.register.this.event") { :do_nothing }
         end
+
+        expect(transaction).to include_event("name" => "register.this.event")
+        expect(transaction).to_not include_event("name" => "dont.register.this.event")
       end
 
-      context "without current transaction" do
-        let(:transaction) { nil }
+      it "in collector mode", :collector_mode do
+        set_current_transaction(transaction)
 
-        it "does not crash" do
-          Appsignal.ignore_instrumentation_events { :do_nothing }
+        Appsignal.instrument("register.this.event") { :do_nothing }
+        Appsignal.ignore_instrumentation_events do
+          Appsignal.instrument("dont.register.this.event") { :do_nothing }
         end
+        Appsignal::Transaction.complete_current!
+
+        names = event_spans.map(&:name)
+        expect(names).to include("register.this.event")
+        expect(names).not_to include("dont.register.this.event")
+      end
+    end
+
+    describe "without a current transaction" do
+      it_in_both_modes do
+        expect do
+          Appsignal.ignore_instrumentation_events { :do_nothing }
+        end.not_to raise_error
       end
     end
   end

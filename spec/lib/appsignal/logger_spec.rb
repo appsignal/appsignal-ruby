@@ -238,6 +238,29 @@ describe Appsignal::Logger do
     end.to raise_error(TypeError)
   end
 
+  describe "format validation" do
+    it "accepts the documented format constants" do
+      [
+        Appsignal::Logger::PLAINTEXT,
+        Appsignal::Logger::LOGFMT,
+        Appsignal::Logger::JSON,
+        Appsignal::Logger::AUTODETECT
+      ].each do |format|
+        expect(Appsignal.internal_logger).not_to receive(:warn)
+        logger = Appsignal::Logger.new("group", :format => format)
+        expect(logger.instance_variable_get(:@format)).to eq(format)
+      end
+    end
+
+    it "warns and falls back to AUTODETECT for an unknown format" do
+      expect(Appsignal.internal_logger).to receive(:warn)
+        .with(/Unknown Appsignal::Logger format 99; falling back to AUTODETECT/)
+
+      logger = Appsignal::Logger.new("group", :format => 99)
+      expect(logger.instance_variable_get(:@format)).to eq(Appsignal::Logger::AUTODETECT)
+    end
+  end
+
   describe "#add" do
     it "should log with a level and message" do
       expect(Appsignal::Extension).to receive(:log)
@@ -701,6 +724,26 @@ describe Appsignal::Logger do
       end
 
       it_behaves_like "tagged logging"
+    end
+  end
+
+  if DependencyHelper.ruby_3_1_or_newer?
+    context "when collector mode is active" do
+      before do
+        Appsignal.clear!
+        start_agent(:options => { :collector_endpoint => "http://127.0.0.1:9090" })
+      end
+
+      it "routes through the OpenTelemetry backend, not the extension" do
+        allow(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
+        expect(Appsignal::Extension).not_to receive(:log)
+
+        logger.info("Hello", :tag => "value")
+
+        expect(Appsignal::Logger::OpenTelemetryBackend).to have_received(:emit)
+          .with("group", ::Logger::INFO, Appsignal::Logger::AUTODETECT, "Hello",
+            { :tag => "value" })
+      end
     end
   end
 end
