@@ -71,5 +71,37 @@ module Appsignal
         end
       end
     end
+
+    # Shoryuken client middleware that records an `enqueue.shoryuken` event so
+    # the enqueue shows up under the active transaction.
+    #
+    # Like all AppSignal events, this only records when there's an active
+    # transaction (e.g. enqueuing from within a web request or another job). An
+    # enqueue with no transaction is a transparent pass-through.
+    #
+    # @!visibility private
+    class ShoryukenClientMiddleware
+      def call(options, &block)
+        # Under Active Job the enqueue is already recorded as an
+        # `enqueue.active_job` event, so skip recording it again here.
+        return yield if Appsignal::Transaction.current? &&
+          Appsignal::Transaction.current.job_enqueue_events_suppressed?
+
+        Appsignal.instrument("enqueue.shoryuken", enqueue_title(options), &block)
+      end
+
+      private
+
+      # Enqueues through a Shoryuken worker carry the worker class in the
+      # `shoryuken_class` message attribute. Raw `send_message` enqueues don't,
+      # so there's no worker class to name -- fall back to the queue instead.
+      def enqueue_title(options)
+        worker_class = options.dig(:message_attributes, "shoryuken_class", :string_value)
+        return "enqueue #{worker_class} job" if worker_class
+
+        queue = options[:queue_url].to_s.split("/").last
+        "enqueue on #{queue}"
+      end
+    end
   end
 end

@@ -163,3 +163,80 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
     end
   end
 end
+
+describe Appsignal::Integrations::ShoryukenClientMiddleware do
+  let(:options) { { :message_body => "foo" } }
+  before { start_agent }
+  around { |example| keep_transactions { example.run } }
+
+  def enqueue(&block)
+    block ||= lambda {}
+    described_class.new.call(options, &block)
+  end
+
+  context "with an active transaction" do
+    # Enqueuing through a Shoryuken worker carries the worker class in the
+    # `shoryuken_class` message attribute, so the event is titled after it.
+    context "enqueued through a worker" do
+      let(:options) do
+        {
+          :message_body => "foo",
+          :queue_url => "https://sqs.us-east-1.amazonaws.com/0/my-queue",
+          :message_attributes => {
+            "shoryuken_class" => { :string_value => "MyShoryukenWorker", :data_type => "String" }
+          }
+        }
+      end
+
+      it "records the enqueue under the transaction, titled after the worker" do
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
+
+        enqueue
+
+        event = transaction.to_h["events"].find { |e| e["name"] == "enqueue.shoryuken" }
+        expect(event).to_not be_nil
+        expect(event["title"]).to eq("enqueue MyShoryukenWorker job")
+      end
+    end
+
+    # A raw `send_message` enqueue has no worker class, so the event falls back
+    # to naming the queue it was sent to.
+    context "enqueued as a raw message" do
+      let(:options) do
+        { :message_body => "foo", :queue_url => "https://sqs.us-east-1.amazonaws.com/0/my-queue" }
+      end
+
+      it "records the enqueue under the transaction, titled after the queue" do
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
+
+        enqueue
+
+        event = transaction.to_h["events"].find { |e| e["name"] == "enqueue.shoryuken" }
+        expect(event).to_not be_nil
+        expect(event["title"]).to eq("enqueue on my-queue")
+      end
+    end
+  end
+
+  context "without an active transaction" do
+    it "passes through without recording" do
+      expect { |block| enqueue(&block) }.to yield_control
+    end
+  end
+
+  context "when job enqueue events are suppressed" do
+    # As happens under Active Job, which records the enqueue itself.
+    it "passes through without recording the enqueue" do
+      transaction = http_request_transaction
+      set_current_transaction(transaction)
+
+      transaction.suppress_job_enqueue_events { enqueue }
+
+      # The outer integration records the enqueue, so this one doesn't.
+      event_names = transaction.to_h["events"].map { |event| event["name"] }
+      expect(event_names).to_not include("enqueue.shoryuken")
+    end
+  end
+end
