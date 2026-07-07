@@ -212,6 +212,45 @@ if DependencyHelper.opentelemetry_present?
       end
     end
 
+    describe ".extract_rack_context" do
+      let(:env) do
+        { "HTTP_TRACEPARENT" => "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01" }
+      end
+
+      it "returns nil when the SDK has not booted" do
+        expect(described_class.started?).to be(false)
+        expect(described_class.extract_rack_context(env)).to be_nil
+      end
+
+      it "extracts from the env with the Rack getter when started" do
+        require "opentelemetry-common"
+        allow(described_class).to receive(:started?).and_return(true)
+
+        expect(::OpenTelemetry.propagation).to receive(:extract)
+          .with(env, :getter => ::OpenTelemetry::Common::Propagation.rack_env_getter)
+
+        described_class.extract_rack_context(env)
+      end
+    end
+
+    describe ".if_started" do
+      it "does not run the block and returns nil when the SDK has not booted" do
+        expect(described_class.started?).to be(false)
+
+        ran = false
+        result = described_class.if_started { ran = true }
+
+        expect(ran).to be(false)
+        expect(result).to be_nil
+      end
+
+      it "runs the block and returns its result when started" do
+        allow(described_class).to receive(:started?).and_return(true)
+
+        expect(described_class.if_started { :value }).to eq(:value)
+      end
+    end
+
     describe ".build_resource" do
       it "maps AppSignal config attributes onto the resource" do
         resource = described_class.build_resource(
