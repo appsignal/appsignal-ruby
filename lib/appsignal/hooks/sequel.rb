@@ -10,7 +10,8 @@ module Appsignal
           "sql.sequel",
           nil,
           sql,
-          Appsignal::EventFormatter::SQL_BODY_FORMAT
+          Appsignal::EventFormatter::SQL_BODY_FORMAT,
+          :opentelemetry_kind => :client
         ) do
           super
         end
@@ -25,7 +26,8 @@ module Appsignal
           "sql.sequel",
           nil,
           sql,
-          Appsignal::EventFormatter::SQL_BODY_FORMAT
+          Appsignal::EventFormatter::SQL_BODY_FORMAT,
+          :opentelemetry_kind => :client
         ) do
           super
         end

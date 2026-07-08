@@ -174,7 +174,7 @@ module AppsignalTest
   module Transaction
     module ClassMethods
       def self.extended(base)
-        base.attr_reader :ext, :error_blocks
+        base.attr_reader :backend, :error_blocks
       end
 
       # Override the {Appsignal::Transaction.new} method so we can track which
@@ -194,7 +194,32 @@ module AppsignalTest
       end
     end
   end
+
+  # Test-only introspection for the transaction backends. These let matchers and
+  # specs read back internal state; they are not part of the production backend
+  # contract (see `Appsignal::Transaction::BaseBackend`).
+  module ExtensionBackend
+    def queue_start
+      @handle.queue_start
+    end
+
+    def _completed?
+      @handle._completed?
+    end
+  end
+
+  module OpenTelemetryBackend
+    def queue_start
+      nil
+    end
+
+    def _completed?
+      @completed
+    end
+  end
 end
 
 Appsignal::Transaction.extend(AppsignalTest::Transaction::ClassMethods)
 Appsignal::Transaction.prepend(AppsignalTest::Transaction::InstanceMethods)
+Appsignal::Transaction::ExtensionBackend.prepend(AppsignalTest::ExtensionBackend)
+Appsignal::Transaction::OpenTelemetryBackend.prepend(AppsignalTest::OpenTelemetryBackend)
