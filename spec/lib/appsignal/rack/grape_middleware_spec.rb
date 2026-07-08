@@ -14,14 +14,7 @@ if DependencyHelper.grape_present?
     let(:env) do
       Rack::MockRequest.env_for("/ping", :method => "POST")
     end
-    let(:transaction) { http_request_transaction }
-    before do
-      stub_const("GrapeExample::Api", app)
-      start_agent
-    end
-    around do |example|
-      keep_transactions { example.run }
-    end
+    before { stub_const("GrapeExample::Api", app) }
 
     def make_request(env)
       app.call(env)
@@ -44,10 +37,30 @@ if DependencyHelper.grape_present?
         end
       end
 
-      it "sets the error" do
-        make_request_with_exception(env, ExampleException, "error message")
+      describe "sets the error" do
+        def perform
+          make_request_with_exception(env, ExampleException, "error message")
+        end
 
-        expect(last_transaction).to have_error("ExampleException", "error message")
+        it "in agent mode", :agent_mode do
+          start_agent
+          perform
+
+          expect(last_transaction).to have_error("ExampleException", "error message")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+
+          event = root_span.events.find { |e| e.name == "exception" }
+          expect(event).not_to be_nil
+          expect(event.attributes["exception.type"]).to eq("ExampleException")
+          expect(event.attributes["exception.message"]).to eq("error message")
+          expect(event.attributes["exception.stacktrace"]).to be_a(String)
+          expect(event.attributes["appsignal.alert_this_error"]).to eq(true)
+          expect(root_span.status.code).to eq(::OpenTelemetry::Trace::Status::ERROR)
+        end
       end
 
       context "with env['grape.skip_appsignal_error'] = true" do
@@ -62,10 +75,24 @@ if DependencyHelper.grape_present?
           end
         end
 
-        it "does not add the error" do
-          make_request_with_exception(env, ExampleException, "error message")
+        describe "does not add the error" do
+          def perform
+            make_request_with_exception(env, ExampleException, "error message")
+          end
 
-          expect(last_transaction).to_not have_error
+          it "in agent mode", :agent_mode do
+            start_agent
+            perform
+
+            expect(last_transaction).to_not have_error
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            perform
+
+            expect(exception_events).to be_empty
+          end
         end
       end
     end
@@ -83,11 +110,30 @@ if DependencyHelper.grape_present?
         Rack::MockRequest.env_for("/hello", :method => "GET")
       end
 
-      it "sets non-unique route path" do
-        make_request(env)
+      describe "sets non-unique route path" do
+        def perform
+          make_request(env)
+        end
 
-        expect(last_transaction).to have_action("GET::GrapeExample::Api#/hello")
-        expect(last_transaction).to include_metadata("path" => "/hello", "method" => "GET")
+        it "in agent mode", :agent_mode do
+          start_agent
+          perform
+
+          expect(last_transaction).to have_action("GET::GrapeExample::Api#/hello")
+          expect(last_transaction).to include_metadata("path" => "/hello", "method" => "GET")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+
+          expect(root_span.name).to eq("GET::GrapeExample::Api#/hello")
+          expect(root_span.kind).to eq(:server)
+          expect(root_span.attributes["appsignal.action_name"])
+            .to eq("GET::GrapeExample::Api#/hello")
+          expect(root_span.attributes["appsignal.tag.path"]).to eq("/hello")
+          expect(root_span.attributes["appsignal.tag.method"]).to eq("GET")
+        end
       end
     end
 
@@ -109,15 +155,62 @@ if DependencyHelper.grape_present?
         Rack::MockRequest.env_for("/users/123", :method => "GET")
       end
 
-      it "sets non-unique route_param path" do
-        make_request(env)
+      describe "sets non-unique route_param path" do
+        def perform
+          make_request(env)
+        end
 
-        expect(last_transaction).to have_action("GET::GrapeExample::Api#/users/:id/")
-        expect(last_transaction).to include_metadata("path" => "/users/:id/", "method" => "GET")
+        it "in agent mode", :agent_mode do
+          start_agent
+          perform
+
+          expect(last_transaction).to have_action("GET::GrapeExample::Api#/users/:id/")
+          expect(last_transaction).to include_metadata("path" => "/users/:id/", "method" => "GET")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+
+          expect(root_span.name).to eq("GET::GrapeExample::Api#/users/:id/")
+          expect(root_span.attributes["appsignal.action_name"])
+            .to eq("GET::GrapeExample::Api#/users/:id/")
+          expect(root_span.attributes["appsignal.tag.path"]).to eq("/users/:id/")
+          expect(root_span.attributes["appsignal.tag.method"]).to eq("GET")
+        end
       end
     end
 
     context "with namespaced path" do
+      shared_examples "sets the namespaced path" do |action|
+        describe "sets namespaced path" do
+          def perform
+            make_request(env)
+          end
+
+          it "in agent mode", :agent_mode do
+            start_agent
+            perform
+
+            expect(last_transaction).to have_action(action)
+            expect(last_transaction).to include_metadata(
+              "path" => "/v1/beta/ping",
+              "method" => "POST"
+            )
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            perform
+
+            expect(root_span.name).to eq(action)
+            expect(root_span.attributes["appsignal.action_name"]).to eq(action)
+            expect(root_span.attributes["appsignal.tag.path"]).to eq("/v1/beta/ping")
+            expect(root_span.attributes["appsignal.tag.method"]).to eq("POST")
+          end
+        end
+      end
+
       context "with symbols" do
         let(:app) do
           Class.new(::Grape::API) do
@@ -136,13 +229,7 @@ if DependencyHelper.grape_present?
           Rack::MockRequest.env_for("/v1/beta/ping", :method => "POST")
         end
 
-        it "sets namespaced path" do
-          make_request(env)
-
-          expect(last_transaction).to have_action("POST::GrapeExample::Api#/v1/beta/ping")
-          expect(last_transaction).to include_metadata("path" => "/v1/beta/ping",
-            "method" => "POST")
-        end
+        include_examples "sets the namespaced path", "POST::GrapeExample::Api#/v1/beta/ping"
       end
 
       context "with strings" do
@@ -164,15 +251,7 @@ if DependencyHelper.grape_present?
             Rack::MockRequest.env_for("/v1/beta/ping", :method => "POST")
           end
 
-          it "sets namespaced path" do
-            make_request(env)
-
-            expect(last_transaction).to have_action("POST::GrapeExample::Api#/v1/beta/ping")
-            expect(last_transaction).to include_metadata(
-              "path" => "/v1/beta/ping",
-              "method" => "POST"
-            )
-          end
+          include_examples "sets the namespaced path", "POST::GrapeExample::Api#/v1/beta/ping"
         end
 
         context "with / prefix" do
@@ -193,13 +272,7 @@ if DependencyHelper.grape_present?
             Rack::MockRequest.env_for("/v1/beta/ping", :method => "POST")
           end
 
-          it "sets namespaced path" do
-            make_request(env)
-
-            expect(last_transaction).to have_action("POST::GrapeExample::Api#/v1/beta/ping")
-            expect(last_transaction).to include_metadata("path" => "/v1/beta/ping",
-              "method" => "POST")
-          end
+          include_examples "sets the namespaced path", "POST::GrapeExample::Api#/v1/beta/ping"
         end
       end
     end

@@ -2,7 +2,6 @@ require "appsignal/integrations/data_mapper"
 
 describe Appsignal::Hooks::DataMapperLogListener do
   describe "#log" do
-    let(:transaction) { http_request_transaction }
     let(:message) do
       double(
         :query    => "SELECT * from users",
@@ -15,16 +14,13 @@ describe Appsignal::Hooks::DataMapperLogListener do
         end
       end)
       stub_const("DataObjects", Module.new)
-      start_agent
-      set_current_transaction(transaction)
     end
-    around { |example| keep_transactions { example.run } }
 
     def log_message
       connection_class.new.log(message)
     end
 
-    context "when the scheme is SQL-like" do
+    describe "a SQL-like scheme" do
       let(:connection_class) { DataObjects::Sqlite3::Connection }
       before do
         stub_const("DataObjects::Sqlite3::Connection", Class.new do
@@ -33,9 +29,16 @@ describe Appsignal::Hooks::DataMapperLogListener do
         end)
       end
 
-      it "records the log entry in an event" do
+      def perform
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
         log_message
+        transaction
+      end
 
+      it "in agent mode", :agent_mode do
+        start_agent
+        transaction = perform
         expect(transaction).to include_event(
           "name" => "query.data_mapper",
           "title" => "DataMapper Query",
@@ -44,9 +47,28 @@ describe Appsignal::Hooks::DataMapperLogListener do
           "duration" => 100.0
         )
       end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        Appsignal::Transaction.complete_current!
+
+        expect(event_spans.size).to eq(1)
+        span = event_spans.first
+        expect(span.name).to eq("DataMapper Query")
+        expect(span.kind).to eq(:client)
+        expect(span.parent_span_id).to eq(root_span.span_id)
+        attrs = span.attributes
+        expect(attrs["db.query.text"]).to eq("SELECT * from users")
+        expect(attrs["db.system.name"]).to eq("other_sql")
+        expect(attrs["appsignal.category"]).to eq("query.data_mapper")
+        expect(attrs).not_to have_key("appsignal.body")
+        observed = span.end_timestamp - span.start_timestamp
+        expect(observed).to be_within(50_000_000).of(100_000_000)
+      end
     end
 
-    context "when the scheme is not SQL-like" do
+    describe "a non-SQL scheme" do
       let(:connection_class) { DataObjects::MongoDB::Connection }
       before do
         stub_const("DataObjects::MongoDB::Connection", Class.new do
@@ -55,9 +77,16 @@ describe Appsignal::Hooks::DataMapperLogListener do
         end)
       end
 
-      it "records the log entry in an event without body" do
+      def perform
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
         log_message
+        transaction
+      end
 
+      it "in agent mode", :agent_mode do
+        start_agent
+        transaction = perform
         expect(transaction).to include_event(
           "name" => "query.data_mapper",
           "title" => "DataMapper Query",
@@ -65,6 +94,25 @@ describe Appsignal::Hooks::DataMapperLogListener do
           "body_format" => Appsignal::EventFormatter::DEFAULT,
           "duration" => 100.0
         )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        Appsignal::Transaction.complete_current!
+
+        expect(event_spans.size).to eq(1)
+        span = event_spans.first
+        expect(span.name).to eq("DataMapper Query")
+        expect(span.kind).to eq(:client)
+        expect(span.parent_span_id).to eq(root_span.span_id)
+        attrs = span.attributes
+        expect(attrs["appsignal.category"]).to eq("query.data_mapper")
+        expect(attrs).not_to have_key("appsignal.body")
+        expect(attrs).not_to have_key("db.query.text")
+        expect(attrs).not_to have_key("db.system.name")
+        observed = span.end_timestamp - span.start_timestamp
+        expect(observed).to be_within(50_000_000).of(100_000_000)
       end
     end
   end
