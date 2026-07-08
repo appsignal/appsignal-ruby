@@ -92,6 +92,7 @@ RSpec.shared_context "collector mode", :collector_mode do
     ::OpenTelemetry.tracer_provider = tracer_provider
     ::OpenTelemetry.meter_provider = meter_provider
     ::OpenTelemetry.logger_provider = logger_provider
+    Appsignal::Metrics::OpenTelemetryBackend.reset!
     Appsignal::Logger::OpenTelemetryBackend.reset!
   end
 
