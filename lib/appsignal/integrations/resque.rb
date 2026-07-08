@@ -5,7 +5,12 @@ module Appsignal
     # @!visibility private
     module ResqueIntegration
       def perform
-        transaction = Appsignal::Transaction.create(Appsignal::Transaction::BACKGROUND_JOB)
+        # Read trace context off the job so the transaction links back to the
+        # enqueuer. No-op outside collector mode.
+        transaction = Appsignal::Transaction.create(
+          Appsignal::Transaction::BACKGROUND_JOB,
+          :opentelemetry_context => Appsignal::OpenTelemetry.extract_job_context(payload)
+        )
 
         Appsignal.instrument "perform.resque" do
           super
@@ -25,8 +30,10 @@ module Appsignal
       end
     end
 
-    # Wraps `Resque.push` to record an `enqueue.resque` event so the enqueue
-    # shows up under the active transaction.
+    # Wraps `Resque.push` to record an `enqueue.resque` event so the
+    # enqueue shows up under the active transaction (both modes), and in
+    # collector mode writes the trace context onto the job hash so the job that
+    # later performs links back to it.
     #
     # Like all AppSignal events, this only records when there's an active
     # transaction (e.g. enqueuing from within a web request or another job).
@@ -34,13 +41,24 @@ module Appsignal
     #
     # @!visibility private
     module ResquePushIntegration
-      def push(_queue, item)
+      def push(queue, item)
         # Under Active Job the enqueue is already recorded as an
-        # `enqueue.active_job` event, so skip recording it again here.
-        return super if Appsignal::Transaction.current? &&
-          Appsignal::Transaction.current.job_enqueue_events_suppressed?
+        # `enqueue.active_job` event, so skip recording it again here. The trace
+        # context is still injected so the performed job links back.
+        if Appsignal::Transaction.current? &&
+            Appsignal::Transaction.current.job_enqueue_events_suppressed?
+          Appsignal::OpenTelemetry.inject_context(item)
+          return super
+        end
 
-        Appsignal.instrument("enqueue.resque", "enqueue #{item["class"]} job") { super }
+        Appsignal.instrument(
+          "enqueue.resque",
+          "enqueue #{item["class"]} job",
+          :opentelemetry_kind => :producer
+        ) do
+          Appsignal::OpenTelemetry.inject_context(item)
+          super
+        end
       end
     end
 
