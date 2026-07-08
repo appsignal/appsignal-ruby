@@ -2661,6 +2661,9 @@ module Appsignal
     sig { returns(String) }
     def message; end
   end
+
+  module Metrics
+  end
 end
 
 # Extensions to Object for AppSignal method instrumentation.

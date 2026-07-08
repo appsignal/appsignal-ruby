@@ -2480,6 +2480,9 @@ module Appsignal
   class NotStartedError < Appsignal::InternalError
     def message: () -> String
   end
+
+  module Metrics
+  end
 end
 
 # Extensions to Object for AppSignal method instrumentation.

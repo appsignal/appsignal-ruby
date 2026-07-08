@@ -867,6 +867,39 @@ describe Appsignal do
         expect(Appsignal.internal_logger.level).to eq Logger::DEBUG
       end
     end
+
+    if DependencyHelper.opentelemetry_present?
+      context "when collector_endpoint is set but the OpenTelemetry SDK fails to boot" do
+        let(:err_stream) { std_stream }
+        let(:stdout_stream) { std_stream }
+
+        before do
+          # Simulate a failure inside `Appsignal::OpenTelemetry.configure` —
+          # e.g. one of the OTel gems can't be loaded. The rescue inside
+          # `configure` should set `started?` to false instead of letting the
+          # error bubble out.
+          allow(Appsignal::OpenTelemetry).to receive(:require)
+            .with("opentelemetry/sdk")
+            .and_raise(LoadError, "fake load failure")
+        end
+
+        it "falls back to the agent backend rather than silently dropping telemetry" do
+          capture_std_streams(stdout_stream, err_stream) do
+            start_agent(:options => { :collector_endpoint => "http://127.0.0.1:9090" })
+          end
+
+          # Config still records the user's intent.
+          expect(Appsignal.config.collector_mode_configured?).to be(true)
+          # But the active predicate is false because the SDK never booted.
+          expect(Appsignal.config.collector_mode?).to be(false)
+          expect(Appsignal::OpenTelemetry.started?).to be(false)
+
+          # Backends fall through to the extension implementations.
+          expect(Appsignal::Backends.metrics).to eq(Appsignal::Metrics::ExtensionBackend)
+          expect(Appsignal::Backends.logger).to eq(Appsignal::Logger::ExtensionBackend)
+        end
+      end
+    end
   end
 
   describe ".load" do
@@ -1535,106 +1568,6 @@ describe Appsignal do
       end
     end
 
-    describe "custom metrics" do
-      let(:tags) { { :foo => "bar" } }
-
-      describe ".set_gauge" do
-        it "should call set_gauge on the extension with a string key and float" do
-          expect(Appsignal::Extension).to receive(:set_gauge)
-            .with("key", 0.1, Appsignal::Extension.data_map_new)
-          Appsignal.set_gauge("key", 0.1)
-        end
-
-        it "should call set_gauge with tags" do
-          expect(Appsignal::Extension).to receive(:set_gauge)
-            .with("key", 0.1, Appsignal::Utils::Data.generate(tags))
-          Appsignal.set_gauge("key", 0.1, tags)
-        end
-
-        it "should call set_gauge on the extension with a symbol key and int" do
-          expect(Appsignal::Extension).to receive(:set_gauge)
-            .with("key", 1.0, Appsignal::Extension.data_map_new)
-          Appsignal.set_gauge(:key, 1)
-        end
-
-        it "should not raise an exception when out of range" do
-          expect(Appsignal::Extension).to receive(:set_gauge).with(
-            "key",
-            10,
-            Appsignal::Extension.data_map_new
-          ).and_raise(RangeError)
-          expect(Appsignal.internal_logger).to receive(:warn)
-            .with("The gauge value '10' for metric 'key' is too big")
-
-          Appsignal.set_gauge("key", 10)
-        end
-      end
-
-      describe ".increment_counter" do
-        it "should call increment_counter on the extension with a string key" do
-          expect(Appsignal::Extension).to receive(:increment_counter)
-            .with("key", 1, Appsignal::Extension.data_map_new)
-          Appsignal.increment_counter("key")
-        end
-
-        it "should call increment_counter with tags" do
-          expect(Appsignal::Extension).to receive(:increment_counter)
-            .with("key", 1, Appsignal::Utils::Data.generate(tags))
-          Appsignal.increment_counter("key", 1, tags)
-        end
-
-        it "should call increment_counter on the extension with a symbol key" do
-          expect(Appsignal::Extension).to receive(:increment_counter)
-            .with("key", 1, Appsignal::Extension.data_map_new)
-          Appsignal.increment_counter(:key)
-        end
-
-        it "should call increment_counter on the extension with a count" do
-          expect(Appsignal::Extension).to receive(:increment_counter)
-            .with("key", 5, Appsignal::Extension.data_map_new)
-          Appsignal.increment_counter("key", 5)
-        end
-
-        it "should not raise an exception when out of range" do
-          expect(Appsignal::Extension).to receive(:increment_counter)
-            .with("key", 10, Appsignal::Extension.data_map_new).and_raise(RangeError)
-          expect(Appsignal.internal_logger).to receive(:warn)
-            .with("The counter value '10' for metric 'key' is too big")
-
-          Appsignal.increment_counter("key", 10)
-        end
-      end
-
-      describe ".add_distribution_value" do
-        it "should call add_distribution_value on the extension with a string key and float" do
-          expect(Appsignal::Extension).to receive(:add_distribution_value)
-            .with("key", 0.1, Appsignal::Extension.data_map_new)
-          Appsignal.add_distribution_value("key", 0.1)
-        end
-
-        it "should call add_distribution_value with tags" do
-          expect(Appsignal::Extension).to receive(:add_distribution_value)
-            .with("key", 0.1, Appsignal::Utils::Data.generate(tags))
-          Appsignal.add_distribution_value("key", 0.1, tags)
-        end
-
-        it "should call add_distribution_value on the extension with a symbol key and int" do
-          expect(Appsignal::Extension).to receive(:add_distribution_value)
-            .with("key", 1.0, Appsignal::Extension.data_map_new)
-          Appsignal.add_distribution_value(:key, 1)
-        end
-
-        it "should not raise an exception when out of range" do
-          expect(Appsignal::Extension).to receive(:add_distribution_value)
-            .with("key", 10, Appsignal::Extension.data_map_new).and_raise(RangeError)
-          expect(Appsignal.internal_logger).to receive(:warn)
-            .with("The distribution value '10' for metric 'key' is too big")
-
-          Appsignal.add_distribution_value("key", 10)
-        end
-      end
-    end
-
     describe ".internal_logger" do
       subject { Appsignal.internal_logger }
 
@@ -2122,6 +2055,184 @@ describe Appsignal do
 
         it "does not crash" do
           Appsignal.ignore_instrumentation_events { :do_nothing }
+        end
+      end
+    end
+  end
+
+  describe "custom metrics" do
+    let(:tags) { { :foo => "bar" } }
+
+    describe ".set_gauge" do
+      describe "with a string key and float value" do
+        it "in agent mode", :agent_mode do
+          start_agent
+          expect(Appsignal::Extension).to receive(:set_gauge)
+            .with("key", 0.1, Appsignal::Extension.data_map_new)
+          Appsignal.set_gauge("key", 0.1)
+        end
+      end
+
+      describe "with tags" do
+        def perform
+          Appsignal.set_gauge("key", 0.1, tags)
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent
+          expect(Appsignal::Extension).to receive(:set_gauge)
+            .with("key", 0.1, Appsignal::Utils::Data.generate(tags))
+          perform
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          allow(Appsignal::Metrics::OpenTelemetryBackend).to receive(:set_gauge)
+          expect(Appsignal::Extension).not_to receive(:set_gauge)
+          perform
+          expect(Appsignal::Metrics::OpenTelemetryBackend).to have_received(:set_gauge)
+            .with("key", 0.1, tags)
+        end
+      end
+
+      describe "with a symbol key and int value" do
+        it "in agent mode", :agent_mode do
+          start_agent
+          expect(Appsignal::Extension).to receive(:set_gauge)
+            .with("key", 1.0, Appsignal::Extension.data_map_new)
+          Appsignal.set_gauge(:key, 1)
+        end
+      end
+
+      describe "when the value is out of range" do
+        it "in agent mode", :agent_mode do
+          start_agent
+          expect(Appsignal::Extension).to receive(:set_gauge).with(
+            "key",
+            10,
+            Appsignal::Extension.data_map_new
+          ).and_raise(RangeError)
+          expect(Appsignal.internal_logger).to receive(:warn)
+            .with("The gauge value '10' for metric 'key' is too big")
+
+          Appsignal.set_gauge("key", 10)
+        end
+      end
+    end
+
+    describe ".increment_counter" do
+      describe "with a string key" do
+        it "in agent mode", :agent_mode do
+          start_agent
+          expect(Appsignal::Extension).to receive(:increment_counter)
+            .with("key", 1, Appsignal::Extension.data_map_new)
+          Appsignal.increment_counter("key")
+        end
+      end
+
+      describe "with tags" do
+        def perform
+          Appsignal.increment_counter("key", 5, tags)
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent
+          expect(Appsignal::Extension).to receive(:increment_counter)
+            .with("key", 5, Appsignal::Utils::Data.generate(tags))
+          perform
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          allow(Appsignal::Metrics::OpenTelemetryBackend).to receive(:increment_counter)
+          expect(Appsignal::Extension).not_to receive(:increment_counter)
+          perform
+          expect(Appsignal::Metrics::OpenTelemetryBackend).to have_received(:increment_counter)
+            .with("key", 5, tags)
+        end
+      end
+
+      describe "with a symbol key" do
+        it "in agent mode", :agent_mode do
+          start_agent
+          expect(Appsignal::Extension).to receive(:increment_counter)
+            .with("key", 1, Appsignal::Extension.data_map_new)
+          Appsignal.increment_counter(:key)
+        end
+      end
+
+      describe "with a count" do
+        it "in agent mode", :agent_mode do
+          start_agent
+          expect(Appsignal::Extension).to receive(:increment_counter)
+            .with("key", 5, Appsignal::Extension.data_map_new)
+          Appsignal.increment_counter("key", 5)
+        end
+      end
+
+      describe "when the value is out of range" do
+        it "in agent mode", :agent_mode do
+          start_agent
+          expect(Appsignal::Extension).to receive(:increment_counter)
+            .with("key", 10, Appsignal::Extension.data_map_new).and_raise(RangeError)
+          expect(Appsignal.internal_logger).to receive(:warn)
+            .with("The counter value '10' for metric 'key' is too big")
+
+          Appsignal.increment_counter("key", 10)
+        end
+      end
+    end
+
+    describe ".add_distribution_value" do
+      describe "with a string key and float value" do
+        it "in agent mode", :agent_mode do
+          start_agent
+          expect(Appsignal::Extension).to receive(:add_distribution_value)
+            .with("key", 0.1, Appsignal::Extension.data_map_new)
+          Appsignal.add_distribution_value("key", 0.1)
+        end
+      end
+
+      describe "with tags" do
+        def perform
+          Appsignal.add_distribution_value("key", 0.1, tags)
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent
+          expect(Appsignal::Extension).to receive(:add_distribution_value)
+            .with("key", 0.1, Appsignal::Utils::Data.generate(tags))
+          perform
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          allow(Appsignal::Metrics::OpenTelemetryBackend).to receive(:add_distribution_value)
+          expect(Appsignal::Extension).not_to receive(:add_distribution_value)
+          perform
+          expect(Appsignal::Metrics::OpenTelemetryBackend).to have_received(:add_distribution_value)
+            .with("key", 0.1, tags)
+        end
+      end
+
+      describe "with a symbol key and int value" do
+        it "in agent mode", :agent_mode do
+          start_agent
+          expect(Appsignal::Extension).to receive(:add_distribution_value)
+            .with("key", 1.0, Appsignal::Extension.data_map_new)
+          Appsignal.add_distribution_value(:key, 1)
+        end
+      end
+
+      describe "when the value is out of range" do
+        it "in agent mode", :agent_mode do
+          start_agent
+          expect(Appsignal::Extension).to receive(:add_distribution_value)
+            .with("key", 10, Appsignal::Extension.data_map_new).and_raise(RangeError)
+          expect(Appsignal.internal_logger).to receive(:warn)
+            .with("The distribution value '10' for metric 'key' is too big")
+
+          Appsignal.add_distribution_value("key", 10)
         end
       end
     end
