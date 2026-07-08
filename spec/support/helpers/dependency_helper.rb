@@ -25,6 +25,24 @@ module DependencyHelper
     Appsignal::System.jruby?
   end
 
+  # Whether the optional OpenTelemetry gems collector mode needs are
+  # installable in this bundle. They're no longer gemspec dependencies, so
+  # the OTel specs only run under the `-collector` gemfiles (Ruby 3.1+). This
+  # actually requires the gems (idempotent) so the guarded specs can use them.
+  def opentelemetry_present?
+    return @opentelemetry_present if defined?(@opentelemetry_present)
+
+    @opentelemetry_present =
+      begin
+        require "opentelemetry/sdk"
+        require "opentelemetry-metrics-sdk"
+        require "opentelemetry-logs-sdk"
+        true
+      rescue LoadError
+        false
+      end
+  end
+
   def rails_present?
     dependency_present? "rails"
   end

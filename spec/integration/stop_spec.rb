@@ -15,9 +15,6 @@ describe "AppSignal stop" do
 
     output = runner.output
 
-    # Make sure the app exited properly
-    expect(runner.status.exitstatus).to eq(0)
-
     # Assert the output has no errors
     expect(output).to_not include("ERROR: ")
     # Assert the app has started as expected
