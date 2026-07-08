@@ -63,7 +63,10 @@ module Appsignal
           request.env[APPSIGNAL_EVENT_HANDLER_ID] ||= id
           return unless request_handler?(request.env[APPSIGNAL_EVENT_HANDLER_ID])
 
-          transaction = Appsignal::Transaction.create(Appsignal::Transaction::HTTP_REQUEST)
+          transaction = Appsignal::Transaction.create(
+            Appsignal::Transaction::HTTP_REQUEST,
+            :opentelemetry_context => Appsignal::OpenTelemetry.extract_rack_context(request.env)
+          )
           transaction.start_event
           request.env[APPSIGNAL_TRANSACTION] = transaction
 

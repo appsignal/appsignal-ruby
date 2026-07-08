@@ -33,7 +33,10 @@ module Appsignal
             if wrapped_instrumentation
               env[Appsignal::Rack::APPSIGNAL_TRANSACTION]
             else
-              Appsignal::Transaction.create(Appsignal::Transaction::HTTP_REQUEST)
+              Appsignal::Transaction.create(
+                Appsignal::Transaction::HTTP_REQUEST,
+                :opentelemetry_context => Appsignal::OpenTelemetry.extract_rack_context(env)
+              )
             end
 
           unless wrapped_instrumentation
