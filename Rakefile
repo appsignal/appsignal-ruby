@@ -72,7 +72,50 @@ GITHUB_ACTION_WORKFLOW_FILE = ".github/workflows/ci.yml"
 PRIMARY_JOB_GEMSET = "no_dependencies"
 DEFAULT_RUNS_ON = "ubuntu-latest"
 
+COLLECTOR_GEMFILE_PARTIAL = "collector.rb"
+
 namespace :build_matrix do
+  namespace :gemfiles do
+    # Generates a `<base>-collector.gemfile` next to each base gemfile. The
+    # variant layers the optional OpenTelemetry gems (`gemfiles/collector.rb`)
+    # on top of the base, so collector-mode test runs resolve them while the
+    # base gemfiles (and the gemspec) stay OpenTelemetry-free. Regenerate
+    # whenever a base gemfile is added or removed.
+    task :generate do
+      base_gemfiles =
+        Dir["gemfiles/*.gemfile"]
+          .map { |path| File.basename(path) }
+          .reject { |name| name.end_with?("-collector.gemfile") }
+          .sort
+
+      base_gemfiles.each do |base|
+        name = base.sub(/\.gemfile\z/, "")
+        contents =
+          "# DO NOT EDIT\n" \
+            "# This is a generated file by the " \
+            "`rake build_matrix:gemfiles:generate` task.\n" \
+            "# It layers the optional OpenTelemetry gems (gemfiles/" \
+            "#{COLLECTOR_GEMFILE_PARTIAL}) on top of #{base}.\n" \
+            "\n" \
+            "eval_gemfile File.expand_path(#{base.inspect}, __dir__)\n" \
+            "eval_gemfile File.expand_path(" \
+            "#{COLLECTOR_GEMFILE_PARTIAL.inspect}, __dir__)\n"
+        File.write("gemfiles/#{name}-collector.gemfile", contents)
+      end
+
+      puts "Generated #{base_gemfiles.count} `-collector` gemfiles."
+    end
+
+    task :validate => :generate do
+      output = `git status --porcelain gemfiles`
+      if output.include?("-collector.gemfile")
+        puts "The `-collector` gemfiles are out of date. The changes were not committed."
+        puts "Please run `rake build_matrix:gemfiles:generate` and commit the changes."
+        exit 1
+      end
+    end
+  end
+
   namespace :github do
     task :generate do
       yaml = YAML.load_file("build_matrix.yml")
@@ -113,6 +156,21 @@ namespace :build_matrix do
             job["steps"] << test_step
             builds[build_matrix_key(ruby["ruby"], :ruby_gem => ruby_gem["gem"])] = job
           end
+
+          # On collector-capable Rubies, additionally run the gem's
+          # `-collector` gemfile (base gems + optional OpenTelemetry gems) so
+          # collector-mode specs are exercised. These always depend on the
+          # primary job for the Ruby version and run on Ubuntu only.
+          next unless collector_ruby?(matrix, ruby_version)
+
+          collector_gem = "#{ruby_gem["gem"]}-collector"
+          collector_job = build_job(ruby_version, :ruby_gem => collector_gem)
+          collector_job["env"] = matrix["env"]
+            .merge("BUNDLE_GEMFILE" => "gemfiles/#{collector_gem}.gemfile")
+          collector_job["needs"] = build_matrix_key(ruby["ruby"])
+          collector_job["steps"] << test_step
+          builds[build_matrix_key(ruby["ruby"], :ruby_gem => collector_gem)] =
+            collector_job
         end
 
         # Add build for macOS
@@ -191,6 +249,14 @@ namespace :build_matrix do
             out << "#{bundler_version} #{gemfile_env} ./script/bundler_wrapper install --quiet || { echo 'Bundling failed'; exit 1; }"
             out << "echo 'Running #{gemfile} in #{ruby_version}'"
             out << "#{bundler_version} #{gemfile_env} ./script/bundler_wrapper exec rspec || { echo 'Running specs failed'; exit 1; }"
+
+            next unless collector_ruby?(matrix, ruby_version)
+
+            collector_env = "env BUNDLE_GEMFILE=gemfiles/#{gemfile}-collector.gemfile"
+            out << "echo 'Bundling #{gemfile}-collector in #{ruby_version}'"
+            out << "#{bundler_version} #{collector_env} ./script/bundler_wrapper install --quiet || { echo 'Bundling failed'; exit 1; }"
+            out << "echo 'Running #{gemfile}-collector in #{ruby_version}'"
+            out << "#{bundler_version} #{collector_env} ./script/bundler_wrapper exec rspec || { echo 'Running specs failed'; exit 1; }"
           end
           # rubocop:enable Layout/LineLength
           out << ""
@@ -205,6 +271,10 @@ namespace :build_matrix do
         puts "Generated #{script}"
       end
     end
+  end
+
+  def collector_ruby?(matrix, ruby_version)
+    Array(matrix.dig("collector", "ruby")).include?(ruby_version)
   end
 
   def gemset_for_ruby(ruby, matrix)
