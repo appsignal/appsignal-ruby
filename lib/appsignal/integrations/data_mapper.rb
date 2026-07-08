@@ -21,13 +21,15 @@ module Appsignal
           body_format = Appsignal::EventFormatter::DEFAULT
         end
 
-        # Record event
+        # Record event. The query is an outgoing call to the database, so tag it
+        # as a client span (collector mode); no-op in agent mode.
         Appsignal::Transaction.current.record_event(
           "query.data_mapper",
           "DataMapper Query",
           body_content,
           message.duration,
-          body_format
+          body_format,
+          :opentelemetry_kind => :client
         )
         super
       end
