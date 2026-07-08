@@ -14,9 +14,6 @@ if DependencyHelper.hanami2_present?
     end
     let(:middleware) { Appsignal::Rack::HanamiMiddleware.new(app, {}) }
 
-    before { start_agent }
-    around { |example| keep_transactions { example.run } }
-
     def make_request(env)
       if DependencyHelper.hanami2_2_present?
         instance =
@@ -31,34 +28,96 @@ if DependencyHelper.hanami2_present?
     end
 
     context "without params" do
-      it "sets no request parameters on the transaction" do
-        make_request(env)
+      describe "sets no request parameters on the transaction" do
+        def perform
+          make_request(env)
+        end
 
-        expect(last_transaction).to_not include_params
+        it "in agent mode", :agent_mode do
+          start_agent
+          perform
+
+          expect(last_transaction).to_not include_params
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+
+          expect(root_span.attributes.keys).to_not include("appsignal.request.payload")
+        end
       end
     end
 
     context "with params" do
       let(:router_params) { { "param1" => "value1", "param2" => "value2" } }
 
-      it "sets request parameters on the transaction" do
-        make_request(env)
+      describe "sets request parameters on the transaction" do
+        def perform
+          make_request(env)
+        end
 
-        expect(last_transaction).to include_params("param1" => "value1", "param2" => "value2")
+        it "in agent mode", :agent_mode do
+          start_agent
+          perform
+
+          expect(last_transaction).to include_params("param1" => "value1", "param2" => "value2")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+
+          expect(root_span.kind).to eq(:server)
+          params = JSON.parse(root_span.attributes["appsignal.request.payload"])
+          expect(params).to include("param1" => "value1", "param2" => "value2")
+        end
       end
     end
 
-    it "reports a process_action.hanami event" do
-      make_request(env)
+    describe "reports a process_action.hanami event" do
+      def perform
+        make_request(env)
+      end
 
-      expect(last_transaction).to include_event("name" => "process_action.hanami")
+      it "in agent mode", :agent_mode do
+        start_agent
+        perform
+
+        expect(last_transaction).to include_event("name" => "process_action.hanami")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+
+        span = event_spans.find { |s| s.name == "process_action.hanami" }
+        expect(span).not_to be_nil
+        expect(span.parent_span_id).to eq(root_span.span_id)
+      end
     end
 
     if DependencyHelper.hanami2_2_present?
-      it "sets action name on the transaction" do
-        make_request(env)
+      describe "sets action name on the transaction" do
+        def perform
+          make_request(env)
+        end
 
-        expect(last_transaction).to have_action("HanamiApp::Actions::Books::Index")
+        it "in agent mode", :agent_mode do
+          start_agent
+          perform
+
+          expect(last_transaction).to have_action("HanamiApp::Actions::Books::Index")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+
+          expect(root_span.name).to eq("HanamiApp::Actions::Books::Index")
+          expect(root_span.attributes["appsignal.action_name"])
+            .to eq("HanamiApp::Actions::Books::Index")
+        end
       end
     end
   end
