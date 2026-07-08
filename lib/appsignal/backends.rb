@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require "appsignal/logger/extension_backend"
+require "appsignal/logger/opentelemetry_backend"
+
 module Appsignal
   # @!visibility private
   #
@@ -13,6 +16,14 @@ module Appsignal
   # in by adding one more lookup method here.
   module Backends
     class << self
+      def logger
+        if collector?
+          Appsignal::Logger::OpenTelemetryBackend
+        else
+          Appsignal::Logger::ExtensionBackend
+        end
+      end
+
       private
 
       def collector?
