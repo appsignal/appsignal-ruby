@@ -10,7 +10,16 @@ module Appsignal
           if has_parent_transaction
             Appsignal::Transaction.current
           else
-            Appsignal::Transaction.create(Appsignal::Transaction::HTTP_REQUEST)
+            # Read the incoming trace context off the request headers so the
+            # transaction continues the upstream trace. No-op outside collector
+            # mode. Webmachine isn't Rack: `request.headers` is a case-insensitive
+            # `Webmachine::Headers`, so the default getter reads it directly.
+            Appsignal::Transaction.create(
+              Appsignal::Transaction::HTTP_REQUEST,
+              :opentelemetry_context => Appsignal::OpenTelemetry.if_started do
+                ::OpenTelemetry.propagation.extract(request.headers)
+              end
+            )
           end
 
         begin
