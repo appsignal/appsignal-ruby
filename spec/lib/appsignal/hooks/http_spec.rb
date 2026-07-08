@@ -28,6 +28,11 @@ describe Appsignal::Hooks::HttpHook do
             .to include(Appsignal::Integrations::HttpIntegration::HashOptions)
         end
       end
+
+      it "injects trace context on outgoing requests" do
+        expect(HTTP::Client.included_modules)
+          .to include(Appsignal::Integrations::HttpIntegration::ContextInjection)
+      end
     end
 
     context "with instrument_http_rb set to false" do

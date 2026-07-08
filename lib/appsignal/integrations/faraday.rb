@@ -2,10 +2,11 @@
 
 module Appsignal
   module Integrations
-    # Faraday middleware that records each request as a `request.faraday` event
-    # and suppresses the downstream HTTP client's own instrumentation, so the
-    # request is recorded once rather than as nested Faraday + Net::HTTP (or
-    # Excon) client events.
+    # Faraday middleware that records each request as a `request.faraday` client
+    # event, writes trace context onto the outgoing request so the called service
+    # joins this trace, and suppresses the downstream HTTP client's own
+    # instrumentation, so the request is recorded once rather than as nested
+    # Faraday + Net::HTTP (or Excon) client events.
     #
     # @!visibility private
     class FaradayMiddleware < ::Faraday::Middleware
@@ -16,8 +17,16 @@ module Appsignal
         # Net::HTTP's (scheme and host only), keeping paths out of event titles.
         Appsignal.instrument(
           "request.faraday",
-          "#{http_method} #{uri.scheme}://#{uri.host}"
+          "#{http_method} #{uri.scheme}://#{uri.host}",
+          :opentelemetry_kind => :client
         ) do
+          # Write trace context onto the outgoing request so the called service
+          # joins this trace. Injected inside the instrument block, so the written
+          # `traceparent` reflects the Faraday client event's span. No-op outside
+          # collector mode. `env.request_headers` is the live outgoing header set
+          # and a valid carrier (it responds to `[]=`).
+          Appsignal::OpenTelemetry.inject_context(env.request_headers)
+
           # Faraday's default adapter is Net::HTTP, which AppSignal also
           # instruments. Suppress the adapter's own instrumentation so the
           # request appears once (as the Faraday event) rather than as nested
@@ -37,8 +46,9 @@ module Appsignal
     # the build path is the only way to instrument every connection automatically.
     #
     # Just before the adapter (the innermost handler, where the request is sent)
-    # it inserts `FaradayMiddleware`, which records the `request.faraday` event
-    # and suppresses the downstream client. Skipped if it's already present.
+    # it inserts `FaradayMiddleware`, which records the `request.faraday` event,
+    # injects trace context, and suppresses the downstream client. Skipped if it's
+    # already present.
     #
     # @!visibility private
     module FaradayRackBuilderPatch
