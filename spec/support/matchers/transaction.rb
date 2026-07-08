@@ -63,7 +63,7 @@ define_transaction_sample_matcher_for(:error_causes)
 
 RSpec::Matchers.define :be_completed do
   match(:notify_expectation_failures => true) do |transaction|
-    values_match? transaction.ext._completed?, true
+    values_match? transaction.backend._completed?, true
   end
 end
 
@@ -163,7 +163,8 @@ RSpec::Matchers.define :include_breadcrumb do |action, category, message, metada
       breadcrumb = format_breadcrumb(action, category, message, metadata, time)
       expect(breadcrumbs).to_not include(breadcrumb)
     else
-      expect(breadcrumbs).to_not be_any
+      # No breadcrumbs added means no breadcrumbs sample data at all (nil).
+      expect(breadcrumbs || []).to_not be_any
     end
   end
 
@@ -181,7 +182,7 @@ RSpec::Matchers.alias_matcher :include_breadcrumbs, :include_breadcrumb
 
 RSpec::Matchers.define :have_queue_start do |queue_start_time|
   match(:notify_expectation_failures => true) do |transaction|
-    actual_start = transaction.ext.queue_start
+    actual_start = transaction.backend.queue_start
     if queue_start_time
       expect(actual_start).to eq(queue_start_time)
     else
@@ -190,7 +191,7 @@ RSpec::Matchers.define :have_queue_start do |queue_start_time|
   end
 
   match_when_negated(:notify_expectation_failures => true) do |transaction|
-    actual_start = transaction.ext.queue_start
+    actual_start = transaction.backend.queue_start
     if queue_start_time
       expect(actual_start).to_not eq(queue_start_time)
     else
