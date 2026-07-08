@@ -1,0 +1,6 @@
+# DO NOT EDIT
+# This is a generated file by the `rake build_matrix:gemfiles:generate` task.
+# It layers the optional OpenTelemetry gems (gemfiles/collector.rb) on top of rails-7.0.gemfile.
+
+eval_gemfile File.expand_path("rails-7.0.gemfile", __dir__)
+eval_gemfile File.expand_path("collector.rb", __dir__)
