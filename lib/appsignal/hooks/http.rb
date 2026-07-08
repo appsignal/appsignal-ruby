@@ -32,6 +32,11 @@ module Appsignal
         if defined?(HTTP::Session)
           HTTP::Session.prepend Appsignal::Integrations::HttpIntegration::KeywordOptions
         end
+        # Propagate trace context onto every outgoing hop (redirects included) at
+        # `Client#perform`, where the live request headers are reachable. Kept
+        # separate from the request-boundary event above: it only injects context
+        # and no-ops outside collector mode.
+        HTTP::Client.prepend Appsignal::Integrations::HttpIntegration::ContextInjection
 
         Appsignal::Environment.report_enabled("http_rb")
       end
