@@ -163,6 +163,7 @@ matrix:
           - "3.2.5"
           - "3.1.6"
           - "3.0.7"
+    - gem: "excon"
     - gem: "faraday-1"
     - gem: "faraday-2"
       only:
