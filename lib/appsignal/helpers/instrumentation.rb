@@ -715,7 +715,7 @@ module Appsignal
       # Breadcrumbs can be used to trace what path a user has taken
       # before encountering an error.
       #
-      # Only the last 20 added breadcrumbs will be saved.
+      # At most 20 of the added breadcrumbs will be saved.
       #
       # @example
       #   Appsignal.add_breadcrumb(
@@ -800,10 +800,18 @@ module Appsignal
         title = nil,
         body = nil,
         body_format = Appsignal::EventFormatter::DEFAULT,
+        opentelemetry_kind: nil,
         &block
       )
         Appsignal::Transaction.current
-          .instrument(name, title, body, body_format, &block)
+          .instrument(
+            name,
+            title,
+            body,
+            body_format,
+            :opentelemetry_kind => opentelemetry_kind,
+            &block
+          )
       end
 
       # Instrumentation helper for SQL queries.
