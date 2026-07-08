@@ -3,10 +3,7 @@ if DependencyHelper.sidekiq_present?
 
   describe Appsignal::Integrations::SidekiqDeathHandler do
     let(:options) { {} }
-    before do
-      stub_const("Sidekiq::VERSION", "7.1.0")
-      start_agent(:options => options)
-    end
+    let(:start_agent_args) { { :options => options } }
     around { |example| keep_transactions { example.run } }
 
     let(:exception) do
@@ -16,53 +13,87 @@ if DependencyHelper.sidekiq_present?
     end
     let(:job_context) { {} }
     let(:transaction) { http_request_transaction }
-    before { set_current_transaction(transaction) }
 
-    def call_handler
+    def perform
+      set_current_transaction(transaction)
       expect do
         described_class.new.call(job_context, exception)
       end.to_not(change { created_transactions.count })
     end
 
-    def expect_error_on_transaction
-      expect(last_transaction).to have_error("ExampleStandardError", "uh oh")
-    end
-
-    def expect_no_error_on_transaction
-      expect(last_transaction).to_not have_error
-    end
-
     context "when sidekiq_report_errors = none" do
       let(:options) { { :sidekiq_report_errors => "none" } }
-      before { call_handler }
 
-      it "doesn't track the error on the transaction" do
-        expect_no_error_on_transaction
+      describe "doesn't track the error on the transaction" do
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+
+          expect(last_transaction).to_not have_error
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(exception_events).to be_empty
+        end
       end
     end
 
     context "when sidekiq_report_errors = all" do
       let(:options) { { :sidekiq_report_errors => "all" } }
-      before { call_handler }
 
-      it "doesn't track the error on the transaction" do
-        expect_no_error_on_transaction
+      describe "doesn't track the error on the transaction" do
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+
+          expect(last_transaction).to_not have_error
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(exception_events).to be_empty
+        end
       end
     end
 
     context "when sidekiq_report_errors = discard" do
       let(:options) { { :sidekiq_report_errors => "discard" } }
-      before { call_handler }
 
-      it "records each occurrence of the error on the transaction" do
-        expect_error_on_transaction
+      describe "records the error on the transaction" do
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+
+          expect(last_transaction).to have_error("ExampleStandardError", "uh oh")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          event = root_span.events.find { |e| e.name == "exception" }
+          expect(event).not_to be_nil
+          expect(event.attributes["exception.type"]).to eq("ExampleStandardError")
+          expect(event.attributes["exception.message"]).to eq("uh oh")
+          expect(event.attributes["exception.stacktrace"]).to be_a(String)
+          expect(event.attributes["appsignal.alert_this_error"]).to eq(true)
+          expect(root_span.status.code).to eq(::OpenTelemetry::Trace::Status::ERROR)
+        end
       end
     end
   end
 
   describe Appsignal::Integrations::SidekiqErrorHandler do
     let(:options) { {} }
-    before { start_agent(:options => options) }
+    let(:start_agent_args) { { :options => options } }
     around { |example| keep_transactions { example.run } }
 
     let(:exception) do
@@ -79,43 +110,130 @@ if DependencyHelper.sidekiq_present?
         }
       end
 
-      def expect_report_internal_error
+      def perform
         expect do
           described_class.new.call(exception, job_context)
         end.to(change { created_transactions.count }.by(1))
-
-        transaction = last_transaction
-        expect(transaction).to have_action("SidekiqInternal")
-        expect(transaction).to have_error("ExampleStandardError", "uh oh")
-        expect(transaction).to include_params(
-          "jobstr" => "{ bad json }"
-        )
-        expect(transaction).to include_metadata(
-          "sidekiq_error" => "Sidekiq internal error!"
-        )
       end
 
       context "when sidekiq_report_errors = none" do
         let(:options) { { :sidekiq_report_errors => "none" } }
 
-        it "tracks the error on a new transaction" do
-          expect_report_internal_error
+        describe "tracks the error on a new transaction" do
+          it "in agent mode", :agent_mode do
+            start_agent(**start_agent_args)
+            perform
+
+            transaction = last_transaction
+            expect(transaction).to have_action("SidekiqInternal")
+            expect(transaction).to have_error("ExampleStandardError", "uh oh")
+            expect(transaction).to include_params(
+              "jobstr" => "{ bad json }"
+            )
+            expect(transaction).to include_metadata(
+              "sidekiq_error" => "Sidekiq internal error!"
+            )
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            perform
+
+            expect(root_span.kind).to eq(:consumer)
+            expect(root_span.attributes["appsignal.action_name"])
+              .to eq("SidekiqInternal")
+            event = root_span.events.find { |e| e.name == "exception" }
+            expect(event).not_to be_nil
+            expect(event.attributes["exception.type"]).to eq("ExampleStandardError")
+            expect(event.attributes["exception.message"]).to eq("uh oh")
+            expect(event.attributes["exception.stacktrace"]).to be_a(String)
+            expect(event.attributes["appsignal.alert_this_error"]).to eq(true)
+            expect(root_span.status.code).to eq(::OpenTelemetry::Trace::Status::ERROR)
+            expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+              .to include("jobstr" => "{ bad json }")
+            expect(root_span.attributes["appsignal.tag.sidekiq_error"])
+              .to eq("Sidekiq internal error!")
+          end
         end
       end
 
       context "when sidekiq_report_errors = all" do
         let(:options) { { :sidekiq_report_errors => "all" } }
 
-        it "tracks the error on a new transaction" do
-          expect_report_internal_error
+        describe "tracks the error on a new transaction" do
+          it "in agent mode", :agent_mode do
+            start_agent(**start_agent_args)
+            perform
+
+            transaction = last_transaction
+            expect(transaction).to have_action("SidekiqInternal")
+            expect(transaction).to have_error("ExampleStandardError", "uh oh")
+            expect(transaction).to include_params(
+              "jobstr" => "{ bad json }"
+            )
+            expect(transaction).to include_metadata(
+              "sidekiq_error" => "Sidekiq internal error!"
+            )
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            perform
+
+            expect(root_span.attributes["appsignal.action_name"])
+              .to eq("SidekiqInternal")
+            event = root_span.events.find { |e| e.name == "exception" }
+            expect(event).not_to be_nil
+            expect(event.attributes["exception.type"]).to eq("ExampleStandardError")
+            expect(event.attributes["exception.message"]).to eq("uh oh")
+            expect(event.attributes["exception.stacktrace"]).to be_a(String)
+            expect(event.attributes["appsignal.alert_this_error"]).to eq(true)
+            expect(root_span.status.code).to eq(::OpenTelemetry::Trace::Status::ERROR)
+            expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+              .to include("jobstr" => "{ bad json }")
+            expect(root_span.attributes["appsignal.tag.sidekiq_error"])
+              .to eq("Sidekiq internal error!")
+          end
         end
       end
 
       context "when sidekiq_report_errors = discard" do
         let(:options) { { :sidekiq_report_errors => "discard" } }
 
-        it "tracks the error on a new transaction" do
-          expect_report_internal_error
+        describe "tracks the error on a new transaction" do
+          it "in agent mode", :agent_mode do
+            start_agent(**start_agent_args)
+            perform
+
+            transaction = last_transaction
+            expect(transaction).to have_action("SidekiqInternal")
+            expect(transaction).to have_error("ExampleStandardError", "uh oh")
+            expect(transaction).to include_params(
+              "jobstr" => "{ bad json }"
+            )
+            expect(transaction).to include_metadata(
+              "sidekiq_error" => "Sidekiq internal error!"
+            )
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            perform
+
+            expect(root_span.attributes["appsignal.action_name"])
+              .to eq("SidekiqInternal")
+            event = root_span.events.find { |e| e.name == "exception" }
+            expect(event).not_to be_nil
+            expect(event.attributes["exception.type"]).to eq("ExampleStandardError")
+            expect(event.attributes["exception.message"]).to eq("uh oh")
+            expect(event.attributes["exception.stacktrace"]).to be_a(String)
+            expect(event.attributes["appsignal.alert_this_error"]).to eq(true)
+            expect(root_span.status.code).to eq(::OpenTelemetry::Trace::Status::ERROR)
+            expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+              .to include("jobstr" => "{ bad json }")
+            expect(root_span.attributes["appsignal.tag.sidekiq_error"])
+              .to eq("Sidekiq internal error!")
+          end
         end
       end
     end
@@ -123,52 +241,84 @@ if DependencyHelper.sidekiq_present?
     context "when error is a job error" do
       let(:sidekiq_context) { { :job => {} } }
       let(:transaction) { http_request_transaction }
-      before do
+
+      def perform
         transaction.set_action("existing transaction action")
         set_current_transaction(transaction)
-      end
-
-      def call_handler
         expect do
           described_class.new.call(exception, sidekiq_context)
         end.to_not(change { created_transactions.count })
       end
 
-      def expect_error_on_transaction
-        expect(last_transaction).to have_error("ExampleStandardError", "uh oh")
-      end
-
-      def expect_no_error_on_transaction
-        expect(last_transaction).to_not have_error
-      end
-
       context "when sidekiq_report_errors = none" do
         let(:options) { { :sidekiq_report_errors => "none" } }
-        before { call_handler }
 
-        it "doesn't track the error on the transaction" do
-          expect_no_error_on_transaction
-          expect(last_transaction).to be_completed
+        describe "doesn't track the error and completes the transaction" do
+          it "in agent mode", :agent_mode do
+            start_agent(**start_agent_args)
+            perform
+
+            expect(last_transaction).to_not have_error
+            expect(last_transaction).to be_completed
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            perform
+
+            expect(exception_events).to be_empty
+            expect(transaction).to be_completed
+          end
         end
       end
 
       context "when sidekiq_report_errors = all" do
         let(:options) { { :sidekiq_report_errors => "all" } }
-        before { call_handler }
 
-        it "records each occurrence of the error on the transaction" do
-          expect_error_on_transaction
-          expect(last_transaction).to be_completed
+        describe "records the error and completes the transaction" do
+          it "in agent mode", :agent_mode do
+            start_agent(**start_agent_args)
+            perform
+
+            expect(last_transaction).to have_error("ExampleStandardError", "uh oh")
+            expect(last_transaction).to be_completed
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            perform
+
+            event = root_span.events.find { |e| e.name == "exception" }
+            expect(event).not_to be_nil
+            expect(event.attributes["exception.type"]).to eq("ExampleStandardError")
+            expect(event.attributes["exception.message"]).to eq("uh oh")
+            expect(event.attributes["exception.stacktrace"]).to be_a(String)
+            expect(event.attributes["appsignal.alert_this_error"]).to eq(true)
+            expect(root_span.status.code).to eq(::OpenTelemetry::Trace::Status::ERROR)
+            expect(transaction).to be_completed
+          end
         end
       end
 
       context "when sidekiq_report_errors = discard" do
         let(:options) { { :sidekiq_report_errors => "discard" } }
-        before { call_handler }
 
-        it "doesn't track the error on the transaction" do
-          expect_no_error_on_transaction
-          expect(last_transaction).to be_completed
+        describe "doesn't track the error and completes the transaction" do
+          it "in agent mode", :agent_mode do
+            start_agent(**start_agent_args)
+            perform
+
+            expect(last_transaction).to_not have_error
+            expect(last_transaction).to be_completed
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            perform
+
+            expect(exception_events).to be_empty
+            expect(transaction).to be_completed
+          end
         end
       end
     end
@@ -177,24 +327,46 @@ if DependencyHelper.sidekiq_present?
   describe Appsignal::Integrations::SidekiqClientMiddleware do
     let(:plugin) { described_class.new }
     let(:job) { { "class" => "TestClass", "args" => [] } }
-    before { start_agent }
-    around { |example| keep_transactions { example.run } }
 
     def enqueue
       plugin.call("TestClass", job, "default", nil) { :enqueued }
     end
 
     context "with an active transaction" do
-      it "records the enqueue under the transaction" do
+      it "in agent mode", :agent_mode do
+        start_agent
         transaction = http_request_transaction
         set_current_transaction(transaction)
 
         expect(enqueue).to eq(:enqueued)
 
-        # Records an enqueue event on the transaction, titled after the job.
+        # Records an enqueue event on the transaction, titled after the job;
+        # no wire context in agent mode.
         event = transaction.to_h["events"].find { |e| e["name"] == "enqueue.sidekiq" }
         expect(event).to_not be_nil
         expect(event["title"]).to eq("enqueue TestClass job")
+        expect(job).to_not have_key("traceparent")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
+
+        expect(enqueue).to eq(:enqueued)
+        Appsignal::Transaction.complete_current!
+
+        # The enqueue is a producer event span under the active transaction,
+        # named after the job being enqueued.
+        producer = event_spans.find { |s| s.name == "enqueue TestClass job" }
+        expect(producer.attributes["appsignal.category"]).to eq("enqueue.sidekiq")
+        expect(producer.kind).to eq(:producer)
+        expect(producer.parent_span_id).to eq(root_span.span_id)
+
+        # The job carries the producer span's trace context, so the job that
+        # performs can link back to it.
+        expect(job["traceparent"])
+          .to eq("00-#{producer.hex_trace_id}-#{producer.hex_span_id}-01")
       end
     end
 
@@ -259,26 +431,57 @@ if DependencyHelper.sidekiq_present?
     end
 
     context "without an active transaction" do
-      it "passes through without recording" do
-        expect { |block| plugin.call("TestClass", job, "default", nil, &block) }
-          .to yield_control
+      it "in agent mode", :agent_mode do
+        start_agent
 
+        # A transparent pass-through: nothing is recorded and the job hash is
+        # untouched.
+        expect(enqueue).to eq(:enqueued)
         expect(created_transactions).to be_empty
+        expect(job).to_not have_key("traceparent")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+
+        # No transaction to attach the event to, so nothing is emitted and the
+        # job hash is untouched.
+        expect(enqueue).to eq(:enqueued)
+        expect(span_exporter.finished_spans.map(&:name)).to_not include("enqueue.sidekiq")
+        expect(job).to_not have_key("traceparent")
       end
     end
 
     context "when job enqueue events are suppressed" do
       # As happens under Active Job, which records the enqueue itself.
-      it "passes through without recording the enqueue" do
+      def enqueue_suppressed(transaction)
+        transaction.suppress_job_enqueue_events { enqueue }
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent
         transaction = http_request_transaction
         set_current_transaction(transaction)
 
-        result = transaction.suppress_job_enqueue_events { enqueue }
-        expect(result).to eq(:enqueued)
+        expect(enqueue_suppressed(transaction)).to eq(:enqueued)
 
         # The outer integration records the enqueue, so this one doesn't.
         event_names = transaction.to_h["events"].map { |event| event["name"] }
         expect(event_names).to_not include("enqueue.sidekiq")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
+
+        expect(enqueue_suppressed(transaction)).to eq(:enqueued)
+        Appsignal::Transaction.complete_current!
+
+        # No producer span for the suppressed enqueue...
+        expect(span_exporter.finished_spans.map(&:name)).to_not include("enqueue.sidekiq")
+        # ...but the trace context is still injected so the job links back.
+        expect(job).to have_key("traceparent")
       end
     end
   end
@@ -331,9 +534,7 @@ if DependencyHelper.sidekiq_present?
     end
     let(:plugin) { Appsignal::Integrations::SidekiqMiddleware.new }
     let(:options) { {} }
-    before do
-      start_agent(:options => options)
-    end
+    let(:start_agent_args) { { :options => options } }
     around { |example| keep_transactions { example.run } }
 
     def expect_no_yaml_parse_error(logs)
@@ -341,31 +542,124 @@ if DependencyHelper.sidekiq_present?
     end
 
     describe "internal Sidekiq job values" do
-      it "does not save internal Sidekiq values as metadata on transaction" do
-        perform_sidekiq_job
+      describe "does not save internal Sidekiq values as metadata on transaction" do
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform_sidekiq_job
 
-        transaction_hash = transaction.to_h
-        expect(transaction_hash["metadata"].keys)
-          .to_not include(*Appsignal::Integrations::SidekiqMiddleware::EXCLUDED_JOB_KEYS)
+          transaction_hash = transaction.to_h
+          expect(transaction_hash["metadata"].keys)
+            .to_not include(*Appsignal::Integrations::SidekiqMiddleware::EXCLUDED_JOB_KEYS)
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform_sidekiq_job
+
+          excluded = Appsignal::Integrations::SidekiqMiddleware::EXCLUDED_JOB_KEYS
+          excluded.each do |key|
+            expect(root_span.attributes).to_not have_key("appsignal.tag.#{key}")
+          end
+        end
+      end
+    end
+
+    describe "with incoming trace context" do
+      let(:trace_id_hex) { "0af7651916cd43dd8448eb211c80319c" }
+      let(:span_id_hex) { "b7ad6b7169203331" }
+      let(:traceparent) { "00-#{trace_id_hex}-#{span_id_hex}-01" }
+
+      # A job runs as its own trace, linked back to the span that enqueued it.
+      def expect_linked_back_to_remote
+        expect(root_span.kind).to eq(:consumer)
+        expect(root_span.hex_trace_id).to_not eq(trace_id_hex)
+        expect(root_span.links.size).to eq(1)
+        link_context = root_span.links.first.span_context
+        expect(link_context.hex_trace_id).to eq(trace_id_hex)
+        expect(link_context.hex_span_id).to eq(span_id_hex)
+      end
+
+      context "with a top-level traceparent (Sidekiq style)" do
+        let(:item) { super().merge("traceparent" => traceparent) }
+
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform_sidekiq_job
+
+          # The trace header doesn't leak into the transaction as metadata.
+          expect(transaction.to_h["metadata"].keys).to_not include("traceparent")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform_sidekiq_job
+
+          expect_linked_back_to_remote
+        end
+      end
+
+      context "with a traceparent nested under __otel_headers (ActiveJob style)" do
+        # OpenTelemetry's ActiveJob instrumentation runs the headers through
+        # ActiveJob's argument serializer, so they arrive as an array of
+        # [key, value] pairs, not a hash.
+        let(:item) { super().merge("__otel_headers" => [["traceparent", traceparent]]) }
+
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform_sidekiq_job
+
+          expect(transaction.to_h["metadata"].keys).to_not include("__otel_headers")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform_sidekiq_job
+
+          expect_linked_back_to_remote
+        end
       end
     end
 
     context "with parameter filtering" do
       let(:options) { { :filter_parameters => ["foo"] } }
 
-      it "filters selected arguments" do
-        perform_sidekiq_job
+      describe "filters selected arguments" do
+        def perform
+          perform_sidekiq_job
+        end
 
-        expect(transaction).to include_params(
-          [
-            "foo",
-            {
-              "foo" => "[FILTERED]",
-              "bar" => "Bar",
-              "baz" => { "1" => "foo" }
-            }
-          ]
-        )
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+
+          expect(transaction).to include_params(
+            [
+              "foo",
+              {
+                "foo" => "[FILTERED]",
+                "bar" => "Bar",
+                "baz" => { "1" => "foo" }
+              }
+            ]
+          )
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+
+          params = JSON.parse(root_span.attributes["appsignal.function.parameters"])
+          expect(params).to eq(
+            [
+              "foo",
+              {
+                "foo" => "[FILTERED]",
+                "bar" => "Bar",
+                "baz" => { "1" => "foo" }
+              }
+            ]
+          )
+        end
       end
     end
 
@@ -375,10 +669,25 @@ if DependencyHelper.sidekiq_present?
         item["args"] << "super secret value" # Last argument will be replaced
       end
 
-      it "replaces the last argument (the secret bag) with an [encrypted data] string" do
-        perform_sidekiq_job
+      describe "replaces the last argument (the secret bag) with an [encrypted data] string" do
+        def perform
+          perform_sidekiq_job
+        end
 
-        expect(transaction).to include_params(expected_args << "[encrypted data]")
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+
+          expect(transaction).to include_params(expected_args << "[encrypted data]")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+
+          params = JSON.parse(root_span.attributes["appsignal.function.parameters"])
+          expect(params).to eq(expected_args << "[encrypted data]")
+        end
       end
     end
 
@@ -398,22 +707,57 @@ if DependencyHelper.sidekiq_present?
         }
       end
 
-      it "uses the delayed class and method name for the action" do
-        perform_sidekiq_job
+      describe "uses the delayed class and method name for the action" do
+        def perform
+          perform_sidekiq_job
+        end
 
-        expect(transaction).to have_action("DelayedTestClass.foo_method")
-        expect(transaction).to include_params([{ "bar" => "baz" }])
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+
+          expect(transaction).to have_action("DelayedTestClass.foo_method")
+          expect(transaction).to include_params([{ "bar" => "baz" }])
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+
+          expect(root_span.attributes["appsignal.action_name"])
+            .to eq("DelayedTestClass.foo_method")
+          params = JSON.parse(root_span.attributes["appsignal.function.parameters"])
+          expect(params).to eq([{ "bar" => "baz" }])
+        end
       end
 
       context "when job arguments is a malformed YAML object" do
         before { item["args"] = [] }
 
-        it "logs a warning and uses the default argument" do
-          logs = capture_logs { perform_sidekiq_job }
+        describe "logs a warning and uses the default argument" do
+          def perform
+            capture_logs { perform_sidekiq_job }
+          end
 
-          expect(transaction).to have_action("Sidekiq::Extensions::DelayedClass#perform")
-          expect(transaction).to include_params([])
-          expect(logs).to contains_log(:warn, "Unable to load YAML")
+          it "in agent mode", :agent_mode do
+            start_agent(**start_agent_args)
+            logs = perform
+
+            expect(transaction).to have_action("Sidekiq::Extensions::DelayedClass#perform")
+            expect(transaction).to include_params([])
+            expect(logs).to contains_log(:warn, "Unable to load YAML")
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            logs = perform
+
+            expect(root_span.attributes["appsignal.action_name"])
+              .to eq("Sidekiq::Extensions::DelayedClass#perform")
+            params = JSON.parse(root_span.attributes["appsignal.function.parameters"])
+            expect(params).to eq([])
+            expect(logs).to contains_log(:warn, "Unable to load YAML")
+          end
         end
       end
     end
@@ -434,22 +778,57 @@ if DependencyHelper.sidekiq_present?
         }
       end
 
-      it "uses the delayed class and method name for the action" do
-        perform_sidekiq_job
+      describe "uses the delayed class and method name for the action" do
+        def perform
+          perform_sidekiq_job
+        end
 
-        expect(transaction).to have_action("DelayedTestClass#foo_method")
-        expect(transaction).to include_params([{ "bar" => "baz" }])
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+
+          expect(transaction).to have_action("DelayedTestClass#foo_method")
+          expect(transaction).to include_params([{ "bar" => "baz" }])
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+
+          expect(root_span.attributes["appsignal.action_name"])
+            .to eq("DelayedTestClass#foo_method")
+          params = JSON.parse(root_span.attributes["appsignal.function.parameters"])
+          expect(params).to eq([{ "bar" => "baz" }])
+        end
       end
 
       context "when job arguments is a malformed YAML object" do
         before { item["args"] = [] }
 
-        it "logs a warning and uses the default argument" do
-          logs = capture_logs { perform_sidekiq_job }
+        describe "logs a warning and uses the default argument" do
+          def perform
+            capture_logs { perform_sidekiq_job }
+          end
 
-          expect(transaction).to have_action("Sidekiq::Extensions::DelayedModel#perform")
-          expect(transaction).to include_params([])
-          expect(logs).to contains_log(:warn, "Unable to load YAML")
+          it "in agent mode", :agent_mode do
+            start_agent(**start_agent_args)
+            logs = perform
+
+            expect(transaction).to have_action("Sidekiq::Extensions::DelayedModel#perform")
+            expect(transaction).to include_params([])
+            expect(logs).to contains_log(:warn, "Unable to load YAML")
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            logs = perform
+
+            expect(root_span.attributes["appsignal.action_name"])
+              .to eq("Sidekiq::Extensions::DelayedModel#perform")
+            params = JSON.parse(root_span.attributes["appsignal.function.parameters"])
+            expect(params).to eq([])
+            expect(logs).to contains_log(:warn, "Unable to load YAML")
+          end
         end
       end
     end
@@ -457,37 +836,72 @@ if DependencyHelper.sidekiq_present?
     context "with an error" do
       let(:error) { ExampleException }
 
-      it "creates a transaction and adds the error" do
-        # TODO: additional curly brackets required for issue
-        # https://github.com/rspec/rspec-mocks/issues/1460
-        expect(Appsignal).to receive(:increment_counter)
-          .with("sidekiq_queue_job_count", 1, { :queue => "default", :status => :failed })
-        expect(Appsignal).to receive(:increment_counter)
-          .with("sidekiq_queue_job_count", 1, { :queue => "default", :status => :processed })
-        expect(Appsignal).to receive(:increment_counter)
-          .with("sidekiq_worker_job_count", 1,
-            { :worker => "TestClass#perform", :queue => "default", :status => :failed })
-        expect(Appsignal).to receive(:increment_counter)
-          .with("sidekiq_worker_job_count", 1,
-            { :worker => "TestClass#perform", :queue => "default", :status => :processed })
-        expect do
-          perform_sidekiq_job { raise error, "uh oh" }
-        end.to raise_error(error)
+      describe "creates a transaction and adds the error" do
+        def perform
+          # TODO: additional curly brackets required for issue
+          # https://github.com/rspec/rspec-mocks/issues/1460
+          expect(Appsignal).to receive(:increment_counter)
+            .with("sidekiq_queue_job_count", 1, { :queue => "default", :status => :failed })
+          expect(Appsignal).to receive(:increment_counter)
+            .with("sidekiq_queue_job_count", 1, { :queue => "default", :status => :processed })
+          expect(Appsignal).to receive(:increment_counter)
+            .with("sidekiq_worker_job_count", 1,
+              { :worker => "TestClass#perform", :queue => "default", :status => :failed })
+          expect(Appsignal).to receive(:increment_counter)
+            .with("sidekiq_worker_job_count", 1,
+              { :worker => "TestClass#perform", :queue => "default", :status => :processed })
+          expect do
+            perform_sidekiq_job { raise error, "uh oh" }
+          end.to raise_error(error)
+        end
 
-        expect(transaction).to have_id
-        expect(transaction).to have_namespace(namespace)
-        expect(transaction).to have_action("TestClass#perform")
-        expect(transaction).to have_error("ExampleException", "uh oh")
-        expect(transaction).to include_metadata(
-          "extra" => "data",
-          "queue" => "default",
-          "retry_count" => "0"
-        )
-        expect(transaction).to_not include_environment
-        expect(transaction).to include_params(expected_args)
-        expect(transaction).to include_tags("request_id" => jid)
-        expect(transaction).to_not include_breadcrumbs
-        expect_transaction_to_have_sidekiq_event(transaction)
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+
+          expect(transaction).to have_id
+          expect(transaction).to have_namespace(namespace)
+          expect(transaction).to have_action("TestClass#perform")
+          expect(transaction).to have_error("ExampleException", "uh oh")
+          expect(transaction).to include_metadata(
+            "extra" => "data",
+            "queue" => "default",
+            "retry_count" => "0"
+          )
+          expect(transaction).to_not include_environment
+          expect(transaction).to include_params(expected_args)
+          expect(transaction).to include_tags("request_id" => jid)
+          expect(transaction).to_not include_breadcrumbs
+          expect_transaction_to_have_sidekiq_event(transaction)
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+
+          expect(root_span.kind).to eq(:consumer)
+          expect(root_span.attributes["appsignal.namespace"]).to eq("background")
+          expect(root_span.attributes["appsignal.action_name"]).to eq("TestClass#perform")
+          event = root_span.events.find { |e| e.name == "exception" }
+          expect(event).not_to be_nil
+          expect(event.attributes["exception.type"]).to eq("ExampleException")
+          expect(event.attributes["exception.message"]).to eq("uh oh")
+          expect(event.attributes["exception.stacktrace"]).to be_a(String)
+          expect(event.attributes["appsignal.alert_this_error"]).to eq(true)
+          expect(root_span.status.code).to eq(::OpenTelemetry::Trace::Status::ERROR)
+          expect(root_span.attributes["appsignal.tag.extra"]).to eq("data")
+          expect(root_span.attributes["appsignal.tag.queue"]).to eq("default")
+          expect(root_span.attributes["appsignal.tag.retry_count"]).to eq("0")
+          expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+            .to eq(expected_args)
+          expect(root_span.attributes["appsignal.tag.request_id"]).to eq(jid)
+          expect(event_spans.size).to eq(1)
+          span = event_spans.find { |s| s.name == "perform_job.sidekiq" }
+          expect(span).not_to be_nil
+          expect(span.parent_span_id).to eq(root_span.span_id)
+          expect(span.attributes).not_to have_key("appsignal.body")
+          expect(span.attributes["appsignal.category"]).to eq("perform_job.sidekiq")
+        end
       end
     end
 
@@ -495,55 +909,110 @@ if DependencyHelper.sidekiq_present?
       context "with Rails error reporter" do
         include RailsHelper
 
-        it "reports the worker name as the action, copies the namespace and tags" do
-          expect do
-            with_rails_error_reporter do
-              perform_sidekiq_job do
-                Appsignal.tag_job("test_tag" => "value")
-                Rails.error.handle do
-                  raise ExampleStandardError, "error message"
+        describe "reports the worker name as the action, copies the namespace and tags" do
+          def perform
+            expect do
+              with_rails_error_reporter do
+                perform_sidekiq_job do
+                  Appsignal.tag_job("test_tag" => "value")
+                  Rails.error.handle do
+                    raise ExampleStandardError, "error message"
+                  end
                 end
               end
-            end
-          end.to change { created_transactions.count }.by(1)
+            end.to change { created_transactions.count }.by(1)
+          end
 
-          tags = { "test_tag" => "value" }
-          transaction = last_transaction
+          it "in agent mode", :agent_mode do
+            start_agent(**start_agent_args)
+            perform
 
-          expect(transaction).to have_namespace("background_job")
-          expect(transaction).to have_action("TestClass#perform")
-          expect(transaction).to have_error("ExampleStandardError", "error message")
-          expect(transaction).to include_tags(tags)
+            tags = { "test_tag" => "value" }
+            transaction = last_transaction
+
+            expect(transaction).to have_namespace("background_job")
+            expect(transaction).to have_action("TestClass#perform")
+            expect(transaction).to have_error("ExampleStandardError", "error message")
+            expect(transaction).to include_tags(tags)
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            perform
+
+            expect(root_span.kind).to eq(:consumer)
+            expect(root_span.attributes["appsignal.namespace"]).to eq("background")
+            expect(root_span.attributes["appsignal.action_name"]).to eq("TestClass#perform")
+            event = exception_events
+              .find { |e| e.attributes["exception.type"] == "ExampleStandardError" }
+            expect(event).not_to be_nil
+            expect(event.attributes["exception.message"]).to eq("error message")
+            expect(event.attributes["exception.stacktrace"]).to be_a(String)
+            expect(event.attributes["appsignal.alert_this_error"]).to eq(true)
+            expect(root_span.attributes["appsignal.tag.test_tag"]).to eq("value")
+          end
         end
       end
     end
 
     context "without an error" do
-      it "creates a transaction with events" do
-        # TODO: additional curly brackets required for issue
-        # https://github.com/rspec/rspec-mocks/issues/1460
-        expect(Appsignal).to receive(:increment_counter)
-          .with("sidekiq_queue_job_count", 1, { :queue => "default", :status => :processed })
-        expect(Appsignal).to receive(:increment_counter)
-          .with("sidekiq_worker_job_count", 1,
-            { :worker => "TestClass#perform", :queue => "default", :status => :processed })
-        perform_sidekiq_job
+      describe "creates a transaction with events" do
+        def perform
+          # TODO: additional curly brackets required for issue
+          # https://github.com/rspec/rspec-mocks/issues/1460
+          expect(Appsignal).to receive(:increment_counter)
+            .with("sidekiq_queue_job_count", 1, { :queue => "default", :status => :processed })
+          expect(Appsignal).to receive(:increment_counter)
+            .with("sidekiq_worker_job_count", 1,
+              { :worker => "TestClass#perform", :queue => "default", :status => :processed })
+          perform_sidekiq_job
+        end
 
-        expect(transaction).to have_id
-        expect(transaction).to have_namespace(namespace)
-        expect(transaction).to have_action("TestClass#perform")
-        expect(transaction).to_not have_error
-        expect(transaction).to include_tags("request_id" => jid)
-        expect(transaction).to_not include_environment
-        expect(transaction).to_not include_breadcrumbs
-        expect(transaction).to_not include_params(expected_args)
-        expect(transaction).to include_metadata(
-          "extra" => "data",
-          "queue" => "default",
-          "retry_count" => "0"
-        )
-        expect(transaction).to have_queue_start(Time.parse("2001-01-01 10:00:00UTC").to_i * 1000)
-        expect_transaction_to_have_sidekiq_event(transaction)
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+
+          expect(transaction).to have_id
+          expect(transaction).to have_namespace(namespace)
+          expect(transaction).to have_action("TestClass#perform")
+          expect(transaction).to_not have_error
+          expect(transaction).to include_tags("request_id" => jid)
+          expect(transaction).to_not include_environment
+          expect(transaction).to_not include_breadcrumbs
+          expect(transaction).to_not include_params(expected_args)
+          expect(transaction).to include_metadata(
+            "extra" => "data",
+            "queue" => "default",
+            "retry_count" => "0"
+          )
+          expect(transaction).to have_queue_start(
+            Time.parse("2001-01-01 10:00:00UTC").to_i * 1000
+          )
+          expect_transaction_to_have_sidekiq_event(transaction)
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+
+          expect(root_span.kind).to eq(:consumer)
+          expect(root_span.attributes["appsignal.namespace"]).to eq("background")
+          expect(root_span.attributes["appsignal.action_name"]).to eq("TestClass#perform")
+          expect(exception_events).to be_empty
+          expect(root_span.attributes["appsignal.tag.request_id"]).to eq(jid)
+          expect(root_span.attributes["appsignal.tag.extra"]).to eq("data")
+          expect(root_span.attributes["appsignal.tag.queue"]).to eq("default")
+          expect(root_span.attributes["appsignal.tag.retry_count"]).to eq("0")
+          queue_event = Array(root_span.events).find { |e| e.name == "appsignal.queue_start" }
+          expect(queue_event.attributes["appsignal.queue_start"])
+            .to eq(Time.parse("2001-01-01 10:00:00UTC").to_i * 1000)
+          expect(event_spans.size).to eq(1)
+          span = event_spans.find { |s| s.name == "perform_job.sidekiq" }
+          expect(span).not_to be_nil
+          expect(span.parent_span_id).to eq(root_span.span_id)
+          expect(span.attributes).not_to have_key("appsignal.body")
+          expect(span.attributes["appsignal.category"]).to eq("perform_job.sidekiq")
+        end
       end
     end
 
@@ -638,8 +1107,8 @@ if DependencyHelper.sidekiq_present?
         end
       end
       around { |example| keep_transactions { example.run } }
+
       before do
-        start_agent
         Appsignal.internal_logger = test_logger(log)
         ActiveJob::Base.queue_adapter = :sidekiq
 
@@ -665,35 +1134,19 @@ if DependencyHelper.sidekiq_present?
         end
       end
 
-      it "reports the transaction from the ActiveJob integration" do
-        perform_activejob_sidekiq_job(ActiveJobSidekiqTestJob, given_args)
+      describe "reports the transaction from the ActiveJob integration" do
+        def perform
+          perform_activejob_sidekiq_job(ActiveJobSidekiqTestJob, given_args)
+        end
 
-        transaction = last_transaction
-        expect(transaction).to have_namespace(namespace)
-        expect(transaction).to have_action("ActiveJobSidekiqTestJob#perform")
-        expect(transaction).to_not have_error
-        expect(transaction).to include_metadata("queue" => "default")
-        expect(transaction).to_not include_environment
-        expect(transaction).to include_params([expected_args])
-        expect(transaction).to include_tags(expected_tags.merge("queue" => "default"))
-        expect(transaction).to have_queue_start(time.to_i * 1000)
-
-        events = transaction.to_h["events"]
-          .sort_by { |e| e["start"] }
-          .map { |event| event["name"] }
-        expect(events).to eq(expected_perform_events)
-      end
-
-      context "with error" do
-        it "reports the error on the transaction from the ActiveRecord integration" do
-          expect do
-            perform_activejob_sidekiq_job(ActiveJobSidekiqErrorTestJob, given_args)
-          end.to raise_error(RuntimeError, "uh oh")
+        it "in agent mode", :agent_mode do
+          start_agent
+          perform
 
           transaction = last_transaction
           expect(transaction).to have_namespace(namespace)
-          expect(transaction).to have_action("ActiveJobSidekiqErrorTestJob#perform")
-          expect(transaction).to have_error("RuntimeError", "uh oh")
+          expect(transaction).to have_action("ActiveJobSidekiqTestJob#perform")
+          expect(transaction).to_not have_error
           expect(transaction).to include_metadata("queue" => "default")
           expect(transaction).to_not include_environment
           expect(transaction).to include_params([expected_args])
@@ -704,6 +1157,83 @@ if DependencyHelper.sidekiq_present?
             .sort_by { |e| e["start"] }
             .map { |event| event["name"] }
           expect(events).to eq(expected_perform_events)
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+
+          expect(root_span.kind).to eq(:consumer)
+          expect(root_span.attributes["appsignal.namespace"]).to eq("background")
+          expect(root_span.attributes["appsignal.action_name"])
+            .to eq("ActiveJobSidekiqTestJob#perform")
+          expect(exception_events).to be_empty
+          expect(root_span.attributes["appsignal.tag.queue"]).to eq("default")
+          expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+            .to eq([expected_args])
+          expect(root_span.attributes["appsignal.tag.executions"]).to eq(1)
+          queue_event = Array(root_span.events).find { |e| e.name == "appsignal.queue_start" }
+          expect(queue_event.attributes["appsignal.queue_start"]).to eq(time.to_i * 1000)
+          # The job is enqueued without an active transaction here, so no
+          # enqueue event/producer span is recorded -- only the perform events.
+          expect(event_spans.map(&:name)).to match_array(expected_perform_events)
+          sidekiq_span = event_spans.find { |s| s.name == "perform_job.sidekiq" }
+          expect(sidekiq_span).not_to be_nil
+          expect(sidekiq_span.parent_span_id).to eq(root_span.span_id)
+        end
+      end
+
+      context "with error" do
+        describe "reports the error on the transaction from the ActiveRecord integration" do
+          def perform
+            expect do
+              perform_activejob_sidekiq_job(ActiveJobSidekiqErrorTestJob, given_args)
+            end.to raise_error(RuntimeError, "uh oh")
+          end
+
+          it "in agent mode", :agent_mode do
+            start_agent
+            perform
+
+            transaction = last_transaction
+            expect(transaction).to have_namespace(namespace)
+            expect(transaction).to have_action("ActiveJobSidekiqErrorTestJob#perform")
+            expect(transaction).to have_error("RuntimeError", "uh oh")
+            expect(transaction).to include_metadata("queue" => "default")
+            expect(transaction).to_not include_environment
+            expect(transaction).to include_params([expected_args])
+            expect(transaction).to include_tags(expected_tags.merge("queue" => "default"))
+            expect(transaction).to have_queue_start(time.to_i * 1000)
+
+            events = transaction.to_h["events"]
+              .sort_by { |e| e["start"] }
+              .map { |event| event["name"] }
+            expect(events).to eq(expected_perform_events)
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            perform
+
+            expect(root_span.kind).to eq(:consumer)
+            expect(root_span.attributes["appsignal.namespace"]).to eq("background")
+            expect(root_span.attributes["appsignal.action_name"])
+              .to eq("ActiveJobSidekiqErrorTestJob#perform")
+            expect(exception_events.size).to be >= 1
+            event = exception_events.find { |e| e.attributes["exception.type"] == "RuntimeError" }
+            expect(event).not_to be_nil
+            expect(event.attributes["exception.message"]).to eq("uh oh")
+            expect(event.attributes["exception.stacktrace"]).to be_a(String)
+            expect(event.attributes["appsignal.alert_this_error"]).to eq(true)
+            expect(root_span.attributes["appsignal.tag.queue"]).to eq("default")
+            queue_event = Array(root_span.events).find { |e| e.name == "appsignal.queue_start" }
+            expect(queue_event.attributes["appsignal.queue_start"]).to eq(time.to_i * 1000)
+            expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+              .to eq([expected_args])
+            sidekiq_span = event_spans.find { |s| s.name == "perform_job.sidekiq" }
+            expect(sidekiq_span).not_to be_nil
+            expect(sidekiq_span.parent_span_id).to eq(root_span.span_id)
+          end
         end
       end
 
@@ -717,15 +1247,34 @@ if DependencyHelper.sidekiq_present?
           end
         end
 
-        it "reports ActionMailer data on the transaction" do
-          perform_mailer(ActionMailerSidekiqTestJob, :welcome, given_args)
+        describe "reports ActionMailer data on the transaction" do
+          def perform
+            perform_mailer(ActionMailerSidekiqTestJob, :welcome, given_args)
+          end
 
-          transaction = last_transaction
-          expect(transaction).to have_action("ActionMailerSidekiqTestJob#welcome")
-          expect(transaction).to include_params(
-            ["ActionMailerSidekiqTestJob", "welcome",
-             "deliver_now"] + expected_wrapped_args
-          )
+          it "in agent mode", :agent_mode do
+            start_agent
+            perform
+
+            transaction = last_transaction
+            expect(transaction).to have_action("ActionMailerSidekiqTestJob#welcome")
+            expect(transaction).to include_params(
+              ["ActionMailerSidekiqTestJob", "welcome",
+               "deliver_now"] + expected_wrapped_args
+            )
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            perform
+
+            expect(root_span.attributes["appsignal.action_name"])
+              .to eq("ActionMailerSidekiqTestJob#welcome")
+            expected_params =
+              ["ActionMailerSidekiqTestJob", "welcome", "deliver_now"] + expected_wrapped_args
+            expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+              .to eq(expected_params)
+          end
         end
       end
 
