@@ -29,6 +29,9 @@ end
 Dir[File.join(APPSIGNAL_SPEC_DIR, "support/shared_examples", "*.rb")].sort.each do |f|
   require f
 end
+Dir[File.join(APPSIGNAL_SPEC_DIR, "support/shared_contexts", "*.rb")].sort.each do |f|
+  require f
+end
 if DependencyHelper.rails_present?
   require File.join(ConfigHelpers.rails_project_fixture_path, "config/application.rb")
 end
@@ -78,7 +81,11 @@ RSpec.configure do |config|
   config.exclude_pattern = "spec/integration/diagnose/**/*_spec.rb"
   config.filter_run_excluding(
     :extension_installation_failure => true,
-    :jruby => !DependencyHelper.running_jruby?
+    :jruby => !DependencyHelper.running_jruby?,
+    # The OpenTelemetry gems are optional. When they're not installed (e.g. on
+    # Ruby 2.7, or any non-`-collector` gemfile), skip every collector-mode
+    # example rather than crashing on missing constants.
+    :collector_mode => !DependencyHelper.opentelemetry_present?
   )
   config.mock_with :rspec do |mocks|
     mocks.syntax = :expect
@@ -92,7 +99,23 @@ RSpec.configure do |config|
   end
 
   config.before :suite do
-    WebMock.disable_net_connect!
+    # The OTLP mock server is only needed by collector-mode specs, which only
+    # run when the OpenTelemetry gems are installed. Always disable real network
+    # connections; when those specs run, relax the rule just enough to reach the
+    # mock server bound by `OTLPCollectorServer`.
+    if DependencyHelper.opentelemetry_present?
+      # Boot first: the server binds an OS-assigned port, so its address is only
+      # known afterwards.
+      OTLPCollectorServer.boot!
+      WebMock.disable_net_connect!(:allow => "127.0.0.1:#{OTLPCollectorServer.port}")
+    else
+      WebMock.disable_net_connect!
+    end
+  end
+
+  config.after do
+    OTLPCollectorServer.clear if defined?(OTLPCollectorServer)
+    Appsignal::OpenTelemetry.reset!
   end
 
   config.before :context do
