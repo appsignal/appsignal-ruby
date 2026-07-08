@@ -7,17 +7,30 @@ module Appsignal
       class << self
         BANG = "!"
 
-        # Events a dedicated AppSignal integration already records, so the
-        # generic notifications path must not record them a second time. The
-        # ActiveJob hook owns `enqueue.active_job` (it wraps the enqueue in its
-        # own event, with Rails' native notification nested inside), and the
-        # Faraday integration owns `request.faraday`.
+        # ActiveSupport::Notifications events whose span represents an outgoing
+        # call to a datastore, so they carry CLIENT kind in collector mode (to
+        # match the dedicated DB integrations). Kept deliberately narrow:
+        # `start_event` runs for every instrumented Rails event and span kind is
+        # immutable, so only genuine client calls belong here. Object
+        # instantiation (`instantiation.active_record`) is not a client call.
+        CLIENT_EVENT_NAMES = ["sql.active_record"].freeze
+
+        # Events a dedicated AppSignal integration already records with richer
+        # semantics, so the generic notifications path must not record them a
+        # second time. The ActiveJob hook owns `enqueue.active_job`: it wraps the
+        # enqueue in a producer event that also injects trace context, and the
+        # native notification fires nested inside it. The Faraday integration owns
+        # `request.faraday`: its middleware records the request as a client event
+        # and injects trace context, and Faraday's own instrumentation
+        # notification, if the user added that middleware, fires nested inside it.
         SUPPRESSED_EVENT_NAMES = ["enqueue.active_job", "request.faraday"].freeze
 
         def start_event(name)
           return unless record_event?(name)
 
-          Appsignal::Transaction.current.start_event
+          Appsignal::Transaction.current.start_event(
+            :opentelemetry_kind => CLIENT_EVENT_NAMES.include?(name.to_s) ? :client : nil
+          )
         end
 
         def finish_event(name, payload = {})
