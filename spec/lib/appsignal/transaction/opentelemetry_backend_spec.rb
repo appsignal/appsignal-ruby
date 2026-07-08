@@ -89,6 +89,79 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
       end
     end
 
+    context "with an incoming opentelemetry_context" do
+      let(:trace_id_hex) { "0af7651916cd43dd8448eb211c80319c" }
+      let(:span_id_hex) { "b7ad6b7169203331" }
+      let(:remote_context) do
+        # Build the remote parent context directly instead of parsing a
+        # `traceparent` through `OpenTelemetry.propagation`. The backend's job
+        # is to parent under a context it is handed; extracting one from a
+        # carrier is the Rack middleware's job, covered by its own specs.
+        # Building it here also keeps this a self-contained unit test: parsing
+        # would depend on the global propagator, which is only configured as a
+        # side effect of booting the SDK in some other example.
+        span_context = ::OpenTelemetry::Trace::SpanContext.new(
+          :trace_id => [trace_id_hex].pack("H*"),
+          :span_id => [span_id_hex].pack("H*"),
+          :trace_flags => ::OpenTelemetry::Trace::TraceFlags.from_byte(0x01),
+          :remote => true
+        )
+        ::OpenTelemetry::Trace.context_with_span(
+          ::OpenTelemetry::Trace.non_recording_span(span_context)
+        )
+      end
+
+      def create_backend_with_context(namespace, context)
+        described_class.new("abc-123", namespace, :opentelemetry_context => context)
+          .tap { |b| @backends_created << b }
+      end
+
+      it "parents a server transaction under the remote span (continues the trace)" do
+        backend = create_backend_with_context("http_request", remote_context)
+        backend.complete
+        root = finished_span(backend.instance_variable_get(:@span))
+
+        expect(root.hex_trace_id).to eq(trace_id_hex)
+        expect(root.parent_span_id.unpack1("H*")).to eq(span_id_hex)
+        expect(root.kind).to eq(:server)
+      end
+
+      it "starts a fresh root trace when no context is given" do
+        backend = create_backend("http_request")
+        backend.complete
+        root = finished_span(backend.instance_variable_get(:@span))
+
+        expect(root.hex_trace_id).not_to eq(trace_id_hex)
+        expect(root.parent_span_id).to eq(::OpenTelemetry::Trace::INVALID_SPAN_ID)
+      end
+
+      it "links a consumer transaction back to the remote span (starts a new trace)" do
+        backend = create_backend_with_context("background_job", remote_context)
+        backend.complete
+        root = finished_span(backend.instance_variable_get(:@span))
+
+        # A job is its own unit of work: new trace, no parent.
+        expect(root.hex_trace_id).not_to eq(trace_id_hex)
+        expect(root.parent_span_id).to eq(::OpenTelemetry::Trace::INVALID_SPAN_ID)
+        expect(root.kind).to eq(:consumer)
+
+        # ... but linked back to the enqueuing span.
+        expect(root.links.size).to eq(1)
+        link_context = root.links.first.span_context
+        expect(link_context.hex_trace_id).to eq(trace_id_hex)
+        expect(link_context.hex_span_id).to eq(span_id_hex)
+      end
+
+      it "does not link a consumer transaction when there is no context" do
+        backend = create_backend("background_job")
+        backend.complete
+        root = finished_span(backend.instance_variable_get(:@span))
+
+        expect(root.kind).to eq(:consumer)
+        expect(root.links).to be_nil
+      end
+    end
+
     it "attaches the new span as the OpenTelemetry current span" do
       backend = create_backend
       expect(::OpenTelemetry::Trace.current_span)
