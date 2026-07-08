@@ -66,11 +66,9 @@ if DependencyHelper.hanami_present?
     describe "Appsignal::Loaders::HanamiLoader::HanamiIntegration" do
       let(:transaction) { http_request_transaction }
       let(:app) { HanamiApp::Actions::Books::Index }
-      around { |example| keep_transactions { example.run } }
       before do
         expect(::Hanami.app.config).to receive(:root).and_return(project_fixture_path)
         Appsignal.load(:hanami)
-        start_agent
       end
 
       def make_request(env)
@@ -82,10 +80,25 @@ if DependencyHelper.hanami_present?
         context "without an active transaction" do
           let(:env) { {} }
 
-          it "does not set the action name" do
-            make_request(env)
+          describe "does not set the action name" do
+            def perform
+              make_request(env)
+            end
 
-            expect(transaction).to_not have_action
+            it "in agent mode", :agent_mode do
+              start_agent
+              perform
+
+              expect(transaction).to_not have_action
+            end
+
+            it "in collector mode", :collector_mode do
+              start_collector_agent
+              perform
+              transaction.complete
+
+              expect(root_span.attributes).to_not have_key("appsignal.action_name")
+            end
           end
         end
 
@@ -93,17 +106,49 @@ if DependencyHelper.hanami_present?
           let(:env) { { Appsignal::Rack::APPSIGNAL_TRANSACTION => transaction } }
 
           if DependencyHelper.hanami2_2_present?
-            it "does not set an action name on the transaction" do
-              # This is done by the middleware instead
-              make_request(env)
+            # The action name is set by the middleware instead.
+            describe "does not set an action name on the transaction" do
+              def perform
+                make_request(env)
+              end
 
-              expect(transaction).to_not have_action
+              it "in agent mode", :agent_mode do
+                start_agent
+                perform
+
+                expect(transaction).to_not have_action
+              end
+
+              it "in collector mode", :collector_mode do
+                start_collector_agent
+                perform
+                transaction.complete
+
+                expect(root_span.attributes).to_not have_key("appsignal.action_name")
+              end
             end
           else
-            it "sets action name on the transaction" do
-              make_request(env)
+            describe "sets action name on the transaction" do
+              def perform
+                make_request(env)
+              end
 
-              expect(transaction).to have_action("HanamiApp::Actions::Books::Index")
+              it "in agent mode", :agent_mode do
+                start_agent
+                perform
+
+                expect(transaction).to have_action("HanamiApp::Actions::Books::Index")
+              end
+
+              it "in collector mode", :collector_mode do
+                start_collector_agent
+                perform
+                transaction.complete
+
+                expect(root_span.name).to eq("HanamiApp::Actions::Books::Index")
+                expect(root_span.attributes["appsignal.action_name"])
+                  .to eq("HanamiApp::Actions::Books::Index")
+              end
             end
           end
         end

@@ -1,5 +1,5 @@
 if DependencyHelper.grape_present?
-  describe "Appsignal::Loaders::PadrinoLoader" do
+  describe "Appsignal::Loaders::GrapeLoader" do
     describe "#on_load" do
       it "ensures the Grape middleware is loaded" do
         load_loader(:grape)
