@@ -20,7 +20,9 @@ module Appsignal
       # @!visibility private
       attr_writer :breadcrumbs
 
-      def initialize(transaction_id, namespace, handle: nil)
+      # `opentelemetry_context` is an incoming trace context used only in
+      # collector mode; agent mode has no notion of it, so it's ignored here.
+      def initialize(transaction_id, namespace, handle: nil, opentelemetry_context: nil) # rubocop:disable Lint/UnusedMethodArgument
         super()
         @handle = handle ||
           Appsignal::Extension.start_transaction(transaction_id, namespace, 0) ||
