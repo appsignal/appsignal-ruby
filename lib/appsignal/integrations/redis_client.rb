@@ -12,7 +12,12 @@ module Appsignal
             "#{command[0]}#{" ?" * (command.size - 1)}"
           end
 
-        Appsignal.instrument "query.redis", @config.id, sanitized_command do
+        Appsignal.instrument(
+          "query.redis",
+          @config.id,
+          sanitized_command,
+          :opentelemetry_kind => :client
+        ) do
           super
         end
       end
