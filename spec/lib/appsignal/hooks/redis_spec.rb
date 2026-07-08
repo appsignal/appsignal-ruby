@@ -1,6 +1,5 @@
 describe Appsignal::Hooks::RedisHook do
   let(:options) { {} }
-  before { start_agent(:options => options) }
 
   if DependencyHelper.redis_present?
     context "with redis" do
@@ -8,6 +7,7 @@ describe Appsignal::Hooks::RedisHook do
         context "with redis-client" do
           context "with instrumentation enabled" do
             describe "#dependencies_present?" do
+              before { start_agent(:options => options) }
               subject { described_class.new.dependencies_present? }
 
               it { is_expected.to be_falsey }
@@ -17,6 +17,7 @@ describe Appsignal::Hooks::RedisHook do
       else
         context "with instrumentation enabled" do
           describe "#dependencies_present?" do
+            before { start_agent(:options => options) }
             subject { described_class.new.dependencies_present? }
 
             it { is_expected.to be_truthy }
@@ -27,6 +28,7 @@ describe Appsignal::Hooks::RedisHook do
 
             context "install" do
               before do
+                start_agent(:options => options)
                 Appsignal::Hooks.load_hooks
               end
 
@@ -40,6 +42,8 @@ describe Appsignal::Hooks::RedisHook do
             end
 
             context "requirements" do
+              before { start_agent(:options => options) }
+
               it "driver should have the write method" do
                 # Since we stub the client class below, to make sure that we don't
                 # create a real connection, the test won't fail if the method definition
@@ -51,7 +55,6 @@ describe Appsignal::Hooks::RedisHook do
 
             context "instrumentation" do
               before do
-                start_agent
                 # Stub Redis::Client class so that it doesn't perform an actual
                 # Redis query. This class will be included (prepended) with the
                 # AppSignal Redis integration.
@@ -69,33 +72,81 @@ describe Appsignal::Hooks::RedisHook do
                 # track if it was installed already or not.
                 Appsignal::Hooks::RedisHook.new.install
               end
-              let(:transaction) { http_request_transaction }
-              before { set_current_transaction(transaction) }
-              around { |example| keep_transactions { example.run } }
 
-              it "instrument a redis call" do
-                client = Redis::Client.new
-                expect(client.write([:get, "key"])).to eql("stub_write")
+              describe "a redis call" do
+                def perform
+                  Redis::Client.new.write([:get, "key"])
+                end
 
-                expect(transaction).to include_event(
-                  "name" => "query.redis",
-                  "body" => "get ?",
-                  "title" => "stub_id"
-                )
+                it "in agent mode", :agent_mode do
+                  start_agent
+                  transaction = http_request_transaction
+                  set_current_transaction(transaction)
+                  expect(perform).to eql("stub_write")
+
+                  expect(transaction).to include_event(
+                    "name" => "query.redis",
+                    "body" => "get ?",
+                    "title" => "stub_id"
+                  )
+                end
+
+                it "in collector mode", :collector_mode do
+                  start_collector_agent
+                  transaction = http_request_transaction
+                  set_current_transaction(transaction)
+                  expect(perform).to eql("stub_write")
+                  Appsignal::Transaction.complete_current!
+
+                  expect(event_spans.size).to eq(1)
+                  span = event_spans.first
+                  expect(span.name).to eq("stub_id")
+                  expect(span.kind).to eq(:client)
+                  expect(span.parent_span_id).to eq(root_span.span_id)
+                  expect(span.attributes["appsignal.body"]).to eq("get ?")
+                  expect(span.attributes["appsignal.category"]).to eq("query.redis")
+                  expect(span.attributes).not_to have_key("db.query.text")
+                end
               end
 
-              it "instrument a redis script call" do
-                client = Redis::Client.new
-                script = "return redis.call('set',KEYS[1],ARGV[1])"
-                keys = ["foo"]
-                argv = ["bar"]
-                expect(client.write([:eval, script, keys.size, keys, argv])).to eql("stub_write")
+              describe "a redis script call" do
+                let(:script) { "return redis.call('set',KEYS[1],ARGV[1])" }
 
-                expect(transaction).to include_event(
-                  "name" => "query.redis",
-                  "body" => "#{script} ? ?",
-                  "title" => "stub_id"
-                )
+                def perform
+                  keys = ["foo"]
+                  argv = ["bar"]
+                  Redis::Client.new.write([:eval, script, keys.size, keys, argv])
+                end
+
+                it "in agent mode", :agent_mode do
+                  start_agent
+                  transaction = http_request_transaction
+                  set_current_transaction(transaction)
+                  expect(perform).to eql("stub_write")
+
+                  expect(transaction).to include_event(
+                    "name" => "query.redis",
+                    "body" => "#{script} ? ?",
+                    "title" => "stub_id"
+                  )
+                end
+
+                it "in collector mode", :collector_mode do
+                  start_collector_agent
+                  transaction = http_request_transaction
+                  set_current_transaction(transaction)
+                  expect(perform).to eql("stub_write")
+                  Appsignal::Transaction.complete_current!
+
+                  expect(event_spans.size).to eq(1)
+                  span = event_spans.first
+                  expect(span.name).to eq("stub_id")
+                  expect(span.kind).to eq(:client)
+                  expect(span.parent_span_id).to eq(root_span.span_id)
+                  expect(span.attributes["appsignal.body"]).to eq("#{script} ? ?")
+                  expect(span.attributes["appsignal.category"]).to eq("query.redis")
+                  expect(span.attributes).not_to have_key("db.query.text")
+                end
               end
             end
           end
@@ -105,6 +156,7 @@ describe Appsignal::Hooks::RedisHook do
           let(:options) { { :instrument_redis => false } }
 
           describe "#dependencies_present?" do
+            before { start_agent(:options => options) }
             subject { described_class.new.dependencies_present? }
 
             it { is_expected.to be_falsy }
@@ -115,6 +167,7 @@ describe Appsignal::Hooks::RedisHook do
   else
     context "without redis" do
       describe "#dependencies_present?" do
+        before { start_agent(:options => options) }
         subject { described_class.new.dependencies_present? }
 
         it { is_expected.to be_falsy }
