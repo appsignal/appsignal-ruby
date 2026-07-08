@@ -19,9 +19,9 @@ module Appsignal
           end
 
           # Servers enqueue jobs too, so they need the client middleware that
-          # records the enqueue event. Shoryuken only yields `configure_client`
-          # outside the server, so register it here as well for enqueues from
-          # within a worker.
+          # writes the trace context onto outgoing messages. Shoryuken only
+          # yields `configure_client` outside the server, so register it here as
+          # well for enqueues from within a worker.
           config.client_middleware do |chain|
             chain.add Appsignal::Integrations::ShoryukenClientMiddleware
           end
