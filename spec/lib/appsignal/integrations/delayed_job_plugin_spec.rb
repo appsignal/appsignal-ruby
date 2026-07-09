@@ -87,6 +87,43 @@ describe "Appsignal::Integrations::DelayedJobHook" do
         end
       end
 
+      # Regression for the rake-launched-worker collision: Delayed Job workers
+      # are booted via `rake jobs:work`, so when
+      # `enable_rake_performance_instrumentation` is on, RakeIntegration opens a
+      # "rake" transaction that stays active on the thread while the worker loop
+      # runs. `Transaction.create` is not re-entrant -- with a transaction
+      # already active it returns that one and discards the passed namespace --
+      # so the job is absorbed into the "rake" transaction instead of getting
+      # its own background_job transaction.
+      describe "with a rake transaction already active (rake-launched worker)" do
+        def perform
+          # Mimics Appsignal::Integrations::RakeIntegration wrapping the
+          # long-running `jobs:work` task.
+          Appsignal::Transaction.create("rake")
+          Timecop.freeze(time) do
+            plugin.invoke_with_instrumentation(job, invoked_block)
+          end
+        end
+
+        it "records the job under its own background_job namespace", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+
+          transaction = last_transaction
+          expect(transaction).to have_namespace("background_job")
+          expect(transaction).to have_action("TestClass#perform")
+        end
+
+        it "records the job as its own consumer trace", :collector_mode do
+          start_collector_agent
+          perform
+
+          expect(root_span.kind).to eq(:consumer)
+          expect(root_span.attributes["appsignal.namespace"]).to eq("background")
+          expect(root_span.attributes["appsignal.action_name"]).to eq("TestClass#perform")
+        end
+      end
+
       context "with more complex params" do
         let(:args) do
           {

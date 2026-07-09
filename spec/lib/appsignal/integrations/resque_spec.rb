@@ -103,6 +103,52 @@ if DependencyHelper.resque_present?
       end
     end
 
+    # Regression for the rake-launched-worker collision: Resque workers are
+    # booted via `rake resque:work`, so when
+    # `enable_rake_performance_instrumentation` is on, RakeIntegration opens a
+    # "rake" transaction that stays active on the thread while the worker loop
+    # runs. `Transaction.create` is not re-entrant -- with a transaction already
+    # active it returns that one and discards the passed namespace and
+    # opentelemetry_context -- so the job is absorbed into the "rake" transaction
+    # instead of getting its own background_job transaction linked to the
+    # enqueuer.
+    describe "with a rake transaction already active (rake-launched worker)" do
+      let(:trace_id_hex) { "0af7651916cd43dd8448eb211c80319c" }
+      let(:span_id_hex) { "b7ad6b7169203331" }
+      let(:traceparent) { "00-#{trace_id_hex}-#{span_id_hex}-01" }
+
+      def perform
+        # Mimics Appsignal::Integrations::RakeIntegration wrapping the
+        # long-running `resque:work` task.
+        Appsignal::Transaction.create("rake")
+        perform_rescue_job(ResqueTestJob, "traceparent" => traceparent)
+      end
+
+      it "records the job under its own background_job namespace", :agent_mode do
+        start_agent(**start_agent_args)
+        allow(Appsignal).to receive(:stop)
+        perform
+
+        transaction = last_transaction
+        expect(transaction).to have_namespace(namespace)
+        expect(transaction).to have_action("ResqueTestJob#perform")
+      end
+
+      it "runs as its own trace linked back to the enqueuer", :collector_mode do
+        start_collector_agent
+        allow(Appsignal).to receive(:stop)
+        perform
+
+        expect(root_span.kind).to eq(:consumer)
+        expect(root_span.attributes["appsignal.namespace"]).to eq("background")
+        expect(root_span.hex_trace_id).to_not eq(trace_id_hex)
+        expect(root_span.links.size).to eq(1)
+        link_context = root_span.links.first.span_context
+        expect(link_context.hex_trace_id).to eq(trace_id_hex)
+        expect(link_context.hex_span_id).to eq(span_id_hex)
+      end
+    end
+
     describe "tracks the error on the transaction" do
       def perform
         expect do
