@@ -32,7 +32,11 @@ module Appsignal
           return block.call(job)
         end
 
-        Appsignal.instrument("enqueue.delayed_job", "enqueue #{job.name} job") do
+        Appsignal.instrument(
+          "enqueue.delayed_job",
+          "enqueue #{job.name} job",
+          :opentelemetry_kind => :producer
+        ) do
           block.call(job)
         end
       end
