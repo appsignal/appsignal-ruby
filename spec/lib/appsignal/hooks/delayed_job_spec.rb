@@ -31,6 +31,10 @@ describe Appsignal::Hooks::DelayedJobHook do
   end
 
   context "without delayed job" do
+    # Hide the constant so this passes whether or not the gem is loaded (it is
+    # under the `delayed_job` gemfile).
+    before { hide_const "Delayed::Plugin" }
+
     describe "#dependencies_present?" do
       subject { described_class.new.dependencies_present? }
 

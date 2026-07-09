@@ -1,449 +1,222 @@
-describe "Appsignal::Integrations::DelayedJobHook" do
-  let(:options) { {} }
-  before do
-    stub_const("Delayed", Module.new)
-    stub_const("Delayed::Plugin", Class.new do
-      def self.callbacks
-      end
-    end)
-    stub_const("Delayed::Worker", Class.new do
-      def self.plugins
-        @plugins ||= []
-      end
-    end)
-    require "appsignal/integrations/delayed_job_plugin"
-    start_agent(:options => options)
-  end
+if DependencyHelper.delayed_job_present?
+  require "delayed_job"
+  require "appsignal/integrations/delayed_job_plugin"
+  # Delayed Job ships an in-memory test backend in its own `spec/` dir. Loading
+  # it lets us drive the real enqueue/perform lifecycle without a database.
+  require "#{Gem::Specification.find_by_name("delayed_job").gem_dir}/spec/delayed/backend/test"
 
-  # We haven't found a way to test the hooks, we'll have to do that manually
+  describe "Delayed Job integration" do
+    before do
+      Delayed::Worker.backend = Delayed::Backend::Test::Job
+      Delayed::Worker.delay_jobs = true
+      Delayed::Backend::Test::Job.delete_all
 
-  describe ".invoke_with_instrumentation" do
-    let(:plugin) { Appsignal::Integrations::DelayedJobPlugin }
-    let(:time) { Time.parse("01-01-2001 10:01:00UTC") }
-    let(:created_at) { time - 3600 }
-    let(:run_at) { time - 3600 }
-    let(:payload_object) { double(:args => args) }
-    let(:job_data) do
-      {
-        :id => 123,
-        :name => "TestClass#perform",
-        :priority => 1,
-        :attempts => 1,
-        :queue => "default",
-        :created_at => created_at,
-        :run_at => run_at,
-        :payload_object => payload_object
-      }
-    end
-    let(:args) { ["argument"] }
-    let(:job) { double(job_data) }
-    let(:invoked_block) { proc {} }
+      # Register our plugin exactly once on a fresh lifecycle. Delayed Job
+      # registers a plugin's callbacks when it instantiates the plugin (via
+      # `setup_lifecycle`); resetting the list and rebuilding per-example keeps
+      # the enqueue/perform from being instrumented more than once, whatever the
+      # AppSignal hook may have appended to the list.
+      Delayed::Worker.plugins.delete(Appsignal::Integrations::DelayedJobPlugin)
+      Delayed::Worker.plugins << Appsignal::Integrations::DelayedJobPlugin
+      Delayed::Worker.setup_lifecycle
 
-    def perform
-      Timecop.freeze(time) do
-        keep_transactions do
-          plugin.invoke_with_instrumentation(job, invoked_block)
+      stub_const("DelayedTestJob", Class.new do
+        def perform
         end
-      end
+      end)
     end
 
-    context "with a normal call" do
-      it "wraps it in a transaction" do
-        perform
+    # `invoke_job` runs the real `:invoke_job` lifecycle (and re-raises on
+    # error). Unlike `Delayed::Worker#run` it doesn't rebuild the lifecycle or
+    # swallow the job's exception, so it drives our instrumentation directly.
+    def perform_job(job)
+      job.invoke_job
+    end
 
-        transaction = last_transaction
-        expect(transaction).to have_namespace("background_job")
-        expect(transaction).to have_action("TestClass#perform")
-        expect(transaction).to_not have_error
-        expect(transaction).to include_event(:name => "perform_job.delayed_job")
-        expect(transaction).to include_tags(
-          "priority" => 1,
-          "attempts" => 1,
-          "queue" => "default",
-          "id" => "123"
-        )
-        expect(transaction).to include_params(["argument"])
-      end
+    describe "enqueueing a job" do
+      context "with an active transaction" do
+        it "records an enqueue event titled after the job" do
+          start_agent
+          transaction = http_request_transaction
+          set_current_transaction(transaction)
 
-      context "with more complex params" do
-        let(:args) do
-          {
-            :foo => "Foo",
-            :bar => "Bar"
-          }
-        end
+          Delayed::Job.enqueue(DelayedTestJob.new)
 
-        it "adds the more complex arguments" do
-          perform
-
-          expect(last_transaction).to include_params("foo" => "Foo", "bar" => "Bar")
-        end
-
-        context "with parameter filtering" do
-          let(:options) { { :filter_parameters => ["foo"] } }
-
-          it "filters selected arguments" do
-            perform
-
-            expect(last_transaction).to include_params("foo" => "[FILTERED]", "bar" => "Bar")
-          end
+          event = transaction.to_h["events"].find { |e| e["name"] == "enqueue.delayed_job" }
+          expect(event).to_not be_nil
+          expect(event["title"]).to eq("enqueue DelayedTestJob job")
         end
       end
 
-      context "with run_at in the future" do
-        let(:run_at) { Time.parse("2017-01-01 10:01:00UTC") }
+      context "without an active transaction" do
+        it "is a transparent pass-through" do
+          start_agent
 
-        it "reports queue_start with run_at time" do
-          perform
-
-          expect(last_transaction).to have_queue_start(run_at.to_i * 1000)
+          expect { Delayed::Job.enqueue(DelayedTestJob.new) }
+            .to change { Delayed::Backend::Test::Job.count }.by(1)
         end
       end
 
-      context "with class method job" do
-        let(:job_data) do
-          { :name => "CustomClassMethod.perform", :payload_object => payload_object }
-        end
+      if DependencyHelper.active_job_present?
+        context "when wrapped by Active Job" do
+          # Active Job records its own `enqueue.active_job` event and suppresses
+          # the backend's, so no duplicate is recorded here.
+          before do
+            require "active_job"
+            ActiveJob::Base.queue_adapter = :delayed_job
+            ActiveJob::Base.logger = nil
 
-        it "wraps it in a transaction using the class method job name" do
-          perform
-          expect(last_transaction).to have_action("CustomClassMethod.perform")
-        end
-      end
-
-      context "with custom name call" do
-        before { perform }
-
-        context "with appsignal_name defined" do
-          context "with payload_object being an object" do
-            context "with value" do
-              let(:payload_object) { double(:appsignal_name => "CustomClass#perform") }
-
-              it "wraps it in a transaction using the custom name" do
-                expect(last_transaction).to have_action("CustomClass#perform")
+            stub_const("DelayedActiveJob", Class.new(ActiveJob::Base) do
+              def perform(*)
               end
-            end
-
-            context "with non-String value" do
-              let(:payload_object) { double(:appsignal_name => Object.new) }
-
-              it "wraps it in a transaction using the original job name" do
-                expect(last_transaction).to have_action("TestClass#perform")
-              end
-            end
-
-            context "with class method name as job" do
-              let(:payload_object) { double(:appsignal_name => "CustomClassMethod.perform") }
-
-              it "wraps it in a transaction using the custom name" do
-                perform
-                expect(last_transaction).to have_action("CustomClassMethod.perform")
-              end
-            end
+            end)
           end
 
-          context "with payload_object being a Hash" do
-            context "with value" do
-              let(:payload_object) { double(:appsignal_name => "CustomClassHash#perform") }
+          it "does not record a second enqueue event" do
+            start_agent
+            transaction = http_request_transaction
+            set_current_transaction(transaction)
 
-              it "wraps it in a transaction using the custom name" do
-                expect(last_transaction).to have_action("CustomClassHash#perform")
-              end
-            end
+            DelayedActiveJob.perform_later
 
-            context "with non-String value" do
-              let(:payload_object) { double(:appsignal_name => Object.new) }
-
-              it "wraps it in a transaction using the original job name" do
-                expect(last_transaction).to have_action("TestClass#perform")
-              end
-            end
-
-            context "with class method name as job" do
-              let(:payload_object) { { :appsignal_name => "CustomClassMethod.perform" } }
-
-              it "wraps it in a transaction using the custom name" do
-                perform
-                expect(last_transaction).to have_action("CustomClassMethod.perform")
-              end
-            end
-          end
-
-          context "with payload_object acting like a Hash and returning a non-String value" do
-            class ClassActingAsHash
-              def self.[](_key)
-                Object.new
-              end
-
-              def self.appsignal_name
-                "ClassActingAsHash#perform"
-              end
-            end
-            let(:payload_object) { ClassActingAsHash }
-
-            # We check for hash values before object values
-            # this means ClassActingAsHash returns `Object.new` instead
-            # of `self.appsignal_name`. Since this isn't a valid `String`
-            # we return the default job name as action name.
-            it "wraps it in a transaction using the original job name" do
-              expect(last_transaction).to have_action("TestClass#perform")
-            end
+            event_names = transaction.to_h["events"].map { |e| e["name"] }
+            expect(event_names).to include("enqueue.active_job")
+            expect(event_names).to_not include("enqueue.delayed_job")
           end
         end
       end
+    end
 
-      context "with only job class name" do
-        let(:job_data) do
-          { :name => "Banana", :payload_object => payload_object }
-        end
+    describe "performing a job" do
+      context "with a normal job" do
+        it "wraps it in a background_job transaction" do
+          start_agent
+          job = Delayed::Job.enqueue(DelayedTestJob.new)
 
-        it "appends #perform to the class name" do
-          perform
-          expect(last_transaction).to have_action("Banana#perform")
+          keep_transactions { perform_job(job) }
+
+          transaction = last_transaction
+          expect(transaction).to have_namespace("background_job")
+          expect(transaction).to have_action("DelayedTestJob#perform")
+          expect(transaction).to_not have_error
+          expect(transaction).to include_event(:name => "perform_job.delayed_job")
+          expect(transaction).to include_tags("attempts" => 0, "priority" => 0)
         end
       end
 
-      if active_job_present?
-        require "active_job"
+      context "with a job that raises" do
+        before do
+          stub_const("DelayedErrorJob", Class.new do
+            def perform
+              raise ExampleException, "uh oh"
+            end
+          end)
+        end
 
-        context "when wrapped by ActiveJob" do
-          let(:payload_object) do
-            ActiveJob::QueueAdapters::DelayedJobAdapter::JobWrapper.new(
-              "arguments"  => args,
-              "job_class"  => "TestClass",
-              "job_id"     => 123,
-              "locale"     => :en,
-              "queue_name" => "default"
-            )
-          end
-          let(:job) do
-            double(
-              :id             => 123,
-              :name           => "ActiveJob::QueueAdapters::DelayedJobAdapter::JobWrapper",
-              :priority       => 1,
-              :attempts       => 1,
-              :queue          => "default",
-              :created_at     => created_at,
-              :run_at         => run_at,
-              :payload_object => payload_object
-            )
-          end
-          let(:args) { ["activejob_argument"] }
+        it "records the error on the transaction" do
+          start_agent
+          job = Delayed::Job.enqueue(DelayedErrorJob.new)
 
-          it "wraps it in a transaction with the correct params" do
-            perform
+          keep_transactions do
+            expect { perform_job(job) }.to raise_error(ExampleException, "uh oh")
+          end
+
+          transaction = last_transaction
+          expect(transaction).to have_namespace("background_job")
+          expect(transaction).to have_action("DelayedErrorJob#perform")
+          expect(transaction).to have_error("ExampleException", "uh oh")
+        end
+      end
+
+      context "with a custom appsignal_name" do
+        before do
+          stub_const("DelayedNamedJob", Class.new do
+            def perform
+            end
+
+            def appsignal_name
+              "CustomName#perform"
+            end
+          end)
+        end
+
+        it "uses the custom name as the action" do
+          start_agent
+          job = Delayed::Job.enqueue(DelayedNamedJob.new)
+
+          keep_transactions { perform_job(job) }
+
+          expect(last_transaction).to have_action("CustomName#perform")
+        end
+      end
+
+      if DependencyHelper.active_job_present?
+        context "when wrapped by Active Job" do
+          before do
+            require "active_job"
+            ActiveJob::Base.queue_adapter = :delayed_job
+            ActiveJob::Base.logger = nil
+
+            stub_const("DelayedActiveJob", Class.new(ActiveJob::Base) do
+              def perform(*)
+              end
+            end)
+          end
+
+          it "uses the Active Job class as the action" do
+            start_agent
+
+            keep_transactions do
+              DelayedActiveJob.perform_later("arg")
+              perform_job(Delayed::Backend::Test::Job.all.last)
+            end
 
             transaction = last_transaction
             expect(transaction).to have_namespace("background_job")
-            expect(transaction).to have_action("TestClass#perform")
-            expect(transaction).to_not have_error
-            expect(transaction).to include_event("name" => "perform_job.delayed_job")
-            expect(transaction).to include_tags(
-              "priority" => 1,
-              "attempts" => 1,
-              "queue" => "default",
-              "id" => "123"
-            )
-            expect(transaction).to include_params(["activejob_argument"])
-          end
-
-          context "with more complex params" do
-            let(:args) do
-              {
-                :foo => "Foo",
-                :bar => "Bar"
-              }
-            end
-
-            it "adds the more complex arguments" do
-              perform
-              transaction = last_transaction
-              expect(transaction).to have_action("TestClass#perform")
-              expect(transaction).to include_params(
-                "foo" => "Foo",
-                "bar" => "Bar"
-              )
-            end
-
-            context "with parameter filtering" do
-              let(:options) { { :filter_parameters => ["foo"] } }
-
-              it "filters selected arguments" do
-                perform
-                transaction = last_transaction
-                expect(transaction).to have_action("TestClass#perform")
-                expect(transaction).to include_params(
-                  "foo" => "[FILTERED]",
-                  "bar" => "Bar"
-                )
-              end
-            end
-          end
-
-          context "with run_at in the future" do
-            let(:run_at) { Time.parse("2017-01-01 10:01:00UTC") }
-
-            it "reports queue_start with run_at time" do
-              perform
-
-              expect(last_transaction).to have_queue_start(run_at.to_i * 1000)
-            end
+            expect(transaction).to have_action("DelayedActiveJob#perform")
+            expect(transaction).to include_params(["arg"])
           end
         end
       end
     end
 
-    context "with an erroring call" do
-      let(:error) { ExampleException.new("uh oh") }
-      before do
-        expect(invoked_block).to receive(:call).and_raise(error)
-      end
+    describe ".extract_value" do
+      let(:plugin) { Appsignal::Integrations::DelayedJobPlugin }
 
-      it "adds the error to the transaction" do
-        expect do
-          perform
-        end.to raise_error(error)
+      before { start_agent }
 
-        transaction = last_transaction
-        expect(transaction).to have_namespace("background_job")
-        expect(transaction).to have_action("TestClass#perform")
-        expect(transaction).to have_error("ExampleException", "uh oh")
-      end
-    end
-  end
+      context "for a hash" do
+        let(:hash) { { :key => "value", :bool_false => false } }
 
-  describe ".extract_value" do
-    let(:plugin) { Appsignal::Integrations::DelayedJobPlugin }
+        it "reads an existing key" do
+          expect(plugin.extract_value(hash, :key)).to eq("value")
+        end
 
-    context "for a hash" do
-      let(:hash) { { :key => "value", :bool_false => false } }
+        it "reads a false value" do
+          expect(plugin.extract_value(hash, :bool_false)).to be(false)
+        end
 
-      context "when the key exists" do
-        subject { plugin.extract_value(hash, :key) }
-
-        it { is_expected.to eq "value" }
-
-        context "when the value is false" do
-          subject { plugin.extract_value(hash, :bool_false) }
-
-          it { is_expected.to be false }
+        it "returns the default for a missing key" do
+          expect(plugin.extract_value(hash, :nope, 1)).to eq(1)
         end
       end
 
-      context "when the key does not exist" do
-        subject { plugin.extract_value(hash, :nonexistent_key) }
+      context "for an object" do
+        let(:object) { double(:existing_method => "value") }
 
-        it { is_expected.to be_nil }
-
-        context "with a default value" do
-          subject { plugin.extract_value(hash, :nonexistent_key, 1) }
-
-          it { is_expected.to eq 1 }
-        end
-      end
-    end
-
-    context "for a struct" do
-      let(:struct_class) { Struct.new(:key) }
-      let(:struct) { struct_class.new("value") }
-
-      context "when the key exists" do
-        subject { plugin.extract_value(struct, :key) }
-
-        it { is_expected.to eq "value" }
-      end
-
-      context "when the key does not exist" do
-        subject { plugin.extract_value(struct, :nonexistent_key) }
-
-        it { is_expected.to be_nil }
-
-        context "with a default value" do
-          subject { plugin.extract_value(struct, :nonexistent_key, 1) }
-
-          it { is_expected.to eq 1 }
-        end
-      end
-    end
-
-    context "for a struct with a method" do
-      before do
-        stub_const("TestStructClass", Class.new(Struct.new(:id)) do
-          def appsignal_name
-            "TestStruct#perform"
-          end
-
-          def bool_false
-            false
-          end
-        end)
-      end
-      let(:struct) { TestStructClass.new("id") }
-
-      context "when the Struct responds to a method" do
-        subject { plugin.extract_value(struct, :appsignal_name) }
-
-        it "returns the method value" do
-          is_expected.to eq "TestStruct#perform"
+        it "reads an existing method" do
+          expect(plugin.extract_value(object, :existing_method)).to eq("value")
         end
 
-        context "when the value is false" do
-          subject { plugin.extract_value(struct, :bool_false) }
-
-          it "returns the method value" do
-            is_expected.to be false
-          end
+        it "returns the default for a missing method" do
+          expect(plugin.extract_value(object, :nope, 1)).to eq(1)
         end
       end
 
-      context "when the key does not exist" do
-        subject { plugin.extract_value(struct, :nonexistent_key) }
-
-        context "without a method with the same name" do
-          it "returns nil" do
-            is_expected.to be_nil
-          end
-        end
-
-        context "with a default value" do
-          let(:default_value) { :my_default_value }
-          subject { plugin.extract_value(struct, :nonexistent_key, default_value) }
-
-          it "returns the default value" do
-            is_expected.to eq default_value
-          end
-        end
+      it "converts the value to a string when asked" do
+        object = double(:existing_method => 1)
+        expect(plugin.extract_value(object, :existing_method, nil, true)).to eq("1")
       end
-    end
-
-    context "for an object" do
-      let(:object) { double(:existing_method => "value") }
-
-      context "when the method exists" do
-        subject { plugin.extract_value(object, :existing_method) }
-
-        it { is_expected.to eq "value" }
-      end
-
-      context "when the method does not exist" do
-        subject { plugin.extract_value(object, :nonexistent_method) }
-
-        it { is_expected.to be_nil }
-
-        context "and there is a default value" do
-          subject { plugin.extract_value(object, :nonexistent_method, 1) }
-
-          it { is_expected.to eq 1 }
-        end
-      end
-    end
-
-    context "when we need to call to_s on the value" do
-      let(:object) { double(:existing_method => 1) }
-
-      subject { plugin.extract_value(object, :existing_method, nil, true) }
-
-      it { is_expected.to eq "1" }
     end
   end
 end

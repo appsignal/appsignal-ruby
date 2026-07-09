@@ -73,6 +73,10 @@ module DependencyHelper
     dependency_present? "resque"
   end
 
+  def delayed_job_present?
+    dependency_present? "delayed_job"
+  end
+
   def redis_client_present?
     dependency_present? "redis-client"
   end

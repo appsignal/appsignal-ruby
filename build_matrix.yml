@@ -141,6 +141,7 @@ matrix:
           - "3.4.1"
           - "3.3.4"
           - "jruby-9.4.7.0"
+    - gem: "delayed_job"
     - gem: "dry-monitor"
       only:
         ruby:
