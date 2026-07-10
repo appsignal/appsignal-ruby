@@ -203,6 +203,26 @@ describe Appsignal::Transaction do
         expect(event_span.events.map(&:name)).to include("exception", "appsignal.breadcrumb")
         expect(Array(foreign_span.events).map(&:name)).to be_empty
       end
+
+      it "runs an error block on the span current when the error was added", :collector_mode do
+        start_collector_agent
+        transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+
+        # The block runs when the error is added, while the event span is still
+        # current -- not deferred to completion, when the root span would be
+        # current. A breadcrumb added from the block lands on the event span.
+        transaction.start_event
+        transaction.add_error(ExampleStandardError.new("boom")) do |t|
+          t.add_breadcrumb("network", "GET /", "ok", { "code" => "200" })
+        end
+        transaction.finish_event("sql.query", "Query", "SELECT 1",
+          Appsignal::EventFormatter::DEFAULT)
+        Appsignal::Transaction.complete_current!
+
+        event_span = event_spans.find { |s| s.attributes["appsignal.category"] == "sql.query" }
+        expect(event_span.events.map(&:name)).to include("exception", "appsignal.breadcrumb")
+        expect(Array(root_span.events).map(&:name)).to_not include("appsignal.breadcrumb")
+      end
     end
   end
 

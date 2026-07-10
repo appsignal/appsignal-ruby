@@ -52,9 +52,10 @@ module Appsignal
         raise NotImplementedError
       end
 
-      # Whether the backend records each error eagerly onto one trace, or relies
-      # on the Transaction duplicating itself per error.
-      def records_errors_eagerly?
+      # Whether the backend can hold more than one error on a single
+      # transaction. When it can't (agent mode), the Transaction reports the
+      # extra errors as duplicate transactions instead.
+      def supports_multiple_errors?
         raise NotImplementedError
       end
 
@@ -71,8 +72,9 @@ module Appsignal
         raise NotImplementedError
       end
 
-      # Only used when `records_errors_eagerly?` is false (agent mode). Backends
-      # that record eagerly never duplicate and leave this unimplemented.
+      # Only used when `supports_multiple_errors?` is false (agent mode).
+      # Backends that support multiple errors never duplicate and leave this
+      # unimplemented.
       def duplicate(_new_transaction_id)
         raise NotImplementedError
       end
