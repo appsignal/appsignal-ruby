@@ -109,7 +109,7 @@ module Appsignal
 
       # The extension transaction holds a single error, so the Transaction
       # reports additional errors as duplicate transactions instead.
-      def records_errors_eagerly?
+      def supports_multiple_errors?
         false
       end
 

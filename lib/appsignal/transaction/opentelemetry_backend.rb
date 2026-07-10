@@ -268,9 +268,10 @@ module Appsignal
       end
 
       # Each error is recorded eagerly as its own `exception` event on the span
-      # current when it was added, so the Transaction never duplicates itself --
-      # which is why `duplicate` is left unimplemented (see BaseBackend).
-      def records_errors_eagerly?
+      # current when it was added, so a trace holds many errors and the
+      # Transaction never duplicates itself -- which is why `duplicate` is left
+      # unimplemented (see BaseBackend).
+      def supports_multiple_errors?
         true
       end
 
