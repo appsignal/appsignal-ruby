@@ -174,6 +174,16 @@ module Appsignal
       @completed = false
       @tags = {}
       @store = Hash.new { |hash, key| hash[key] = {} }
+      # The distinct errors added to this transaction, in add order. Drives
+      # `last_errors`, the dedup check and the `ERRORS_LIMIT`, in both modes.
+      # A Set, so membership is by object identity (`eql?`/`hash`), matching how
+      # these errors used to be deduplicated as Hash keys. `Exception#==` would
+      # instead collapse distinct errors with the same class, message and
+      # backtrace, which we don't want.
+      @errors = Set.new
+      # Blocks per error, only populated in agent mode, where they run against
+      # the duplicate transactions at completion. Collector mode runs blocks
+      # when the error is added and never touches this.
       @error_blocks = Hash.new { |hash, key| hash[key] = [] }
       @is_duplicate = false
       @error_set = nil
@@ -236,7 +246,7 @@ module Appsignal
       should_sample = true
 
       unless duplicate?
-        self.class.last_errors = @error_blocks.keys
+        self.class.last_errors = @errors.to_a
         should_sample = @backend.finish
       end
 
@@ -627,7 +637,7 @@ module Appsignal
       return unless error
       return unless Appsignal.active?
 
-      if error.instance_variable_get(:@__appsignal_error_reported) && !@error_blocks.include?(error)
+      if error.instance_variable_get(:@__appsignal_error_reported) && !@errors.include?(error)
         return
       end
 
@@ -715,26 +725,37 @@ module Appsignal
 
     # @!visibility private
     def internal_set_error(error, &block)
-      is_new_error = !@error_blocks.include?(error)
+      is_new_error = !@errors.include?(error)
 
-      if is_new_error && @error_blocks.length >= ERRORS_LIMIT
+      if is_new_error && @errors.length >= ERRORS_LIMIT
         Appsignal.internal_logger.warn "Appsignal::Transaction#add_error: Transaction has more " \
           "than #{ERRORS_LIMIT} distinct errors. Only the first " \
           "#{ERRORS_LIMIT} distinct errors will be reported."
         return
       end
 
-      if @error_blocks.empty?
+      if @errors.empty?
         _set_error(error)
-      elsif is_new_error && @backend.records_errors_eagerly?
+      elsif is_new_error && @backend.supports_multiple_errors?
         # Record additional errors immediately so each exception event lands on
         # the span current now, not the root span at completion. The agent
         # backend instead reports extras as duplicate transactions.
         _send_error_to_backend(error)
       end
 
-      @error_blocks[error] << block
-      @error_blocks[error].compact!
+      @errors.add(error)
+
+      if @backend.supports_multiple_errors?
+        # Collector mode: the error is already recorded, so run its block now
+        # rather than at completion. Anything a block attaches to the current
+        # span -- breadcrumbs, nested errors, custom instrumentation -- then
+        # lands where the error was reported, not on the root span at
+        # completion.
+        self.class.with_transaction(self) { block.call(self) } if block
+      else
+        @error_blocks[error] << block
+        @error_blocks[error].compact!
+      end
     end
 
     private
@@ -751,40 +772,25 @@ module Appsignal
       end
     end
 
-    # Reports the errors stored on the transaction at completion, in one of two
-    # ways depending on the backend:
+    # Reports the errors stored on the transaction at completion.
     #
-    #   - eager (collector): each error was already recorded as its own exception
-    #     event when added, on the span current at that moment; here we only run
-    #     the error blocks.
-    #   - deferred (agent): the extension holds a single error, so the primary
-    #     error's blocks run on this transaction and every additional error is
-    #     reported as a duplicate transaction.
+    # In eager (collector) mode nothing is left to do: each error was recorded
+    # and its block run when the error was added. In deferred (agent) mode the
+    # extension holds a single error, so the primary error's blocks run on this
+    # transaction and every additional error is reported as a duplicate
+    # transaction.
     def report_errors
-      if @backend.records_errors_eagerly?
-        run_error_blocks
-      else
-        report_errors_as_duplicates
-      end
+      return if @backend.supports_multiple_errors?
+
+      report_errors_as_duplicates
     end
 
-    # Eager mode: the errors are already recorded, so just run their blocks.
-    # Blocks run in add-order, so a later error's block wins on a shared key, and
-    # all block-set metadata merges onto the root span. (Per-error metadata
-    # isolation is deferred -- the processor/UI does not read per-event
-    # attributes yet.)
-    def run_error_blocks
-      @error_blocks.each_value do |blocks|
-        self.class.with_transaction(self) do
-          blocks.each { |block| block.call(self) }
-        end
-      end
-    end
-
-    # Agent mode: the extension transaction holds a single error, so report each
-    # additional error as a duplicate transaction.
+    # Agent-only legacy path. The extension transaction holds a single error, so
+    # extra errors are reported as duplicate transactions. This whole method
+    # disappears once agent mode is dropped: collector mode records every error
+    # eagerly and leaves nothing to do at completion.
     def report_errors_as_duplicates
-      @error_blocks.each do |error, blocks|
+      @errors.each do |error|
         # Ignore the error that is already set in this transaction.
         next if error == @error_set
 
@@ -793,7 +799,7 @@ module Appsignal
           # with a block that calls all the blocks set for that error
           # in the original transaction.
           transaction.internal_set_error(error) do
-            blocks.each { |block| block.call(transaction) }
+            @error_blocks[error].each { |block| block.call(transaction) }
           end
 
           transaction.complete
