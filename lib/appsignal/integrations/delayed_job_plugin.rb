@@ -32,9 +32,23 @@ module Appsignal
           return block.call(job)
         end
 
-        Appsignal.instrument("enqueue.delayed_job", "enqueue #{job.name} job") do
+        Appsignal.instrument("enqueue.delayed_job", "enqueue #{enqueue_name(job)} job") do
           block.call(job)
         end
+      end
+
+      # Titles the enqueue event after the job. The `appsignal_name` override is
+      # honored verbatim, as it is when naming the perform action. That override
+      # is a full action name, so an enqueue that uses it reads as
+      # `enqueue Class#method job` rather than the bare `enqueue Class job`. We
+      # accept that inconsistency so the enqueue and perform events stay tied to
+      # the same name for the rare job that sets it.
+      def self.enqueue_name(job)
+        payload = job.payload_object
+        appsignal_name = extract_value(payload, :appsignal_name, nil)
+        return appsignal_name if appsignal_name.is_a?(String)
+
+        job.name
       end
 
       def self.invoke_with_instrumentation(job, block)

@@ -48,6 +48,30 @@ if DependencyHelper.delayed_job_present?
         end
       end
 
+      context "with a custom appsignal_name" do
+        before do
+          stub_const("DelayedNamedJob", Class.new do
+            def perform
+            end
+
+            def appsignal_name
+              "CustomName#perform"
+            end
+          end)
+        end
+
+        it "titles the enqueue event with the custom name" do
+          start_agent
+          transaction = http_request_transaction
+          set_current_transaction(transaction)
+
+          Delayed::Job.enqueue(DelayedNamedJob.new)
+
+          event = transaction.to_h["events"].find { |e| e["name"] == "enqueue.delayed_job" }
+          expect(event["title"]).to eq("enqueue CustomName#perform job")
+        end
+      end
+
       context "without an active transaction" do
         it "is a transparent pass-through" do
           start_agent
