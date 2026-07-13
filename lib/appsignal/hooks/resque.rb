@@ -7,7 +7,7 @@ module Appsignal
       register :resque
 
       def dependencies_present?
-        defined?(::Resque)
+        defined?(::Resque) && Appsignal.config && Appsignal.config[:instrument_resque]
       end
 
       def install

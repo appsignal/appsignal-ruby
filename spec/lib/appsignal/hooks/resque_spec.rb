@@ -5,7 +5,17 @@ describe Appsignal::Hooks::ResqueHook do
     context "when Resque is loaded" do
       before { stub_const "Resque", 1 }
 
-      it { is_expected.to be_truthy }
+      context "when Resque instrumentation is enabled" do
+        before { configure }
+
+        it { is_expected.to be_truthy }
+      end
+
+      context "when Resque instrumentation is disabled" do
+        before { configure(:options => { :instrument_resque => false }) }
+
+        it { is_expected.to be_falsy }
+      end
     end
 
     context "when Resque is not loaded" do

@@ -329,6 +329,11 @@ module Appsignal
 
     # @!visibility private
     def job_enqueue_events_suppressed?
+      # When enqueue instrumentation is disabled, every enqueue integration
+      # treats its event as suppressed. That is how the config option turns the
+      # enqueue events off across all integrations at once.
+      return true if Appsignal.config && !Appsignal.config[:enable_job_enqueue_instrumentation]
+
       store("job_enqueue")[:suppressed] == true
     end
 

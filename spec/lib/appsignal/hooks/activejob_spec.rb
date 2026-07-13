@@ -9,7 +9,17 @@ if DependencyHelper.active_job_present?
       context "when ActiveJob constant is found" do
         before { stub_const "ActiveJob", Class.new }
 
-        it { is_expected.to be_truthy }
+        context "when Active Job instrumentation is enabled" do
+          before { configure }
+
+          it { is_expected.to be_truthy }
+        end
+
+        context "when Active Job instrumentation is disabled" do
+          before { configure(:options => { :instrument_active_job => false }) }
+
+          it { is_expected.to be_falsy }
+        end
       end
 
       context "when ActiveJob constant is not found" do
@@ -383,6 +393,22 @@ if DependencyHelper.active_job_present?
           ActiveJobTestJob.perform_later
 
           expect(suppressed_during_enqueue).to be(true)
+        end
+      end
+
+      context "when enqueue instrumentation is disabled" do
+        let(:options) { { :enable_job_enqueue_instrumentation => false } }
+
+        it "does not record an enqueue event but still enqueues the job" do
+          transaction = http_request_transaction
+          set_current_transaction(transaction)
+
+          ActiveJobTestJob.perform_later
+
+          enqueue_events =
+            transaction.to_h["events"].select { |event| event["name"] == "enqueue.active_job" }
+          expect(enqueue_events).to be_empty
+          expect(ActiveJob::Base.queue_adapter.enqueued_jobs.count).to eq(1)
         end
       end
     end

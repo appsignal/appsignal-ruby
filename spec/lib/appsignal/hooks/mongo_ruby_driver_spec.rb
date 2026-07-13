@@ -2,6 +2,7 @@ describe Appsignal::Hooks::MongoRubyDriverHook do
   require "appsignal/integrations/mongo_ruby_driver"
 
   context "with mongo ruby driver" do
+    let(:options) { {} }
     let(:subscriber) { Appsignal::Hooks::MongoMonitorSubscriber.new }
     before do
       allow(Appsignal::Hooks::MongoMonitorSubscriber).to receive(:new).and_return(subscriber)
@@ -14,12 +15,19 @@ describe Appsignal::Hooks::MongoRubyDriverHook do
         def subscribe
         end
       end)
+      configure(:options => options)
     end
 
     describe "#dependencies_present?" do
       subject { described_class.new.dependencies_present? }
 
       it { is_expected.to be_truthy }
+
+      context "when MongoDB instrumentation is disabled" do
+        let(:options) { { :instrument_mongo => false } }
+
+        it { is_expected.to be_falsy }
+      end
     end
 
     it "adds a subscriber to Mongo::Monitoring" do

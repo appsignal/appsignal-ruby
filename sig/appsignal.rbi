@@ -1182,6 +1182,10 @@ module Appsignal
       sig { returns(T::Boolean) }
       attr_accessor :enable_host_metrics
 
+      # _@return_ — Configure whether to record an event when a background job is enqueued
+      sig { returns(T::Boolean) }
+      attr_accessor :enable_job_enqueue_instrumentation
+
       # _@return_ — Configure whether minutely probes are enabled
       sig { returns(T::Boolean) }
       attr_accessor :enable_minutely_probes
@@ -1218,6 +1222,18 @@ module Appsignal
       sig { returns(T::Boolean) }
       attr_accessor :files_world_accessible
 
+      # _@return_ — Configure whether to instrument Active Job
+      sig { returns(T::Boolean) }
+      attr_accessor :instrument_active_job
+
+      # _@return_ — Configure whether to instrument Delayed Job
+      sig { returns(T::Boolean) }
+      attr_accessor :instrument_delayed_job
+
+      # _@return_ — Configure whether to instrument requests made with the Excon gem
+      sig { returns(T::Boolean) }
+      attr_accessor :instrument_excon
+
       # _@return_ — Configure whether to instrument requests made with the Faraday gem
       sig { returns(T::Boolean) }
       attr_accessor :instrument_faraday
@@ -1225,6 +1241,10 @@ module Appsignal
       # _@return_ — Configure whether to instrument requests made with the http.rb gem
       sig { returns(T::Boolean) }
       attr_accessor :instrument_http_rb
+
+      # _@return_ — Configure whether to instrument MongoDB queries
+      sig { returns(T::Boolean) }
+      attr_accessor :instrument_mongo
 
       # _@return_ — Configure whether to instrument requests made with Net::HTTP
       sig { returns(T::Boolean) }
@@ -1234,13 +1254,29 @@ module Appsignal
       sig { returns(T::Boolean) }
       attr_accessor :instrument_ownership
 
+      # _@return_ — Configure whether to instrument Que
+      sig { returns(T::Boolean) }
+      attr_accessor :instrument_que
+
       # _@return_ — Configure whether to instrument Redis queries
       sig { returns(T::Boolean) }
       attr_accessor :instrument_redis
 
+      # _@return_ — Configure whether to instrument Resque
+      sig { returns(T::Boolean) }
+      attr_accessor :instrument_resque
+
       # _@return_ — Configure whether to instrument Sequel queries
       sig { returns(T::Boolean) }
       attr_accessor :instrument_sequel
+
+      # _@return_ — Configure whether to instrument Shoryuken
+      sig { returns(T::Boolean) }
+      attr_accessor :instrument_shoryuken
+
+      # _@return_ — Configure whether to instrument Sidekiq
+      sig { returns(T::Boolean) }
+      attr_accessor :instrument_sidekiq
 
       # _@return_ — Configure whether the Ownership gem instrumentation should set namespace
       sig { returns(T::Boolean) }

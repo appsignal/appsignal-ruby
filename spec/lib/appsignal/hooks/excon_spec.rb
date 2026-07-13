@@ -1,5 +1,6 @@
 describe Appsignal::Hooks::ExconHook do
-  before { start_agent }
+  let(:options) { {} }
+  before { start_agent(:options => options) }
 
   context "with Excon" do
     before do
@@ -15,6 +16,12 @@ describe Appsignal::Hooks::ExconHook do
       subject { described_class.new.dependencies_present? }
 
       it { is_expected.to be_truthy }
+
+      context "when Excon instrumentation is disabled" do
+        let(:options) { { :instrument_excon => false } }
+
+        it { is_expected.to be_falsy }
+      end
     end
 
     describe "#install" do

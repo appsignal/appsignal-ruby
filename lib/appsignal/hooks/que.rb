@@ -7,7 +7,7 @@ module Appsignal
       register :que
 
       def dependencies_present?
-        defined?(::Que::Job)
+        defined?(::Que::Job) && Appsignal.config && Appsignal.config[:instrument_que]
       end
 
       def install

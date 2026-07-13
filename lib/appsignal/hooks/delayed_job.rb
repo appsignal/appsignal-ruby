@@ -7,7 +7,8 @@ module Appsignal
       register :delayed_job
 
       def dependencies_present?
-        defined?(::Delayed::Plugin)
+        defined?(::Delayed::Plugin) && Appsignal.config &&
+          Appsignal.config[:instrument_delayed_job]
       end
 
       def install

@@ -7,7 +7,7 @@ module Appsignal
       register :excon
 
       def dependencies_present?
-        Appsignal.config && defined?(::Excon)
+        Appsignal.config && defined?(::Excon) && Appsignal.config[:instrument_excon]
       end
 
       def install
