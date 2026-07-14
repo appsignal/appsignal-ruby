@@ -198,6 +198,66 @@ if DependencyHelper.sidekiq_present?
       end
     end
 
+    context "when using the Sidekiq delayed extension" do
+      let(:job) do
+        {
+          "class" => "Sidekiq::Extensions::DelayedClass",
+          "args" => [
+            "---\n- !ruby/class 'DelayedTestClass'\n- :foo_method\n- - :bar: baz\n"
+          ]
+        }
+      end
+
+      it "titles the enqueue event with the delayed class and method name" do
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
+
+        expect(enqueue).to eq(:enqueued)
+
+        event = transaction.to_h["events"].find { |e| e["name"] == "enqueue.sidekiq" }
+        expect(event["title"]).to eq("enqueue DelayedTestClass.foo_method job")
+      end
+
+      context "when the delayed job arguments are malformed YAML" do
+        before { job["args"] = [] }
+
+        it "logs a warning and titles the enqueue event with the job class" do
+          transaction = http_request_transaction
+          set_current_transaction(transaction)
+
+          logs = capture_logs { expect(enqueue).to eq(:enqueued) }
+
+          event = transaction.to_h["events"].find { |e| e["name"] == "enqueue.sidekiq" }
+          expect(event["title"]).to eq("enqueue Sidekiq::Extensions::DelayedClass job")
+          expect(logs).to contains_log(
+            :warn,
+            "Unable to load YAML from Sidekiq delayed extension job"
+          )
+        end
+      end
+    end
+
+    context "when using the Sidekiq ActiveRecord instance delayed extension" do
+      let(:job) do
+        {
+          "class" => "Sidekiq::Extensions::DelayedModel",
+          "args" => [
+            "---\n- !ruby/object:DelayedTestClass {}\n- :foo_method\n- - :bar: :baz\n"
+          ]
+        }
+      end
+
+      it "titles the enqueue event with the delayed class and method name" do
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
+
+        expect(enqueue).to eq(:enqueued)
+
+        event = transaction.to_h["events"].find { |e| e["name"] == "enqueue.sidekiq" }
+        expect(event["title"]).to eq("enqueue DelayedTestClass#foo_method job")
+      end
+    end
+
     context "without an active transaction" do
       it "passes through without recording" do
         expect { |block| plugin.call("TestClass", job, "default", nil, &block) }

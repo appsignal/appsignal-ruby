@@ -49,6 +49,55 @@ module Appsignal
       end
     end
 
+    # Resolves the name of a Sidekiq job. That's normally the job class, but
+    # the Sidekiq delayed extensions encode the real target and method as YAML
+    # in the job's first argument, so those are decoded into a `Target.method`
+    # (class) or `Target#method` (instance) name.
+    #
+    # Shared between the client middleware, which titles the enqueue event with
+    # it, and the server middleware, which names the perform transaction with
+    # it. The same job then reads the same name on both sides.
+    #
+    # @!visibility private
+    module SidekiqActionName
+      module_function
+
+      # Based on: https://github.com/mperham/sidekiq/blob/63ee43353bd3b753beb0233f64865e658abeb1c3/lib/sidekiq/api.rb#L316-L334
+      def parse_action_name(job)
+        args = job.fetch("args", [])
+        job_class = job["class"]
+        case job_class
+        when "Sidekiq::Extensions::DelayedModel"
+          safe_load(args[0], job_class) do |target, method, _|
+            "#{target.class}##{method}"
+          end
+        when /\ASidekiq::Extensions::Delayed/
+          safe_load(args[0], job_class) do |target, method, _|
+            "#{target}.#{method}"
+          end
+        else
+          job_class
+        end
+      end
+
+      # Based on: https://github.com/mperham/sidekiq/blob/63ee43353bd3b753beb0233f64865e658abeb1c3/lib/sidekiq/api.rb#L403-L412
+      def safe_load(content, default)
+        if Gem::Version.new(YAML::VERSION) >= Gem::Version.new("4.0.0")
+          yield(*YAML.unsafe_load(content))
+        else
+          yield(*YAML.load(content)) # rubocop:disable Security/YAMLLoad
+        end
+      rescue => error
+        # Sidekiq issue #1761: in dev mode, it's possible to have jobs enqueued
+        # which haven't been loaded into memory yet so the YAML can't be
+        # loaded.
+        Appsignal.internal_logger.warn(
+          "Unable to load YAML from Sidekiq delayed extension job: #{error.message}"
+        )
+        default
+      end
+    end
+
     # Sidekiq client middleware that runs on enqueue. Records an
     # `enqueue.sidekiq` event so the enqueue shows up under the active
     # transaction.
@@ -65,7 +114,8 @@ module Appsignal
         return yield if Appsignal::Transaction.current? &&
           Appsignal::Transaction.current.job_enqueue_events_suppressed?
 
-        Appsignal.instrument("enqueue.sidekiq", "enqueue #{job["class"]} job", &block)
+        title = "enqueue #{SidekiqActionName.parse_action_name(job)} job"
+        Appsignal.instrument("enqueue.sidekiq", title, &block)
       end
     end
 
@@ -144,7 +194,7 @@ module Appsignal
       end
 
       def formatted_action_name(job)
-        sidekiq_action_name = parse_action_name(job)
+        sidekiq_action_name = SidekiqActionName.parse_action_name(job)
         return unless sidekiq_action_name
 
         complete_action = sidekiq_action_name =~ /\.|#/
@@ -163,30 +213,12 @@ module Appsignal
         end
       end
 
-      # Based on: https://github.com/mperham/sidekiq/blob/63ee43353bd3b753beb0233f64865e658abeb1c3/lib/sidekiq/api.rb#L316-L334
-      def parse_action_name(job)
-        args = job.fetch("args", [])
-        job_class = job["class"]
-        case job_class
-        when "Sidekiq::Extensions::DelayedModel"
-          safe_load(args[0], job_class) do |target, method, _|
-            "#{target.class}##{method}"
-          end
-        when /\ASidekiq::Extensions::Delayed/
-          safe_load(args[0], job_class) do |target, method, _|
-            "#{target}.#{method}"
-          end
-        else
-          job_class
-        end
-      end
-
       # Based on: https://github.com/mperham/sidekiq/blob/63ee43353bd3b753beb0233f64865e658abeb1c3/lib/sidekiq/api.rb#L336-L358
       def parse_arguments(job)
         args = job.fetch("args", [])
         case job["class"]
         when /\ASidekiq::Extensions::Delayed/
-          safe_load(args[0], args) do |_, _, arg|
+          SidekiqActionName.safe_load(args[0], args) do |_, _, arg|
             arg
           end
         else
@@ -198,21 +230,6 @@ module Appsignal
           end
           args
         end
-      end
-
-      # Based on: https://github.com/mperham/sidekiq/blob/63ee43353bd3b753beb0233f64865e658abeb1c3/lib/sidekiq/api.rb#L403-L412
-      def safe_load(content, default)
-        if YAML::VERSION >= "4.0.0"
-          yield(*YAML.unsafe_load(content))
-        else
-          yield(*YAML.load(content)) # rubocop:disable Security/YAMLLoad
-        end
-      rescue => error
-        # Sidekiq issue #1761: in dev mode, it's possible to have jobs enqueued
-        # which haven't been loaded into memory yet so the YAML can't be
-        # loaded.
-        Appsignal.internal_logger.warn "Unable to load YAML: #{error.message}"
-        default
       end
     end
   end
