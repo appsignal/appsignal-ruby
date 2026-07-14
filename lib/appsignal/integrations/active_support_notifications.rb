@@ -13,7 +13,13 @@ module Appsignal
         # `start_event` runs for every instrumented Rails event and span kind is
         # immutable, so only genuine client calls belong here. Object
         # instantiation (`instantiation.active_record`) is not a client call.
-        CLIENT_EVENT_NAMES = ["sql.active_record"].freeze
+        #
+        # `sql.sequel` is emitted by the sequel-rails gem through
+        # ActiveSupport::Notifications, so it reaches us here rather than through
+        # the dedicated Sequel hook (which already tags its own query events as
+        # CLIENT). Including it keeps a Sequel query CLIENT regardless of which
+        # path records it.
+        CLIENT_EVENT_NAMES = ["sql.active_record", "sql.sequel"].freeze
 
         # Events a dedicated AppSignal integration already records with richer
         # semantics, so the generic notifications path must not record them a

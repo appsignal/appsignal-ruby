@@ -42,6 +42,53 @@ shared_examples "activesupport instrument override" do
     end
   end
 
+  describe "a Sequel query event (emitted by sequel-rails)" do
+    def perform
+      as.instrument(
+        "sql.sequel",
+        :name => "Sequel::Postgres::Database",
+        :sql => "SQL"
+      ) { "value" }
+    end
+
+    it "in agent mode", :agent_mode do
+      start_agent
+      transaction = http_request_transaction
+      set_current_transaction(transaction)
+      as.notifier = notifier
+
+      expect(perform).to eq "value"
+      expect(transaction).to include_event(
+        "body" => "SQL",
+        "body_format" => Appsignal::EventFormatter::SQL_BODY_FORMAT,
+        "count" => 1,
+        "name" => "sql.sequel",
+        "title" => "Sequel::Postgres::Database"
+      )
+    end
+
+    it "in collector mode", :collector_mode do
+      start_collector_agent
+      transaction = http_request_transaction
+      set_current_transaction(transaction)
+      as.notifier = notifier
+
+      expect(perform).to eq "value"
+      Appsignal::Transaction.complete_current!
+
+      expect(event_spans.size).to eq(1)
+      span = event_spans.find { |s| s.name == "Sequel::Postgres::Database" }
+      expect(span).not_to be_nil
+      expect(span.parent_span_id).to eq(root_span.span_id)
+      # A database query is an outgoing call, so it carries CLIENT kind.
+      expect(span.kind).to eq(:client)
+      expect(span.attributes["db.query.text"]).to eq("SQL")
+      expect(span.attributes["db.system.name"]).to eq("other_sql")
+      expect(span.attributes["appsignal.category"]).to eq("sql.sequel")
+      expect(span.attributes).not_to have_key("appsignal.body")
+    end
+  end
+
   describe "an event with no registered formatter" do
     def perform
       as.instrument("no-registered.formatter", :key => "something") { "value" }
