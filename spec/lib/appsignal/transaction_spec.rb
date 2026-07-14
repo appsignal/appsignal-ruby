@@ -226,6 +226,108 @@ describe Appsignal::Transaction do
     end
   end
 
+  # A block handed to AppSignal (an error block, or an after_create/
+  # before_complete hook) is user code that can raise. Because these blocks
+  # can run far from where they were defined -- an error block runs at
+  # completion in agent mode -- a failure must be logged and swallowed, never
+  # raised into whatever drove creation or completion. Otherwise, in collector
+  # mode, the transaction's OpenTelemetry context is left attached to the
+  # fiber and leaks into the next request on that thread.
+  describe "when a block handed to the transaction raises" do
+    describe "an error block" do
+      it_in_both_modes "completes the transaction and logs, without raising" do
+        transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+
+        logs = capture_logs do
+          expect do
+            transaction.add_error(ExampleStandardError.new("boom")) do
+              raise ExampleStandardError, "error block boom"
+            end
+            Appsignal::Transaction.complete_current!
+          end.to_not raise_error
+        end
+
+        expect(transaction).to be_completed
+        expect(logs).to contains_log(:error, /Error in error block defined at .+error block boom/)
+      end
+
+      it "detaches the OpenTelemetry context", :collector_mode do
+        start_collector_agent
+        transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+
+        expect do
+          transaction.add_error(ExampleStandardError.new("boom")) do
+            raise ExampleStandardError, "error block boom"
+          end
+          Appsignal::Transaction.complete_current!
+        end.to_not raise_error
+
+        expect(::OpenTelemetry::Trace.current_span)
+          .to eq(::OpenTelemetry::Trace::Span::INVALID)
+      end
+    end
+
+    describe "a before_complete hook" do
+      it_in_both_modes "completes the transaction and logs, without raising" do
+        Appsignal::Transaction.before_complete do |_transaction, _error|
+          raise ExampleStandardError, "before_complete boom"
+        end
+        transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+
+        logs = capture_logs do
+          expect { Appsignal::Transaction.complete_current! }.to_not raise_error
+        end
+
+        expect(transaction).to be_completed
+        expect(logs).to contains_log(
+          :error, /Error in before_complete hook block defined at .+before_complete boom/
+        )
+      end
+
+      it "detaches the OpenTelemetry context", :collector_mode do
+        start_collector_agent
+        Appsignal::Transaction.before_complete do |_transaction, _error|
+          raise ExampleStandardError, "before_complete boom"
+        end
+        create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+
+        expect { Appsignal::Transaction.complete_current! }.to_not raise_error
+        expect(::OpenTelemetry::Trace.current_span)
+          .to eq(::OpenTelemetry::Trace::Span::INVALID)
+      end
+    end
+
+    describe "an after_create hook" do
+      it_in_both_modes "creates the transaction and logs, without raising" do
+        Appsignal::Transaction.after_create do |_transaction|
+          raise ExampleStandardError, "after_create boom"
+        end
+
+        logs = capture_logs do
+          expect { create_transaction(Appsignal::Transaction::HTTP_REQUEST) }
+            .to_not raise_error
+        end
+
+        expect(logs).to contains_log(
+          :error, /Error in after_create hook block defined at .+after_create boom/
+        )
+      end
+
+      it "detaches the OpenTelemetry context on the next completion", :collector_mode do
+        start_collector_agent
+        Appsignal::Transaction.after_create do |_transaction|
+          raise ExampleStandardError, "after_create boom"
+        end
+
+        create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+        Appsignal::Transaction.complete_current!
+
+        expect(::OpenTelemetry::Trace.current_span)
+          .to eq(::OpenTelemetry::Trace::Span::INVALID)
+      end
+    end
+  end
+
   describe ".current" do
     context "when there is a current transaction" do
       let!(:transaction) { create_transaction }

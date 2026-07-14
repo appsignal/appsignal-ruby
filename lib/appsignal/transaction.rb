@@ -751,7 +751,11 @@ module Appsignal
         # span -- breadcrumbs, nested errors, custom instrumentation -- then
         # lands where the error was reported, not on the root span at
         # completion.
-        self.class.with_transaction(self) { block.call(self) } if block
+        if block
+          self.class.with_transaction(self) do
+            call_transaction_block(block, self, :source => "error")
+          end
+        end
       else
         @error_blocks[error] << block
         @error_blocks[error].compact!
@@ -760,15 +764,34 @@ module Appsignal
 
     private
 
+    # Run a block handed to the transaction by user code -- an error block from
+    # `set_error`/`send_error`/`report_error`, or an `after_create`/
+    # `before_complete` hook -- without letting it break the transaction
+    # lifecycle. These blocks can run far from where they were defined (an error
+    # block runs at completion in agent mode), so a failure is logged and
+    # swallowed rather than raised into whatever drove creation or completion.
+    # Re-raising would surface the error in unrelated code and, in collector
+    # mode, leave the OpenTelemetry context attached to the fiber -- leaking it
+    # into the next request on that thread.
+    def call_transaction_block(block, *args, source:)
+      block.call(*args)
+    rescue => e
+      location = block.source_location&.join(":") || "unknown location"
+      Appsignal.internal_logger.error(
+        "Error in #{source} block defined at #{location}: " \
+          "#{e.class}: #{e.message}\n#{e.backtrace&.join("\n")}"
+      )
+    end
+
     def run_after_create_hooks
       self.class.after_create.each do |block|
-        block.call(self)
+        call_transaction_block(block, self, :source => "after_create hook")
       end
     end
 
     def run_before_complete_hooks
       self.class.before_complete.each do |block|
-        block.call(self, @error_set)
+        call_transaction_block(block, self, @error_set, :source => "before_complete hook")
       end
     end
 
@@ -799,7 +822,9 @@ module Appsignal
           # with a block that calls all the blocks set for that error
           # in the original transaction.
           transaction.internal_set_error(error) do
-            @error_blocks[error].each { |block| block.call(transaction) }
+            @error_blocks[error].each do |block|
+              call_transaction_block(block, transaction, :source => "error")
+            end
           end
 
           transaction.complete
@@ -810,7 +835,7 @@ module Appsignal
 
       self.class.with_transaction(self) do
         @error_blocks[@error_set].each do |block|
-          block.call(self)
+          call_transaction_block(block, self, :source => "error")
         end
       end
     end
