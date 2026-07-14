@@ -7,6 +7,10 @@ module Appsignal
       extend Appsignal::Hooks::Helpers
 
       callbacks do |lifecycle|
+        lifecycle.around(:enqueue) do |job, &block|
+          enqueue_with_instrumentation(job, block)
+        end
+
         lifecycle.around(:invoke_job) do |job, &block|
           invoke_with_instrumentation(job, block)
         end
@@ -14,6 +18,37 @@ module Appsignal
         lifecycle.after(:execute) do |_execute|
           Appsignal.stop("delayed job")
         end
+      end
+
+      # Records an `enqueue.delayed_job` event so the enqueue shows up under the
+      # active transaction (e.g. when enqueuing from within a web request or
+      # another job). An enqueue with no active transaction is a transparent
+      # pass-through.
+      def self.enqueue_with_instrumentation(job, block)
+        # Under Active Job the enqueue is already recorded as an
+        # `enqueue.active_job` event, so skip recording it again here.
+        if Appsignal::Transaction.current? &&
+            Appsignal::Transaction.current.job_enqueue_events_suppressed?
+          return block.call(job)
+        end
+
+        Appsignal.instrument("enqueue.delayed_job", "enqueue #{enqueue_name(job)} job") do
+          block.call(job)
+        end
+      end
+
+      # Titles the enqueue event after the job. The `appsignal_name` override is
+      # honored verbatim, as it is when naming the perform action. That override
+      # is a full action name, so an enqueue that uses it reads as
+      # `enqueue Class#method job` rather than the bare `enqueue Class job`. We
+      # accept that inconsistency so the enqueue and perform events stay tied to
+      # the same name for the rare job that sets it.
+      def self.enqueue_name(job)
+        payload = job.payload_object
+        appsignal_name = extract_value(payload, :appsignal_name, nil)
+        return appsignal_name if appsignal_name.is_a?(String)
+
+        job.name
       end
 
       def self.invoke_with_instrumentation(job, block)
