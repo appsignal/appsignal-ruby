@@ -392,7 +392,12 @@ describe Appsignal::Transaction do
         end
 
         describe "completing a restored transaction" do
+          # Set an action so this isolates the restore/discard behaviour: an
+          # actionless transaction would be flagged `ignore_subtrace` on its own
+          # (see "#complete" / actionless handling), which is unrelated to
+          # whether it was restored.
           def perform
+            transaction.set_action("SomeController#action")
             transaction.discard!
             transaction.restore!
             transaction.complete

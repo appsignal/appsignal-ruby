@@ -515,6 +515,31 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
 
       expect(backend._completed?).to eq(true)
     end
+
+    context "when no action was set" do
+      it "flags the subtrace as ignored so the collector drops the placeholder-named root" do
+        backend = create_backend
+        span = backend.instance_variable_get(:@span)
+        backend.complete
+
+        finished = finished_span(span)
+        expect(finished.name).to eq("appsignal.transaction http_request")
+        expect(finished.attributes["appsignal.ignore_subtrace"]).to be(true)
+      end
+    end
+
+    context "when an action was set" do
+      it "does not flag the subtrace as ignored" do
+        backend = create_backend
+        backend.set_action("PagesController#show")
+        span = backend.instance_variable_get(:@span)
+        backend.complete
+
+        finished = finished_span(span)
+        expect(finished.attributes["appsignal.action_name"]).to eq("PagesController#show")
+        expect(finished.attributes).to_not have_key("appsignal.ignore_subtrace")
+      end
+    end
   end
 
   describe "#discard" do
