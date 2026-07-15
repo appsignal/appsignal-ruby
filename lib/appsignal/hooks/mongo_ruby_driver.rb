@@ -7,7 +7,8 @@ module Appsignal
       register :mongo_ruby_driver
 
       def dependencies_present?
-        defined?(::Mongo::Monitoring::Global)
+        defined?(::Mongo::Monitoring::Global) && Appsignal.config &&
+          Appsignal.config[:instrument_mongo]
       end
 
       def install

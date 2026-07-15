@@ -5,7 +5,17 @@ describe Appsignal::Hooks::SidekiqHook do
     context "when Sidekiq constant is found" do
       before { stub_const "Sidekiq", Class.new }
 
-      it { is_expected.to be_truthy }
+      context "when Sidekiq instrumentation is enabled" do
+        before { configure }
+
+        it { is_expected.to be_truthy }
+      end
+
+      context "when Sidekiq instrumentation is disabled" do
+        before { configure(:options => { :instrument_sidekiq => false }) }
+
+        it { is_expected.to be_falsy }
+      end
     end
 
     context "when Sidekiq constant is not found" do

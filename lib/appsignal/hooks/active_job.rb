@@ -22,7 +22,8 @@ module Appsignal
       end
 
       def dependencies_present?
-        self.class.dependencies_present?
+        self.class.dependencies_present? && Appsignal.config &&
+          Appsignal.config[:instrument_active_job]
       end
 
       def install
@@ -56,6 +57,15 @@ module Appsignal
       # @!visibility private
       module ActiveJobEnqueueInstrumentation
         def enqueue(*, **)
+          # Skip recording the event when enqueue events are suppressed. That is
+          # the case when enqueue instrumentation is disabled, and it keeps this
+          # integration consistent with the standalone adapters (Sidekiq, ...),
+          # which already gate their own enqueue event on this check.
+          if Appsignal::Transaction.current? &&
+              Appsignal::Transaction.current.job_enqueue_events_suppressed?
+            return super
+          end
+
           Appsignal.instrument("enqueue.active_job", "enqueue #{self.class.name} job") do
             # Active Job enqueues through an adapter (Sidekiq, Resque, ...) that
             # has its own enqueue instrumentation. Suppress it so the enqueue is

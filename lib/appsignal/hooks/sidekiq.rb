@@ -20,7 +20,8 @@ module Appsignal
       end
 
       def dependencies_present?
-        self.class.dependencies_present?
+        self.class.dependencies_present? && Appsignal.config &&
+          Appsignal.config[:instrument_sidekiq]
       end
 
       def install

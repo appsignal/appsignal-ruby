@@ -3,7 +3,17 @@ describe Appsignal::Hooks::QueHook do
     describe "#dependencies_present?" do
       subject { described_class.new.dependencies_present? }
 
-      it { is_expected.to be_truthy }
+      context "when Que instrumentation is enabled" do
+        before { configure }
+
+        it { is_expected.to be_truthy }
+      end
+
+      context "when Que instrumentation is disabled" do
+        before { configure(:options => { :instrument_que => false }) }
+
+        it { is_expected.to be_falsy }
+      end
     end
 
     it "installs the QuePlugin" do

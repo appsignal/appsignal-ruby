@@ -1105,6 +1105,9 @@ module Appsignal
       # _@return_ — Configure whether host metrics collection is enabled
       attr_accessor enable_host_metrics: bool
 
+      # _@return_ — Configure whether to record an event when a background job is enqueued
+      attr_accessor enable_job_enqueue_instrumentation: bool
+
       # _@return_ — Configure whether minutely probes are enabled
       attr_accessor enable_minutely_probes: bool
 
@@ -1132,11 +1135,23 @@ module Appsignal
       # _@return_ — Configure whether files created by AppSignal should be world accessible
       attr_accessor files_world_accessible: bool
 
+      # _@return_ — Configure whether to instrument Active Job
+      attr_accessor instrument_active_job: bool
+
+      # _@return_ — Configure whether to instrument Delayed Job
+      attr_accessor instrument_delayed_job: bool
+
+      # _@return_ — Configure whether to instrument requests made with the Excon gem
+      attr_accessor instrument_excon: bool
+
       # _@return_ — Configure whether to instrument requests made with the Faraday gem
       attr_accessor instrument_faraday: bool
 
       # _@return_ — Configure whether to instrument requests made with the http.rb gem
       attr_accessor instrument_http_rb: bool
+
+      # _@return_ — Configure whether to instrument MongoDB queries
+      attr_accessor instrument_mongo: bool
 
       # _@return_ — Configure whether to instrument requests made with Net::HTTP
       attr_accessor instrument_net_http: bool
@@ -1144,11 +1159,23 @@ module Appsignal
       # _@return_ — Configure whether to instrument the Ownership gem
       attr_accessor instrument_ownership: bool
 
+      # _@return_ — Configure whether to instrument Que
+      attr_accessor instrument_que: bool
+
       # _@return_ — Configure whether to instrument Redis queries
       attr_accessor instrument_redis: bool
 
+      # _@return_ — Configure whether to instrument Resque
+      attr_accessor instrument_resque: bool
+
       # _@return_ — Configure whether to instrument Sequel queries
       attr_accessor instrument_sequel: bool
+
+      # _@return_ — Configure whether to instrument Shoryuken
+      attr_accessor instrument_shoryuken: bool
+
+      # _@return_ — Configure whether to instrument Sidekiq
+      attr_accessor instrument_sidekiq: bool
 
       # _@return_ — Configure whether the Ownership gem instrumentation should set namespace
       attr_accessor ownership_set_namespace: bool

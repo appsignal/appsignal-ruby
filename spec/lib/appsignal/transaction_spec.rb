@@ -716,6 +716,22 @@ describe Appsignal::Transaction do
     end
   end
 
+  describe "#job_enqueue_events_suppressed?" do
+    let(:transaction) { new_transaction }
+
+    it "is not suppressed by default" do
+      expect(transaction.job_enqueue_events_suppressed?).to be(false)
+    end
+
+    context "when enqueue instrumentation is disabled" do
+      let(:options) { { :enable_job_enqueue_instrumentation => false } }
+
+      it "reports enqueue events as suppressed" do
+        expect(transaction.job_enqueue_events_suppressed?).to be(true)
+      end
+    end
+  end
+
   describe "#add_params" do
     let(:transaction) { new_transaction }
 

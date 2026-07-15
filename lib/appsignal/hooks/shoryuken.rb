@@ -7,7 +7,7 @@ module Appsignal
       register :shoryuken
 
       def dependencies_present?
-        defined?(::Shoryuken)
+        defined?(::Shoryuken) && Appsignal.config && Appsignal.config[:instrument_shoryuken]
       end
 
       def install

@@ -1,5 +1,6 @@
 describe Appsignal::Hooks::DelayedJobHook do
   context "with delayed job" do
+    let(:options) { {} }
     before do
       stub_const("Delayed::Plugin", Class.new do
         def self.callbacks
@@ -10,6 +11,7 @@ describe Appsignal::Hooks::DelayedJobHook do
           @plugins ||= []
         end
       end)
+      configure(:options => options)
       # Install the hook directly rather than through `start_agent`. Hooks
       # install once per process and are never reset, so relying on
       # `start_agent` made "adds the plugin" pass only when this spec was the
@@ -23,6 +25,12 @@ describe Appsignal::Hooks::DelayedJobHook do
       subject { described_class.new.dependencies_present? }
 
       it { is_expected.to be_truthy }
+
+      context "when Delayed Job instrumentation is disabled" do
+        let(:options) { { :instrument_delayed_job => false } }
+
+        it { is_expected.to be_falsy }
+      end
     end
 
     it "adds the plugin" do

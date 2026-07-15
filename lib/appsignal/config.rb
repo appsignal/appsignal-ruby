@@ -96,6 +96,7 @@ module Appsignal
       :enable_at_exit_hook => "on_error",
       :enable_at_exit_reporter => true,
       :enable_host_metrics => true,
+      :enable_job_enqueue_instrumentation => true,
       :enable_minutely_probes => true,
       :enable_statsd => true,
       :enable_nginx_metrics => false,
@@ -113,13 +114,21 @@ module Appsignal
       :ignore_errors => [],
       :ignore_logs => [],
       :ignore_namespaces => [],
+      :instrument_active_job => true,
       :instrument_code_ownership => true,
+      :instrument_delayed_job => true,
+      :instrument_excon => true,
       :instrument_faraday => true,
       :instrument_http_rb => true,
+      :instrument_mongo => true,
       :instrument_net_http => true,
       :instrument_ownership => true,
+      :instrument_que => true,
       :instrument_redis => true,
+      :instrument_resque => true,
       :instrument_sequel => true,
+      :instrument_shoryuken => true,
+      :instrument_sidekiq => true,
       :log => "file",
       :logging_endpoint => "https://appsignal-endpoint.net",
       :ownership_set_namespace => false,
@@ -181,6 +190,8 @@ module Appsignal
       :enable_allocation_tracking => "APPSIGNAL_ENABLE_ALLOCATION_TRACKING",
       :enable_at_exit_reporter => "APPSIGNAL_ENABLE_AT_EXIT_REPORTER",
       :enable_host_metrics => "APPSIGNAL_ENABLE_HOST_METRICS",
+      :enable_job_enqueue_instrumentation =>
+        "APPSIGNAL_ENABLE_JOB_ENQUEUE_INSTRUMENTATION",
       :enable_minutely_probes => "APPSIGNAL_ENABLE_MINUTELY_PROBES",
       :enable_statsd => "APPSIGNAL_ENABLE_STATSD",
       :enable_nginx_metrics => "APPSIGNAL_ENABLE_NGINX_METRICS",
@@ -192,13 +203,21 @@ module Appsignal
       :enable_rake_performance_instrumentation =>
         "APPSIGNAL_ENABLE_RAKE_PERFORMANCE_INSTRUMENTATION",
       :files_world_accessible => "APPSIGNAL_FILES_WORLD_ACCESSIBLE",
+      :instrument_active_job => "APPSIGNAL_INSTRUMENT_ACTIVE_JOB",
       :instrument_code_ownership => "APPSIGNAL_INSTRUMENT_CODE_OWNERSHIP",
+      :instrument_delayed_job => "APPSIGNAL_INSTRUMENT_DELAYED_JOB",
+      :instrument_excon => "APPSIGNAL_INSTRUMENT_EXCON",
       :instrument_faraday => "APPSIGNAL_INSTRUMENT_FARADAY",
       :instrument_http_rb => "APPSIGNAL_INSTRUMENT_HTTP_RB",
+      :instrument_mongo => "APPSIGNAL_INSTRUMENT_MONGO",
       :instrument_net_http => "APPSIGNAL_INSTRUMENT_NET_HTTP",
       :instrument_ownership => "APPSIGNAL_INSTRUMENT_OWNERSHIP",
+      :instrument_que => "APPSIGNAL_INSTRUMENT_QUE",
       :instrument_redis => "APPSIGNAL_INSTRUMENT_REDIS",
+      :instrument_resque => "APPSIGNAL_INSTRUMENT_RESQUE",
       :instrument_sequel => "APPSIGNAL_INSTRUMENT_SEQUEL",
+      :instrument_shoryuken => "APPSIGNAL_INSTRUMENT_SHORYUKEN",
+      :instrument_sidekiq => "APPSIGNAL_INSTRUMENT_SIDEKIQ",
       :ownership_set_namespace => "APPSIGNAL_OWNERSHIP_SET_NAMESPACE",
       :running_in_container => "APPSIGNAL_RUNNING_IN_CONTAINER",
       :send_environment_metadata => "APPSIGNAL_SEND_ENVIRONMENT_METADATA",
@@ -828,6 +847,8 @@ module Appsignal
       #   @return [Boolean] Configure whether the at_exit reporter is enabled
       # @!attribute [rw] enable_host_metrics
       #   @return [Boolean] Configure whether host metrics collection is enabled
+      # @!attribute [rw] enable_job_enqueue_instrumentation
+      #   @return [Boolean] Configure whether to record an event when a background job is enqueued
       # @!attribute [rw] enable_minutely_probes
       #   @return [Boolean] Configure whether minutely probes are enabled
       # @!attribute [rw] enable_statsd
@@ -846,18 +867,34 @@ module Appsignal
       #   @return [Boolean] Configure whether Rake performance instrumentation is enabled
       # @!attribute [rw] files_world_accessible
       #   @return [Boolean] Configure whether files created by AppSignal should be world accessible
+      # @!attribute [rw] instrument_active_job
+      #   @return [Boolean] Configure whether to instrument Active Job
+      # @!attribute [rw] instrument_delayed_job
+      #   @return [Boolean] Configure whether to instrument Delayed Job
+      # @!attribute [rw] instrument_excon
+      #   @return [Boolean] Configure whether to instrument requests made with the Excon gem
       # @!attribute [rw] instrument_faraday
       #   @return [Boolean] Configure whether to instrument requests made with the Faraday gem
       # @!attribute [rw] instrument_http_rb
       #   @return [Boolean] Configure whether to instrument requests made with the http.rb gem
+      # @!attribute [rw] instrument_mongo
+      #   @return [Boolean] Configure whether to instrument MongoDB queries
       # @!attribute [rw] instrument_net_http
       #   @return [Boolean] Configure whether to instrument requests made with Net::HTTP
       # @!attribute [rw] instrument_ownership
       #   @return [Boolean] Configure whether to instrument the Ownership gem
+      # @!attribute [rw] instrument_que
+      #   @return [Boolean] Configure whether to instrument Que
       # @!attribute [rw] instrument_redis
       #   @return [Boolean] Configure whether to instrument Redis queries
+      # @!attribute [rw] instrument_resque
+      #   @return [Boolean] Configure whether to instrument Resque
       # @!attribute [rw] instrument_sequel
       #   @return [Boolean] Configure whether to instrument Sequel queries
+      # @!attribute [rw] instrument_shoryuken
+      #   @return [Boolean] Configure whether to instrument Shoryuken
+      # @!attribute [rw] instrument_sidekiq
+      #   @return [Boolean] Configure whether to instrument Sidekiq
       # @!attribute [rw] ownership_set_namespace
       #   @return [Boolean] Configure whether the Ownership gem instrumentation should set namespace
       # @!attribute [rw] running_in_container
