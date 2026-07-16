@@ -238,7 +238,7 @@ module Appsignal
 
         transaction =
           Appsignal::Transaction.new(Appsignal::Transaction::HTTP_REQUEST)
-        transaction.set_error(error, &block)
+        transaction.set_error(error, :source => "Appsignal.send_error", &block)
 
         transaction.complete
       end
@@ -373,7 +373,7 @@ module Appsignal
             Appsignal::Transaction.new(Appsignal::Transaction::HTTP_REQUEST)
           end
 
-        transaction.add_error(exception, &block)
+        transaction.add_error(exception, :source => "Appsignal.report_error", &block)
 
         transaction.complete unless has_parent_transaction
       end

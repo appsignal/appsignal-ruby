@@ -627,7 +627,7 @@ module Appsignal
 
     # @!visibility private
     # @see Appsignal::Helpers::Instrumentation#report_error
-    def add_error(error, &block)
+    def add_error(error, source: nil, &block)
       unless error.is_a?(Exception)
         Appsignal.internal_logger.error "Appsignal::Transaction#add_error: Cannot add error. " \
           "The given value is not an exception: #{error.inspect}"
@@ -641,6 +641,11 @@ module Appsignal
         return
       end
 
+      # Wrap the block here, at the entry point, so it stays protected wherever
+      # it later runs: right away in collector mode, or at completion in agent
+      # mode. `source` names the helper the block was given to, when known, so
+      # the log points the customer at the right call.
+      block = protect(source ? "the block passed to #{source}" : "the error block", &block) if block
       internal_set_error(error, &block)
 
       # Mark errors and their causes as tracked so we don't report duplicates,
@@ -751,7 +756,11 @@ module Appsignal
         # span -- breadcrumbs, nested errors, custom instrumentation -- then
         # lands where the error was reported, not on the root span at
         # completion.
-        self.class.with_transaction(self) { block.call(self) } if block
+        if block
+          self.class.with_transaction(self) do
+            block.call(self)
+          end
+        end
       else
         @error_blocks[error] << block
         @error_blocks[error].compact!
@@ -760,15 +769,44 @@ module Appsignal
 
     private
 
+    # Wrap a block handed to the transaction by user code so that, wherever it
+    # later runs, a failure is logged and swallowed instead of breaking the
+    # transaction lifecycle. An error block runs at completion in agent mode,
+    # and the `after_create`/`before_complete` hooks run during creation and
+    # completion, so a raise would otherwise skip the rest of that work. In
+    # collector mode that includes the backend teardown that detaches the
+    # transaction's OpenTelemetry context, which would then leak onto the fiber
+    # and become the parent of the next request's spans on that thread.
+    # Re-raising is wrong because the block runs far from where its caller
+    # defined it, so the error would surface in unrelated code.
+    #
+    # Returns `nil` when no block is given, so it can wrap an optional block.
+    def protect(description, &block)
+      return unless block
+
+      proc do |*args|
+        block.call(*args)
+      rescue => error
+        location = block.source_location&.join(":") || "an unknown location"
+        Appsignal.internal_logger.error(
+          "Error in #{description}, defined at #{location}: " \
+            "#{error.class}: #{error.message}\n#{error.backtrace&.join("\n")}"
+        )
+      end
+    end
+
+    # Hooks are registered both as blocks and as method objects pushed onto the
+    # set directly, so there is no single entry point to wrap them at. They are
+    # protected here instead, at the one place that runs all of them.
     def run_after_create_hooks
       self.class.after_create.each do |block|
-        block.call(self)
+        protect("the after_create hook", &block).call(self)
       end
     end
 
     def run_before_complete_hooks
       self.class.before_complete.each do |block|
-        block.call(self, @error_set)
+        protect("the before_complete hook", &block).call(self, @error_set)
       end
     end
 
@@ -797,9 +835,12 @@ module Appsignal
         duplicate.tap do |transaction|
           # In the duplicate transaction for each error, set an error
           # with a block that calls all the blocks set for that error
-          # in the original transaction.
+          # in the original transaction. Those blocks were already wrapped
+          # when they were added, so they are called directly here.
           transaction.internal_set_error(error) do
-            @error_blocks[error].each { |block| block.call(transaction) }
+            @error_blocks[error].each do |block|
+              block.call(transaction)
+            end
           end
 
           transaction.complete
