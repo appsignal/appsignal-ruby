@@ -63,6 +63,7 @@ module Appsignal
         @breadcrumb_count = 0
         @queue_start = nil
         @start_time = Time.now
+        @action_set = false
 
         kind = SPAN_KIND_BY_NAMESPACE.fetch(namespace, DEFAULT_SPAN_KIND)
         @span = start_transaction_span(namespace, kind, opentelemetry_context)
@@ -116,6 +117,7 @@ module Appsignal
         # the collector treats the span name as authoritative for display.
         @span.name = action
         @span.set_attribute("appsignal.action_name", action)
+        @action_set = true
       end
 
       def set_namespace(namespace)
@@ -246,9 +248,12 @@ module Appsignal
       end
 
       def complete
-        # `teardown` sets `@completed`, so this guard also makes the metric
+        # `teardown` sets `@completed`, so this guard also makes the body
         # idempotent across a double `complete`, and skips it on `discard`.
-        emit_queue_duration_metric unless @completed
+        unless @completed
+          emit_queue_duration_metric
+          ignore_subtrace_without_action
+        end
         teardown
       end
 
@@ -299,6 +304,23 @@ module Appsignal
         end
         ::OpenTelemetry::Context.detach(@context_token) if @context_token
         @span&.finish
+      end
+
+      # An action name is required for performance monitoring, and a transaction
+      # that never set one has nothing to group by. Agent mode simply does not
+      # report such a transaction (e.g. a static-asset or otherwise unrouted
+      # request). Collector mode can't represent "no name": the root span keeps
+      # the placeholder name it was created with (`appsignal.transaction
+      # <namespace>`), so without this every actionless request would surface
+      # under that shared placeholder action. Mirror agent mode by flagging the
+      # subtrace so the collector drops it, exactly as `discard` does. The flag
+      # must be set before `teardown` finishes the span, since attributes set on
+      # an ended span are dropped. This is orthogonal to the queue-duration
+      # metric above, which is a namespace-level signal on its own stream.
+      def ignore_subtrace_without_action
+        return if @action_set
+
+        @span&.set_attribute("appsignal.ignore_subtrace", true)
       end
 
       # Emits the queue duration as a distribution metric in both the
