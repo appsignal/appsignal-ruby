@@ -1,5 +1,54 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.9.0
+
+_Published on 2026-07-16._
+
+### Added
+
+- Improve Faraday support. AppSignal now instruments Faraday requests automatically, without double-instrumenting the underlying HTTP client. Turn it off with the `instrument_faraday` option. (minor [c3354af3](https://github.com/appsignal/appsignal-ruby/commit/c3354af3f2497a984aa0110c9460d92ae3b5676f), [24aa25da](https://github.com/appsignal/appsignal-ruby/commit/24aa25da63a6b7abf74f3c29ce0d27ccbda38422))
+- Add config options to turn individual integrations off. Set
+  `instrument_sidekiq`, `instrument_shoryuken`, `instrument_que`,
+  `instrument_resque`, `instrument_delayed_job`, `instrument_active_job`,
+  `instrument_excon` or `instrument_mongo` to `false` to disable that
+  integration entirely. This turns off both the instrumentation of the jobs or
+  requests and the enqueue instrumentation for that integration. They all
+  default to `true`. Each can also be set through its environment variable, such
+  as `APPSIGNAL_INSTRUMENT_SIDEKIQ`.
+
+  (minor [d899994e](https://github.com/appsignal/appsignal-ruby/commit/d899994e23e32d6afac6ab457b905399a8ea68e3))
+- Instrument background job enqueues. Enqueuing a job now records an enqueue
+  event on the active transaction, so enqueues made from within a web request or
+  another job show up in the event timeline. This is recorded for Sidekiq
+  (`enqueue.sidekiq`), Que (`enqueue.que`, plus `bulk_enqueue.que` for bulk
+  enqueues on Que 2), Resque (`enqueue.resque`), Shoryuken (`enqueue.shoryuken`)
+  and Delayed Job (`enqueue.delayed_job`). Each event is titled after the job
+  being enqueued.
+
+  For Active Job, the `enqueue.active_job` event is now recorded by AppSignal's
+  own instrumentation rather than by Rails' native `enqueue.active_job`
+  notification. The native notification is suppressed so the enqueue is recorded
+  once, and the event is now titled after the job being enqueued.
+
+  These enqueue events can be turned off with the
+  `enable_job_enqueue_instrumentation` config option. Set it to `false` to stop
+  recording enqueue events across all integrations, without affecting the
+  instrumentation of the jobs themselves. It defaults to `true` and can also be
+  set through the `APPSIGNAL_ENABLE_JOB_ENQUEUE_INSTRUMENTATION` environment
+  variable.
+
+  (minor [caa8fbc7](https://github.com/appsignal/appsignal-ruby/commit/caa8fbc766f67e945836e6f78bc61ce98d8e0288))
+- Report the `grape` gem version in the environment metadata. For more information, see [our environment metadata docs](https://docs.appsignal.com/application/environment-metadata). (patch [6e91223c](https://github.com/appsignal/appsignal-ruby/commit/6e91223c777a3da8dc2b5c68c3b446fb61db8b5b))
+
+### Fixed
+
+- Instrument HTTP.rb chained requests on http 6. Requests made through a chained
+  client -- `HTTP.follow.get(...)`, `HTTP.headers(...).get(...)`, and so on -- go
+  through `HTTP::Session` rather than `HTTP::Client`, and were not being recorded.
+  They now produce a `request.http_rb` event like any other request.
+
+  (patch [9de9522a](https://github.com/appsignal/appsignal-ruby/commit/9de9522af442cb8b51be5b59702558002fbb5169))
+
 ## 4.8.6
 
 _Published on 2026-06-23._
