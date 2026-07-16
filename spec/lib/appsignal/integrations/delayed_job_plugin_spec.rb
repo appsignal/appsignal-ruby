@@ -35,7 +35,7 @@ if DependencyHelper.delayed_job_present?
 
     describe "enqueueing a job" do
       context "with an active transaction" do
-        it "records an enqueue event titled after the job" do
+        it "records an enqueue event titled after the job", :agent_mode do
           start_agent
           transaction = http_request_transaction
           set_current_transaction(transaction)
@@ -46,38 +46,42 @@ if DependencyHelper.delayed_job_present?
           expect(event).to_not be_nil
           expect(event["title"]).to eq("enqueue DelayedTestJob job")
         end
-      end
 
-      context "with a custom appsignal_name" do
-        before do
-          stub_const("DelayedNamedJob", Class.new do
-            def perform
-            end
-
-            def appsignal_name
-              "CustomName#perform"
-            end
-          end)
-        end
-
-        it "titles the enqueue event with the custom name" do
-          start_agent
+        it "records the enqueue as a producer span", :collector_mode do
+          start_collector_agent
           transaction = http_request_transaction
           set_current_transaction(transaction)
 
-          Delayed::Job.enqueue(DelayedNamedJob.new)
+          Delayed::Job.enqueue(DelayedTestJob.new)
+          Appsignal::Transaction.complete_current!
 
-          event = transaction.to_h["events"].find { |e| e["name"] == "enqueue.delayed_job" }
-          expect(event["title"]).to eq("enqueue CustomName#perform job")
+          # Delayed Job has no envelope to carry trace context, so -- like
+          # OpenTelemetry's own instrumentation -- nothing is injected; the
+          # producer span is not linked to the later perform.
+          producer = event_spans.find { |s| s.name == "enqueue DelayedTestJob job" }
+          expect(producer.attributes["appsignal.category"]).to eq("enqueue.delayed_job")
+          expect(producer.kind).to eq(:producer)
+          expect(producer.parent_span_id).to eq(root_span.span_id)
         end
       end
 
       context "without an active transaction" do
-        it "is a transparent pass-through" do
+        it "is a transparent pass-through", :agent_mode do
           start_agent
 
           expect { Delayed::Job.enqueue(DelayedTestJob.new) }
             .to change { Delayed::Backend::Test::Job.count }.by(1)
+        end
+
+        it "emits no enqueue span", :collector_mode do
+          start_collector_agent
+
+          Delayed::Job.enqueue(DelayedTestJob.new)
+
+          # Event spans are named after the title; the event name lives in the
+          # `appsignal.category` attribute, so match on that.
+          categories = span_exporter.finished_spans.map { |s| s.attributes["appsignal.category"] }
+          expect(categories).to_not include("enqueue.delayed_job")
         end
       end
 
@@ -96,7 +100,7 @@ if DependencyHelper.delayed_job_present?
             end)
           end
 
-          it "does not record a second enqueue event" do
+          it "does not record a second enqueue event", :agent_mode do
             start_agent
             transaction = http_request_transaction
             set_current_transaction(transaction)
@@ -107,48 +111,6 @@ if DependencyHelper.delayed_job_present?
             expect(event_names).to include("enqueue.active_job")
             expect(event_names).to_not include("enqueue.delayed_job")
           end
-        end
-      end
-    end
-
-    describe "performing a job" do
-      context "with a normal job" do
-        it "wraps it in a background_job transaction" do
-          start_agent
-          job = Delayed::Job.enqueue(DelayedTestJob.new)
-
-          keep_transactions { perform_job(job) }
-
-          transaction = last_transaction
-          expect(transaction).to have_namespace("background_job")
-          expect(transaction).to have_action("DelayedTestJob#perform")
-          expect(transaction).to_not have_error
-          expect(transaction).to include_event(:name => "perform_job.delayed_job")
-          expect(transaction).to include_tags("attempts" => 0, "priority" => 0)
-        end
-      end
-
-      context "with a job that raises" do
-        before do
-          stub_const("DelayedErrorJob", Class.new do
-            def perform
-              raise ExampleException, "uh oh"
-            end
-          end)
-        end
-
-        it "records the error on the transaction" do
-          start_agent
-          job = Delayed::Job.enqueue(DelayedErrorJob.new)
-
-          keep_transactions do
-            expect { perform_job(job) }.to raise_error(ExampleException, "uh oh")
-          end
-
-          transaction = last_transaction
-          expect(transaction).to have_namespace("background_job")
-          expect(transaction).to have_action("DelayedErrorJob#perform")
-          expect(transaction).to have_error("ExampleException", "uh oh")
         end
       end
 
@@ -164,7 +126,99 @@ if DependencyHelper.delayed_job_present?
           end)
         end
 
-        it "uses the custom name as the action" do
+        it "titles the enqueue event with the custom name", :agent_mode do
+          start_agent
+          transaction = http_request_transaction
+          set_current_transaction(transaction)
+
+          Delayed::Job.enqueue(DelayedNamedJob.new)
+
+          event = transaction.to_h["events"].find { |e| e["name"] == "enqueue.delayed_job" }
+          expect(event["title"]).to eq("enqueue CustomName#perform job")
+        end
+      end
+    end
+
+    describe "performing a job" do
+      context "with a normal job" do
+        it "wraps it in a background_job transaction", :agent_mode do
+          start_agent
+          job = Delayed::Job.enqueue(DelayedTestJob.new)
+
+          keep_transactions { perform_job(job) }
+
+          transaction = last_transaction
+          expect(transaction).to have_namespace("background_job")
+          expect(transaction).to have_action("DelayedTestJob#perform")
+          expect(transaction).to_not have_error
+          expect(transaction).to include_event(:name => "perform_job.delayed_job")
+          expect(transaction).to include_tags("attempts" => 0, "priority" => 0)
+        end
+
+        it "wraps it in a consumer span", :collector_mode do
+          start_collector_agent
+          job = Delayed::Job.enqueue(DelayedTestJob.new)
+
+          perform_job(job)
+          Appsignal::Transaction.complete_current!
+
+          expect(root_span.kind).to eq(:consumer)
+          expect(root_span.attributes["appsignal.action_name"]).to eq("DelayedTestJob#perform")
+          expect(root_span.attributes["appsignal.namespace"]).to eq("background")
+          expect(event_spans.map(&:name)).to include("perform_job.delayed_job")
+        end
+      end
+
+      context "with a job that raises" do
+        before do
+          stub_const("DelayedErrorJob", Class.new do
+            def perform
+              raise ExampleException, "uh oh"
+            end
+          end)
+        end
+
+        it "records the error on the transaction", :agent_mode do
+          start_agent
+          job = Delayed::Job.enqueue(DelayedErrorJob.new)
+
+          keep_transactions do
+            expect { perform_job(job) }.to raise_error(ExampleException, "uh oh")
+          end
+
+          transaction = last_transaction
+          expect(transaction).to have_namespace("background_job")
+          expect(transaction).to have_action("DelayedErrorJob#perform")
+          expect(transaction).to have_error("ExampleException", "uh oh")
+        end
+
+        it "records the error on the consumer span", :collector_mode do
+          start_collector_agent
+          job = Delayed::Job.enqueue(DelayedErrorJob.new)
+
+          expect { perform_job(job) }.to raise_error(ExampleException, "uh oh")
+          Appsignal::Transaction.complete_current!
+
+          expect(root_span.kind).to eq(:consumer)
+          event = root_span.events.find { |e| e.name == "exception" }
+          expect(event.attributes["exception.type"]).to eq("ExampleException")
+          expect(event.attributes["exception.message"]).to eq("uh oh")
+        end
+      end
+
+      context "with a custom appsignal_name" do
+        before do
+          stub_const("DelayedNamedJob", Class.new do
+            def perform
+            end
+
+            def appsignal_name
+              "CustomName#perform"
+            end
+          end)
+        end
+
+        it "uses the custom name as the action", :agent_mode do
           start_agent
           job = Delayed::Job.enqueue(DelayedNamedJob.new)
 
@@ -187,7 +241,7 @@ if DependencyHelper.delayed_job_present?
             end)
           end
 
-          it "uses the Active Job class as the action" do
+          it "uses the Active Job class as the action", :agent_mode do
             start_agent
 
             keep_transactions do
