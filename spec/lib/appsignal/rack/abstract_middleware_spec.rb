@@ -387,6 +387,11 @@ describe Appsignal::Rack::AbstractMiddleware do
             perform
 
             expect(root_span.attributes).to_not have_key("appsignal.action_name")
+            # With no action to group by, mirror agent mode (which does not
+            # report an actionless transaction) by flagging the subtrace so the
+            # collector drops it, instead of surfacing it under the placeholder
+            # span name.
+            expect(root_span.attributes["appsignal.ignore_subtrace"]).to be(true)
           end
         end
       end
