@@ -7,12 +7,37 @@ module Appsignal
       extend Appsignal::Hooks::Helpers
 
       callbacks do |lifecycle|
+        lifecycle.around(:enqueue) do |job, &block|
+          enqueue_with_instrumentation(job, block)
+        end
+
         lifecycle.around(:invoke_job) do |job, &block|
           invoke_with_instrumentation(job, block)
         end
 
         lifecycle.after(:execute) do |_execute|
           Appsignal.stop("delayed job")
+        end
+      end
+
+      # Records an `enqueue.delayed_job` event so the enqueue shows up under the
+      # active transaction (e.g. when enqueuing from within a web request or
+      # another job). An enqueue with no active transaction is a transparent
+      # pass-through.
+      def self.enqueue_with_instrumentation(job, block)
+        # Under Active Job the enqueue is already recorded as an
+        # `enqueue.active_job` event, so skip recording it again here.
+        if Appsignal::Transaction.current? &&
+            Appsignal::Transaction.current.job_enqueue_events_suppressed?
+          return block.call(job)
+        end
+
+        Appsignal.instrument(
+          "enqueue.delayed_job",
+          "enqueue #{job.name} job",
+          :opentelemetry_kind => :producer
+        ) do
+          block.call(job)
         end
       end
 
