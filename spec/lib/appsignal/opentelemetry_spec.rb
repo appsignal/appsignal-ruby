@@ -22,6 +22,21 @@ if DependencyHelper.opentelemetry_present?
     before { described_class.reset! }
     after { described_class.reset! }
 
+    # Attach a root span to the current OTel context, run the block, and detach
+    # it afterwards. Stands in for Bug A leaving a previous request's root span
+    # attached to the fiber, so the extraction specs can assert that a request
+    # with no incoming trace context does not inherit it.
+    def with_leaked_ambient_context
+      tracer = ::OpenTelemetry.tracer_provider.tracer("leak-spec")
+      leaked = tracer.start_root_span("leaked-from-previous-request")
+      token = ::OpenTelemetry::Context.attach(
+        ::OpenTelemetry::Trace.context_with_span(leaked)
+      )
+      yield leaked
+    ensure
+      ::OpenTelemetry::Context.detach(token)
+    end
+
     describe ".configure" do
       context "on success" do
         it "sets started? to true" do
@@ -222,14 +237,84 @@ if DependencyHelper.opentelemetry_present?
         expect(described_class.extract_rack_context(env)).to be_nil
       end
 
-      it "extracts from the env with the Rack getter when started" do
+      it "extracts from the env with the Rack getter, onto an empty context, when started" do
         require "opentelemetry-common"
         allow(described_class).to receive(:started?).and_return(true)
 
-        expect(::OpenTelemetry.propagation).to receive(:extract)
-          .with(env, :getter => ::OpenTelemetry::Common::Propagation.rack_env_getter)
+        received = {}
+        allow(::OpenTelemetry.propagation).to receive(:extract) do |carrier, **kwargs|
+          received = kwargs.merge(:carrier => carrier)
+          ::OpenTelemetry::Context.empty
+        end
 
         described_class.extract_rack_context(env)
+
+        expect(received[:carrier]).to eq(env)
+        expect(received[:getter])
+          .to eq(::OpenTelemetry::Common::Propagation.rack_env_getter)
+        # The base context must carry no ambient span, so a request with no
+        # `traceparent` in the carrier does not inherit whatever span happens
+        # to be current on the fiber.
+        expect(::OpenTelemetry::Trace.current_span(received[:context]))
+          .to eq(::OpenTelemetry::Trace::Span::INVALID)
+      end
+
+      # Regression for issue #7. With a span already attached to the fiber's
+      # context, extraction must reflect only the carrier. Otherwise a request
+      # with no `traceparent` inherits the ambient span and its trace merges
+      # into the leaked one.
+      context "with a span already attached to the current context", :collector_mode do
+        before { start_collector_agent }
+
+        it "does not inherit the ambient span when the env has no trace context" do
+          with_leaked_ambient_context do |leaked|
+            context = described_class.extract_rack_context({})
+            extracted = ::OpenTelemetry::Trace.current_span(context).context
+            expect(extracted).to_not be_valid
+            expect(extracted.hex_trace_id).to_not eq(leaked.context.hex_trace_id)
+          end
+        end
+
+        it "still continues a real incoming traceparent" do
+          with_leaked_ambient_context do
+            context = described_class.extract_rack_context(env)
+            extracted = ::OpenTelemetry::Trace.current_span(context).context
+            expect(extracted.hex_trace_id).to eq("0af7651916cd43dd8448eb211c80319c")
+          end
+        end
+      end
+    end
+
+    describe ".extract_job_context" do
+      let(:carrier) do
+        { "traceparent" => "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01" }
+      end
+
+      it "returns nil when the SDK has not booted" do
+        expect(described_class.started?).to be(false)
+        expect(described_class.extract_job_context({})).to be_nil
+      end
+
+      # Regression for issue #7, mirroring the Rack case for the job carrier.
+      context "with a span already attached to the current context", :collector_mode do
+        before { start_collector_agent }
+
+        it "does not inherit the ambient span when the job has no trace context" do
+          with_leaked_ambient_context do |leaked|
+            context = described_class.extract_job_context({})
+            extracted = ::OpenTelemetry::Trace.current_span(context).context
+            expect(extracted).to_not be_valid
+            expect(extracted.hex_trace_id).to_not eq(leaked.context.hex_trace_id)
+          end
+        end
+
+        it "still reads a real incoming traceparent" do
+          with_leaked_ambient_context do
+            context = described_class.extract_job_context(carrier)
+            extracted = ::OpenTelemetry::Trace.current_span(context).context
+            expect(extracted.hex_trace_id).to eq("0af7651916cd43dd8448eb211c80319c")
+          end
+        end
       end
     end
 
