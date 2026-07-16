@@ -3959,7 +3959,8 @@ describe Appsignal::Transaction do
         )
       end
 
-      it "does not keep error causes from previously set errors" do
+      it "does not keep error causes from previously set errors", :agent_mode do
+        start_agent(**start_agent_args)
         transaction.send(:_set_error, error)
         transaction.send(:_set_error, error_without_cause)
 
@@ -3970,6 +3971,24 @@ describe Appsignal::Transaction do
         )
 
         expect(transaction).to include_error_causes([])
+      end
+
+      it "records no causes for a later cause-less error in collector mode",
+        :collector_mode do
+        start_collector_agent
+        transaction.send(:_set_error, error)
+        transaction.send(:_set_error, error_without_cause)
+        transaction.complete
+
+        # Collector mode records each error as its own exception event rather
+        # than overwriting, so the later cause-less error's event carries no
+        # causes; the earlier error's causes do not leak onto it.
+        events = Array(root_span.events).select { |event| event.name == "exception" }
+        without_cause = events.find do |event|
+          event.attributes["exception.message"] == "error without cause"
+        end
+        expect(without_cause).not_to be_nil
+        expect(without_cause.attributes).not_to have_key("appsignal.error_causes")
       end
 
       describe "with app paths" do

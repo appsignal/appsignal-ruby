@@ -46,6 +46,14 @@ describe Appsignal::Metrics::OpenTelemetryBackend, :if => DependencyHelper.opent
       snapshot = snapshot_for("my_gauge")
       expect(snapshot.data_points.first.value).to eq(10.0)
     end
+
+    it "coerces a symbol metric name to a string" do
+      described_class.set_gauge(:my_gauge, 1.0, {})
+
+      # snapshot_for matches on the string name, so this only finds the
+      # snapshot if the symbol name was coerced.
+      expect(snapshot_for("my_gauge")).not_to be_nil
+    end
   end
 
   describe ".increment_counter" do

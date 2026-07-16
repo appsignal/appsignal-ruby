@@ -1565,24 +1565,57 @@ describe Appsignal do
 
       context "with transaction" do
         let(:transaction) { http_request_transaction }
-        before { set_current_transaction(transaction) }
 
-        it "merges the params if called multiple times" do
-          Appsignal.add_params("param1" => "value1")
-          Appsignal.add_params("param2" => "value2")
+        describe "merging the params if called multiple times" do
+          def perform
+            set_current_transaction(transaction)
+            Appsignal.add_params("param1" => "value1")
+            Appsignal.add_params("param2" => "value2")
+          end
 
-          transaction._sample
-          expect(transaction).to include_params(
-            "param1" => "value1",
-            "param2" => "value2"
-          )
+          it "in agent mode", :agent_mode do
+            start_agent
+            perform
+
+            transaction._sample
+            expect(transaction).to include_params(
+              "param1" => "value1",
+              "param2" => "value2"
+            )
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            perform
+            transaction.complete
+
+            expect(JSON.parse(root_span.attributes["appsignal.request.payload"]))
+              .to eq("param1" => "value1", "param2" => "value2")
+          end
         end
 
-        it "adds parameters with a block to the transaction" do
-          Appsignal.add_params { { "param1" => "value1" } }
+        describe "adding parameters with a block" do
+          def perform
+            set_current_transaction(transaction)
+            Appsignal.add_params { { "param1" => "value1" } }
+          end
 
-          transaction._sample
-          expect(transaction).to include_params("param1" => "value1")
+          it "in agent mode", :agent_mode do
+            start_agent
+            perform
+
+            transaction._sample
+            expect(transaction).to include_params("param1" => "value1")
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            perform
+            transaction.complete
+
+            expect(JSON.parse(root_span.attributes["appsignal.request.payload"]))
+              .to eq("param1" => "value1")
+          end
         end
       end
 
@@ -1596,18 +1629,29 @@ describe Appsignal do
     end
 
     describe ".set_empty_params!" do
-      before { start_agent }
-
-      context "with transaction" do
+      describe "marking parameters to be sent as an empty value" do
         let(:transaction) { http_request_transaction }
-        before { set_current_transaction(transaction) }
 
-        it "marks parameters to be sent as an empty value" do
+        def perform
+          set_current_transaction(transaction)
           Appsignal.add_params("key1" => "value")
           Appsignal.set_empty_params!
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent
+          perform
 
           transaction._sample
           expect(transaction).to_not include_params
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(root_span.attributes).to_not have_key("appsignal.request.payload")
         end
       end
     end
@@ -1649,24 +1693,57 @@ describe Appsignal do
 
       context "with transaction" do
         let(:transaction) { http_request_transaction }
-        before { set_current_transaction(transaction) }
 
-        it "merges the session data if called multiple times" do
-          Appsignal.set_session_data("data1" => "value1")
-          Appsignal.set_session_data("data2" => "value2")
+        describe "merging the session data if called multiple times" do
+          def perform
+            set_current_transaction(transaction)
+            Appsignal.set_session_data("data1" => "value1")
+            Appsignal.set_session_data("data2" => "value2")
+          end
 
-          transaction._sample
-          expect(transaction).to include_session_data(
-            "data1" => "value1",
-            "data2" => "value2"
-          )
+          it "in agent mode", :agent_mode do
+            start_agent
+            perform
+
+            transaction._sample
+            expect(transaction).to include_session_data(
+              "data1" => "value1",
+              "data2" => "value2"
+            )
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            perform
+            transaction.complete
+
+            expect(JSON.parse(root_span.attributes["appsignal.request.session_data"]))
+              .to eq("data1" => "value1", "data2" => "value2")
+          end
         end
 
-        it "adds session data with a block to the transaction" do
-          Appsignal.set_session_data { { "data" => "value1" } }
+        describe "adding session data with a block" do
+          def perform
+            set_current_transaction(transaction)
+            Appsignal.set_session_data { { "data" => "value1" } }
+          end
 
-          transaction._sample
-          expect(transaction).to include_session_data("data" => "value1")
+          it "in agent mode", :agent_mode do
+            start_agent
+            perform
+
+            transaction._sample
+            expect(transaction).to include_session_data("data" => "value1")
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            perform
+            transaction.complete
+
+            expect(JSON.parse(root_span.attributes["appsignal.request.session_data"]))
+              .to eq("data" => "value1")
+          end
         end
       end
 
@@ -1716,24 +1793,59 @@ describe Appsignal do
 
       context "with transaction" do
         let(:transaction) { http_request_transaction }
-        before { set_current_transaction(transaction) }
 
-        it "merges the request headers if called multiple times" do
-          Appsignal.add_headers("PATH_INFO" => "/some-path")
-          Appsignal.add_headers("REQUEST_METHOD" => "GET")
+        # Uses true HTTP headers (rather than CGI vars like PATH_INFO) because
+        # collector mode only emits the HTTP_*/CONTENT_* headers as
+        # http.request.header.* attributes and drops the rest.
+        describe "merging the request headers if called multiple times" do
+          def perform
+            set_current_transaction(transaction)
+            Appsignal.add_headers("HTTP_ACCEPT" => "text/html")
+            Appsignal.add_headers("HTTP_ACCEPT_CHARSET" => "utf-8")
+          end
 
-          transaction._sample
-          expect(transaction).to include_environment(
-            "PATH_INFO" => "/some-path",
-            "REQUEST_METHOD" => "GET"
-          )
+          it "in agent mode", :agent_mode do
+            start_agent
+            perform
+
+            transaction._sample
+            expect(transaction).to include_environment(
+              "HTTP_ACCEPT" => "text/html",
+              "HTTP_ACCEPT_CHARSET" => "utf-8"
+            )
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            perform
+            transaction.complete
+
+            expect(root_span.attributes["http.request.header.accept"]).to eq("text/html")
+            expect(root_span.attributes["http.request.header.accept-charset"]).to eq("utf-8")
+          end
         end
 
-        it "adds request headers with a block to the transaction" do
-          Appsignal.add_headers { { "PATH_INFO" => "/some-path" } }
+        describe "adding request headers with a block" do
+          def perform
+            set_current_transaction(transaction)
+            Appsignal.add_headers { { "HTTP_ACCEPT" => "text/html" } }
+          end
 
-          transaction._sample
-          expect(transaction).to include_environment("PATH_INFO" => "/some-path")
+          it "in agent mode", :agent_mode do
+            start_agent
+            perform
+
+            transaction._sample
+            expect(transaction).to include_environment("HTTP_ACCEPT" => "text/html")
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            perform
+            transaction.complete
+
+            expect(root_span.attributes["http.request.header.accept"]).to eq("text/html")
+          end
         end
       end
 
@@ -1791,17 +1903,33 @@ describe Appsignal do
 
       context "with transaction" do
         let(:transaction) { http_request_transaction }
-        before { set_current_transaction transaction }
 
-        it "merges the custom data if called multiple times" do
-          Appsignal.add_custom_data(:abc => "value")
-          Appsignal.add_custom_data(:def => "value")
+        describe "merging the custom data if called multiple times" do
+          def perform
+            set_current_transaction(transaction)
+            Appsignal.add_custom_data(:abc => "value")
+            Appsignal.add_custom_data(:def => "value")
+          end
 
-          transaction._sample
-          expect(transaction).to include_custom_data(
-            "abc" => "value",
-            "def" => "value"
-          )
+          it "in agent mode", :agent_mode do
+            start_agent
+            perform
+
+            transaction._sample
+            expect(transaction).to include_custom_data(
+              "abc" => "value",
+              "def" => "value"
+            )
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            perform
+            transaction.complete
+
+            expect(JSON.parse(root_span.attributes["appsignal.custom_data"]))
+              .to eq("abc" => "value", "def" => "value")
+          end
         end
       end
 
@@ -2008,17 +2136,6 @@ describe Appsignal do
           end
         end
 
-        it "yields and allows additional metadata to be set with global helpers" do
-          Appsignal.send_error(StandardError.new("my_error")) do
-            Appsignal.set_action("my_action")
-            Appsignal.set_namespace("my_namespace")
-          end
-
-          expect(last_transaction).to have_namespace("my_namespace")
-          expect(last_transaction).to have_action("my_action")
-          expect(last_transaction).to have_error("StandardError", "my_error")
-        end
-
         it "logs a raising block without raising, naming the helper" do
           logs = capture_logs do
             expect do
@@ -2034,29 +2151,82 @@ describe Appsignal do
           )
         end
 
-        it "yields to set metadata and doesn't modify the active transaction" do
-          active_transaction = http_request_transaction
-          active_transaction.set_action("active action")
-          active_transaction.set_namespace("active namespace")
-          set_current_transaction(active_transaction)
-          expect(current_transaction).to eq(active_transaction)
+        # The block uses the global helpers, which act on the current
+        # transaction. send_error runs the block against its own transaction, so
+        # the block's metadata and the error must land there, not on the
+        # transaction that was active when send_error was called. That active
+        # transaction must be restored afterwards and left untouched.
+        describe "yielding to set metadata with global helpers, " \
+          "with an active transaction" do
+          def perform
+            active_transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+            active_transaction.set_action("active action")
+            active_transaction.set_namespace("active namespace")
 
-          Appsignal.send_error(StandardError.new("my_error")) do
-            Appsignal.set_action("my_action")
-            Appsignal.set_namespace("my_namespace")
+            Appsignal.send_error(StandardError.new("my_error")) do
+              Appsignal.set_action("my_action")
+              Appsignal.set_namespace("my_namespace")
+              Appsignal.add_tags(:block_tag => "value")
+            end
+
+            active_transaction
           end
 
-          # Restores the active_transaction as the current transaction
-          expect(current_transaction).to eq(active_transaction)
+          it "in agent mode", :agent_mode do
+            start_agent
+            active_transaction = perform
 
-          expect(last_transaction).to have_namespace("my_namespace")
-          expect(last_transaction).to have_action("my_action")
-          expect(last_transaction).to have_error("StandardError", "my_error")
-          expect(last_transaction).to be_completed
+            # The active transaction is restored as the current transaction.
+            expect(current_transaction).to eq(active_transaction)
 
-          expect(active_transaction).to have_namespace("active namespace")
-          expect(active_transaction).to have_action("active action")
-          expect(active_transaction).to_not be_completed
+            # The block ran against send_error's own transaction.
+            expect(last_transaction).to have_namespace("my_namespace")
+            expect(last_transaction).to have_action("my_action")
+            expect(last_transaction).to include_tags("block_tag" => "value")
+            expect(last_transaction).to have_error("StandardError", "my_error")
+            expect(last_transaction).to be_completed
+
+            # The active transaction is untouched.
+            expect(active_transaction).to have_namespace("active namespace")
+            expect(active_transaction).to have_action("active action")
+            expect(active_transaction).to_not include_tags
+            expect(active_transaction).to_not be_completed
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            active_transaction = perform
+
+            # send_error restores the active transaction as both the current
+            # AppSignal transaction and the current OpenTelemetry span, so the
+            # active trace continues rather than being dropped or left open.
+            expect(current_transaction).to eq(active_transaction)
+            active_trace_id = ::OpenTelemetry::Trace.current_span.context.trace_id
+
+            # Finish the active transaction so its root span is exported too.
+            Appsignal::Transaction.complete_current!
+
+            server_spans = span_exporter.finished_spans.select { |s| s.kind == :server }
+            error_span = server_spans.find { |s| s.name == "my_action" }
+            active_span = server_spans.find { |s| s.name == "active action" }
+            expect(error_span).not_to be_nil
+            expect(active_span).not_to be_nil
+
+            # send_error reports on its own transaction, a separate trace from
+            # the active one, which continues on the trace that stayed current.
+            expect(active_span.trace_id).to eq(active_trace_id)
+            expect(error_span.trace_id).not_to eq(active_trace_id)
+
+            # The block's metadata and the error land on send_error's trace.
+            expect(error_span.attributes["appsignal.namespace"]).to eq("my_namespace")
+            expect(error_span.attributes["appsignal.tag.block_tag"]).to eq("value")
+            expect(Array(error_span.events).map(&:name)).to include("exception")
+
+            # The active trace is untouched: no block metadata, no error.
+            expect(active_span.attributes["appsignal.namespace"]).to eq("active namespace")
+            expect(active_span.attributes).to_not have_key("appsignal.tag.block_tag")
+            expect(Array(active_span.events).map(&:name)).to_not include("exception")
+          end
         end
       end
     end
@@ -2103,7 +2273,14 @@ describe Appsignal do
       end
 
       context "when there is an active transaction" do
-        before { set_current_transaction(transaction) }
+        # Mode-tagged examples set the current transaction in their own body,
+        # after starting the agent, so collector mode builds the root span
+        # against the in-memory provider. Untagged examples keep the hook.
+        before do |example|
+          unless example.metadata[:agent_mode] || example.metadata[:collector_mode]
+            set_current_transaction(transaction)
+          end
+        end
 
         context "when the error is not an Exception" do
           let(:error) { Object.new }
@@ -2126,16 +2303,41 @@ describe Appsignal do
           end
         end
 
-        context "when given a block" do
-          it "yields the transaction and allows additional metadata to be set" do
+        describe "when given a block" do
+          # The set_error helper yields the current transaction and runs the
+          # block synchronously, so the block's metadata lands on the active
+          # transaction in both modes.
+          def perform
+            set_current_transaction(transaction)
             Appsignal.set_error(StandardError.new("my_error")) do |t|
               t.set_action("my_action")
               t.set_namespace("my_namespace")
             end
+          end
+
+          it "in agent mode", :agent_mode do
+            start_agent
+            perform
 
             expect(transaction).to have_namespace("my_namespace")
             expect(transaction).to have_action("my_action")
             expect(transaction).to have_error("StandardError", "my_error")
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            perform
+            transaction.complete
+
+            expect(root_span.name).to eq("my_action")
+            expect(root_span.attributes["appsignal.action_name"]).to eq("my_action")
+            expect(root_span.attributes["appsignal.namespace"]).to eq("my_namespace")
+
+            event = root_span.events.find { |e| e.name == "exception" }
+            expect(event).not_to be_nil
+            expect(event.attributes["exception.type"]).to eq("StandardError")
+            expect(event.attributes["exception.message"]).to eq("my_error")
+            expect(root_span.status.code).to eq(::OpenTelemetry::Trace::Status::ERROR)
           end
         end
       end
@@ -2206,34 +2408,61 @@ describe Appsignal do
         end
 
         context "when given a block" do
-          it "yields the transaction and allows additional metadata to be set" do
-            Appsignal.report_error(error) do |t|
-              t.set_action("my_action")
-              t.set_namespace("my_namespace")
-              t.set_tags(:tag1 => "value1")
+          # With no active transaction, report_error creates its own
+          # transaction and completes it, so the block's metadata and the error
+          # land on that transaction in both modes.
+          shared_examples "reports the metadata on its own transaction" do
+            it "in agent mode", :agent_mode do
+              start_agent
+              perform
+
+              transaction = last_transaction
+              expect(transaction).to have_namespace("my_namespace")
+              expect(transaction).to have_action("my_action")
+              expect(transaction).to have_error("ExampleException", "error message")
+              expect(transaction).to include_tags("tag1" => "value1")
+              expect(transaction).to be_completed
             end
 
-            transaction = last_transaction
-            expect(transaction).to have_namespace("my_namespace")
-            expect(transaction).to have_action("my_action")
-            expect(transaction).to have_error("ExampleException", "error message")
-            expect(transaction).to include_tags("tag1" => "value1")
-            expect(transaction).to be_completed
+            it "in collector mode", :collector_mode do
+              start_collector_agent
+              perform
+
+              expect(root_span.name).to eq("my_action")
+              expect(root_span.attributes["appsignal.action_name"]).to eq("my_action")
+              expect(root_span.attributes["appsignal.namespace"]).to eq("my_namespace")
+              expect(root_span.attributes["appsignal.tag.tag1"]).to eq("value1")
+
+              event = root_span.events.find { |e| e.name == "exception" }
+              expect(event).not_to be_nil
+              expect(event.attributes["exception.type"]).to eq("ExampleException")
+              expect(event.attributes["exception.message"]).to eq("error message")
+              expect(root_span.status.code).to eq(::OpenTelemetry::Trace::Status::ERROR)
+            end
           end
 
-          it "yields and allows additional metadata to be set with the global helpers" do
-            Appsignal.report_error(error) do
-              Appsignal.set_action("my_action")
-              Appsignal.set_namespace("my_namespace")
-              Appsignal.set_tags(:tag1 => "value1")
+          describe "yielding the transaction" do
+            def perform
+              Appsignal.report_error(error) do |t|
+                t.set_action("my_action")
+                t.set_namespace("my_namespace")
+                t.set_tags(:tag1 => "value1")
+              end
             end
 
-            transaction = last_transaction
-            expect(transaction).to have_namespace("my_namespace")
-            expect(transaction).to have_action("my_action")
-            expect(transaction).to have_error("ExampleException", "error message")
-            expect(transaction).to include_tags("tag1" => "value1")
-            expect(transaction).to be_completed
+            include_examples "reports the metadata on its own transaction"
+          end
+
+          describe "with the global helpers" do
+            def perform
+              Appsignal.report_error(error) do
+                Appsignal.set_action("my_action")
+                Appsignal.set_namespace("my_namespace")
+                Appsignal.set_tags(:tag1 => "value1")
+              end
+            end
+
+            include_examples "reports the metadata on its own transaction"
           end
 
           it "logs a raising block without raising, naming the helper" do
@@ -2368,14 +2597,20 @@ describe Appsignal do
           end
         end
 
-        it "does not complete the transaction" do
+        it_in_both_modes "does not complete the transaction" do
+          set_current_transaction(transaction)
           Appsignal.report_error(error)
 
-          expect(last_transaction).to_not be_completed
+          expect(transaction).to_not be_completed
         end
 
         context "when given a block" do
-          before do
+          # Agent mode defers the block to completion; the collector example
+          # below starts the agent and reports the error itself, so it skips
+          # this setup.
+          before do |example|
+            next if example.metadata[:collector_mode]
+
             Appsignal.report_error(error) do |t|
               t.set_action("my_action")
               t.set_namespace("my_namespace")
@@ -2437,6 +2672,32 @@ describe Appsignal do
             expect(transaction).to have_error("ExampleException", "error message")
             expect(transaction).to include_tags("tag1" => "value1")
           end
+
+          it "applies the block to the transaction eagerly", :collector_mode do
+            start_collector_agent
+            set_current_transaction(transaction)
+            Appsignal.report_error(error) do |t|
+              t.set_action("my_action")
+              t.set_namespace("my_namespace")
+              t.set_tags(:tag1 => "value1")
+            end
+
+            # Collector mode records the error and runs its block when the error
+            # is added, not at completion as agent mode does. So the action name
+            # is on the active transaction's span right away. Tags flush with the
+            # other sample data at completion.
+            expect(::OpenTelemetry::Trace.current_span.name).to eq("my_action")
+
+            transaction.complete
+            expect(root_span.name).to eq("my_action")
+            expect(root_span.attributes["appsignal.action_name"]).to eq("my_action")
+            expect(root_span.attributes["appsignal.namespace"]).to eq("my_namespace")
+            expect(root_span.attributes["appsignal.tag.tag1"]).to eq("value1")
+
+            event = root_span.events.find { |e| e.name == "exception" }
+            expect(event).not_to be_nil
+            expect(event.attributes["exception.message"]).to eq("error message")
+          end
         end
       end
     end
@@ -2444,14 +2705,33 @@ describe Appsignal do
     describe ".set_action" do
       around { |example| keep_transactions { example.run } }
 
-      context "with current transaction" do
-        before { set_current_transaction(transaction) }
-
-        it "sets the namespace on the current transaction" do
+      describe "setting the action on the current transaction" do
+        def perform
+          set_current_transaction(transaction)
           Appsignal.set_action("custom")
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent
+          perform
 
           expect(transaction).to have_action("custom")
         end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(root_span.name).to eq("custom")
+          expect(root_span.attributes["appsignal.action_name"]).to eq("custom")
+        end
+      end
+
+      # The nil and no-current-transaction cases are guarded in the helper
+      # before any backend, so they behave the same in both modes.
+      context "with current transaction" do
+        before { set_current_transaction(transaction) }
 
         it "does not set the action if the action is nil" do
           Appsignal.set_action(nil)
@@ -2461,7 +2741,7 @@ describe Appsignal do
       end
 
       context "without current transaction" do
-        it "does not set ther action" do
+        it "does not set the action" do
           Appsignal.set_action("custom")
 
           expect(transaction).to_not have_action
@@ -2472,14 +2752,32 @@ describe Appsignal do
     describe ".set_namespace" do
       around { |example| keep_transactions { example.run } }
 
-      context "with current transaction" do
-        before { set_current_transaction(transaction) }
-
-        it "should set the namespace to the current transaction" do
+      describe "setting the namespace on the current transaction" do
+        def perform
+          set_current_transaction(transaction)
           Appsignal.set_namespace("custom")
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent
+          perform
 
           expect(transaction).to have_namespace("custom")
         end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(root_span.attributes["appsignal.namespace"]).to eq("custom")
+        end
+      end
+
+      # The nil and no-current-transaction cases are guarded in the helper
+      # before any backend, so they behave the same in both modes.
+      context "with current transaction" do
+        before { set_current_transaction(transaction) }
 
         it "does not update the namespace if the namespace is nil" do
           Appsignal.set_namespace(nil)
