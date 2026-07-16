@@ -248,7 +248,25 @@ describe Appsignal::Transaction do
         end
 
         expect(transaction).to be_completed
-        expect(logs).to contains_log(:error, /Error in error block defined at .+error block boom/)
+        expect(logs).to contains_log(:error,
+          /Error in the error block, defined at .+error block boom/)
+      end
+
+      it "names the reporting helper in the log when a source is given" do
+        transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+
+        logs = capture_logs do
+          transaction.add_error(
+            ExampleStandardError.new("boom"),
+            :source => "Appsignal.send_error"
+          ) { raise ExampleStandardError, "error block boom" }
+          Appsignal::Transaction.complete_current!
+        end
+
+        expect(logs).to contains_log(
+          :error,
+          /Error in the block passed to Appsignal\.send_error, defined at .+error block boom/
+        )
       end
 
       it "detaches the OpenTelemetry context", :collector_mode do
@@ -280,7 +298,7 @@ describe Appsignal::Transaction do
 
         expect(transaction).to be_completed
         expect(logs).to contains_log(
-          :error, /Error in before_complete hook block defined at .+before_complete boom/
+          :error, /Error in the before_complete hook, defined at .+before_complete boom/
         )
       end
 
@@ -309,7 +327,7 @@ describe Appsignal::Transaction do
         end
 
         expect(logs).to contains_log(
-          :error, /Error in after_create hook block defined at .+after_create boom/
+          :error, /Error in the after_create hook, defined at .+after_create boom/
         )
       end
 
@@ -3287,14 +3305,17 @@ describe Appsignal::Transaction do
     end
 
     context "when a block is given" do
-      it "stores the block in the error blocks" do
-        block = proc { "block" }
+      it "stores the block, wrapped, in the error blocks" do
+        called_with = nil
+        transaction.add_error(error) { |t| called_with = t }
 
-        transaction.add_error(error, &block)
+        stored = transaction.error_blocks[error]
+        expect(stored.size).to eq(1)
 
-        expect(transaction.error_blocks).to eq({
-          error => [block]
-        })
+        # The block is wrapped when it is added, so what is stored is not the
+        # given block itself but a wrapper that calls through to it.
+        stored.each { |block| block.call(transaction) }
+        expect(called_with).to eq(transaction)
       end
     end
 
@@ -3510,12 +3531,15 @@ describe Appsignal::Transaction do
       end
 
       context "when a block is given" do
-        it "adds the block to the error blocks" do
-          block = proc { "block" }
+        it "adds the block, wrapped, to the error blocks" do
+          called = false
+          transaction.add_error(error) { called = true }
 
-          transaction.add_error(error, &block)
+          stored = transaction.error_blocks[error]
+          expect(stored.size).to eq(1)
 
-          expect(transaction.error_blocks).to eq({ error => [block] })
+          stored.each { |block| block.call(transaction) }
+          expect(called).to be(true)
         end
       end
     end
@@ -3561,12 +3585,15 @@ describe Appsignal::Transaction do
           expect(transaction.error_blocks.length).to eq(10)
         end
 
-        it "does add the block to the error blocks" do
-          block = proc { "block" }
+        it "does add the block, wrapped, to the error blocks" do
+          called = false
+          transaction.add_error(seen_error) { called = true }
 
-          transaction.add_error(seen_error, &block)
+          stored = transaction.error_blocks[seen_error]
+          expect(stored.size).to eq(1)
 
-          expect(transaction.error_blocks[seen_error]).to eq([block])
+          stored.each { |block| block.call(transaction) }
+          expect(called).to be(true)
         end
 
         it "does not log a debug message" do

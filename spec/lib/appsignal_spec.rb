@@ -2019,6 +2019,21 @@ describe Appsignal do
           expect(last_transaction).to have_error("StandardError", "my_error")
         end
 
+        it "logs a raising block without raising, naming the helper" do
+          logs = capture_logs do
+            expect do
+              Appsignal.send_error(StandardError.new("my_error")) do
+                raise ExampleStandardError, "metadata boom"
+              end
+            end.to_not raise_error
+          end
+
+          expect(logs).to contains_log(
+            :error,
+            /Error in the block passed to Appsignal\.send_error, defined at .+metadata boom/
+          )
+        end
+
         it "yields to set metadata and doesn't modify the active transaction" do
           active_transaction = http_request_transaction
           active_transaction.set_action("active action")
@@ -2219,6 +2234,21 @@ describe Appsignal do
             expect(transaction).to have_error("ExampleException", "error message")
             expect(transaction).to include_tags("tag1" => "value1")
             expect(transaction).to be_completed
+          end
+
+          it "logs a raising block without raising, naming the helper" do
+            logs = capture_logs do
+              expect do
+                Appsignal.report_error(error) do
+                  raise ExampleStandardError, "metadata boom"
+                end
+              end.to_not raise_error
+            end
+
+            expect(logs).to contains_log(
+              :error,
+              /Error in the block passed to Appsignal\.report_error, defined at .+metadata boom/
+            )
           end
         end
       end

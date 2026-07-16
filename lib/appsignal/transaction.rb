@@ -627,7 +627,7 @@ module Appsignal
 
     # @!visibility private
     # @see Appsignal::Helpers::Instrumentation#report_error
-    def add_error(error, &block)
+    def add_error(error, source: nil, &block)
       unless error.is_a?(Exception)
         Appsignal.internal_logger.error "Appsignal::Transaction#add_error: Cannot add error. " \
           "The given value is not an exception: #{error.inspect}"
@@ -641,6 +641,11 @@ module Appsignal
         return
       end
 
+      # Wrap the block here, at the entry point, so it stays protected wherever
+      # it later runs: right away in collector mode, or at completion in agent
+      # mode. `source` names the helper the block was given to, when known, so
+      # the log points the customer at the right call.
+      block = protect(source ? "the block passed to #{source}" : "the error block", &block) if block
       internal_set_error(error, &block)
 
       # Mark errors and their causes as tracked so we don't report duplicates,
@@ -753,7 +758,7 @@ module Appsignal
         # completion.
         if block
           self.class.with_transaction(self) do
-            call_transaction_block(block, self, :source => "error")
+            block.call(self)
           end
         end
       else
@@ -764,34 +769,44 @@ module Appsignal
 
     private
 
-    # Run a block handed to the transaction by user code -- an error block from
-    # `set_error`/`send_error`/`report_error`, or an `after_create`/
-    # `before_complete` hook -- without letting it break the transaction
-    # lifecycle. These blocks can run far from where they were defined (an error
-    # block runs at completion in agent mode), so a failure is logged and
-    # swallowed rather than raised into whatever drove creation or completion.
-    # Re-raising would surface the error in unrelated code and, in collector
-    # mode, leave the OpenTelemetry context attached to the fiber -- leaking it
-    # into the next request on that thread.
-    def call_transaction_block(block, *args, source:)
-      block.call(*args)
-    rescue => e
-      location = block.source_location&.join(":") || "unknown location"
-      Appsignal.internal_logger.error(
-        "Error in #{source} block defined at #{location}: " \
-          "#{e.class}: #{e.message}\n#{e.backtrace&.join("\n")}"
-      )
+    # Wrap a block handed to the transaction by user code so that, wherever it
+    # later runs, a failure is logged and swallowed instead of breaking the
+    # transaction lifecycle. An error block runs at completion in agent mode,
+    # and the `after_create`/`before_complete` hooks run during creation and
+    # completion, so a raise would otherwise skip the rest of that work. In
+    # collector mode that includes the backend teardown that detaches the
+    # transaction's OpenTelemetry context, which would then leak onto the fiber
+    # and become the parent of the next request's spans on that thread.
+    # Re-raising is wrong because the block runs far from where its caller
+    # defined it, so the error would surface in unrelated code.
+    #
+    # Returns `nil` when no block is given, so it can wrap an optional block.
+    def protect(description, &block)
+      return unless block
+
+      proc do |*args|
+        block.call(*args)
+      rescue => error
+        location = block.source_location&.join(":") || "an unknown location"
+        Appsignal.internal_logger.error(
+          "Error in #{description}, defined at #{location}: " \
+            "#{error.class}: #{error.message}\n#{error.backtrace&.join("\n")}"
+        )
+      end
     end
 
+    # Hooks are registered both as blocks and as method objects pushed onto the
+    # set directly, so there is no single entry point to wrap them at. They are
+    # protected here instead, at the one place that runs all of them.
     def run_after_create_hooks
       self.class.after_create.each do |block|
-        call_transaction_block(block, self, :source => "after_create hook")
+        protect("the after_create hook", &block).call(self)
       end
     end
 
     def run_before_complete_hooks
       self.class.before_complete.each do |block|
-        call_transaction_block(block, self, @error_set, :source => "before_complete hook")
+        protect("the before_complete hook", &block).call(self, @error_set)
       end
     end
 
@@ -820,10 +835,11 @@ module Appsignal
         duplicate.tap do |transaction|
           # In the duplicate transaction for each error, set an error
           # with a block that calls all the blocks set for that error
-          # in the original transaction.
+          # in the original transaction. Those blocks were already wrapped
+          # when they were added, so they are called directly here.
           transaction.internal_set_error(error) do
             @error_blocks[error].each do |block|
-              call_transaction_block(block, transaction, :source => "error")
+              block.call(transaction)
             end
           end
 
@@ -835,7 +851,7 @@ module Appsignal
 
       self.class.with_transaction(self) do
         @error_blocks[@error_set].each do |block|
-          call_transaction_block(block, self, :source => "error")
+          block.call(self)
         end
       end
     end
