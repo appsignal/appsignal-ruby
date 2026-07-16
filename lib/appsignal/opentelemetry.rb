@@ -125,8 +125,14 @@ module Appsignal
       # names Rack puts in the env.
       def extract_rack_context(env)
         if_started do
+          # Extract onto an empty context, not `Context.current`. The W3C
+          # extractor returns its base context unchanged when the carrier has no
+          # `traceparent`, so a request with no incoming context would inherit
+          # whatever span is ambient on the fiber. Starting empty means "no
+          # carrier" yields no parent, and the transaction starts its own trace.
           ::OpenTelemetry.propagation.extract(
             env,
+            :context => ::OpenTelemetry::Context.empty,
             :getter => ::OpenTelemetry::Common::Propagation.rack_env_getter
           )
         end
@@ -148,7 +154,15 @@ module Appsignal
           nested = item["__otel_headers"]
           nested = nested.to_h if otel_header_pairs?(nested)
           carrier = item.merge(nested) if nested.is_a?(Hash)
-          ::OpenTelemetry.propagation.extract(carrier)
+          # Extract onto an empty context rather than the default
+          # `Context.current`, for the same reason as `extract_rack_context`:
+          # a job with no injected trace context must not inherit an ambient
+          # span left on the fiber. Otherwise the job's transaction would link
+          # back to an unrelated leaked span instead of standing on its own.
+          ::OpenTelemetry.propagation.extract(
+            carrier,
+            :context => ::OpenTelemetry::Context.empty
+          )
         end
       end
 
