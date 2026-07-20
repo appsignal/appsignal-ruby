@@ -254,7 +254,10 @@ module Appsignal
         # `teardown` sets `@completed`, so this guard also makes the body
         # idempotent across a double `complete`, and skips it on `discard`.
         unless @completed
-          emit_queue_duration_metric
+          # The queue metric is only emitted for a transaction that set an
+          # action to group by. An actionless transaction is never reported in
+          # agent mode, so it must contribute to no aggregate here either.
+          emit_queue_duration_metric if @action_set
           ignore_subtrace_without_action
         end
         teardown
@@ -308,17 +311,11 @@ module Appsignal
         @span&.finish
       end
 
-      # An action name is required for performance monitoring, and a transaction
-      # that never set one has nothing to group by. Agent mode simply does not
-      # report such a transaction (e.g. a static-asset or otherwise unrouted
-      # request). Collector mode can't represent "no name": the root span keeps
-      # the placeholder name it was created with (`appsignal.transaction
-      # <namespace>`), so without this every actionless request would surface
-      # under that shared placeholder action. Mirror agent mode by flagging the
-      # subtrace so the collector drops it, exactly as `discard` does. The flag
-      # must be set before `teardown` finishes the span, since attributes set on
-      # an ended span are dropped. This is orthogonal to the queue-duration
-      # metric above, which is a namespace-level signal on its own stream.
+      # A transaction that never set an action has nothing to group by, and agent
+      # mode does not report one at all. Collector mode cannot represent "no
+      # action", so the subtrace is flagged for the collector to drop instead,
+      # the same way `discard` does. The flag has to be set before `teardown`
+      # finishes the span, because attributes set on an ended span are dropped.
       def ignore_subtrace_without_action
         return if @action_set
 
