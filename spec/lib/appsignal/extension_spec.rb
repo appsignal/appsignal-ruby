@@ -12,6 +12,18 @@ describe Appsignal::Extension do
     it { is_expected.to be_kind_of(String) }
   end
 
+  # Allocation tracking is MRI-only: the JRuby extension defines neither the
+  # allocation event hook nor this counter, so the method only exists here.
+  describe ".allocation_count", :if => !DependencyHelper.running_jruby? do
+    subject { Appsignal::Extension.allocation_count }
+
+    # The counter only climbs once the allocation event hook is installed, which
+    # is a process-wide side effect avoided here. This checks the getter is
+    # wired; the climbing behavior is covered end-to-end by the collector-mode
+    # trace integration spec.
+    it { is_expected.to be_kind_of(Integer) }
+  end
+
   context "when the extension library can be loaded" do
     subject { Appsignal::Extension }
 

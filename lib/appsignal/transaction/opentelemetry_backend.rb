@@ -54,6 +54,14 @@ module Appsignal
       # queue duration when `queue_start_ms > 946_681_200_000`.
       QUEUE_START_MIN = 946_681_200_000
 
+      # One open event on the event stack. Holds the OpenTelemetry span and the
+      # context token attached for it, plus the allocation bookkeeping for the
+      # event. `allocation_start` is the allocation counter when the event began
+      # (nil when allocation tracking is off), and `child_allocation_count`
+      # accumulates the full allocation counts of the event's finished children,
+      # so the event's own allocations are `full - child_allocation_count`.
+      EventFrame = Struct.new(:span, :token, :allocation_start, :child_allocation_count)
+
       def initialize(transaction_id, namespace, opentelemetry_context: nil, **)
         super()
         @transaction_id = transaction_id
@@ -64,6 +72,9 @@ module Appsignal
         @queue_start = nil
         @start_time = Time.now
         @action_set = false
+        @action = nil
+        @allocation_start = current_allocation_count
+        @root_child_allocation_count = 0
 
         kind = SPAN_KIND_BY_NAMESPACE.fetch(namespace, DEFAULT_SPAN_KIND)
         @span = start_transaction_span(namespace, kind, opentelemetry_context)
@@ -84,17 +95,18 @@ module Appsignal
         token = ::OpenTelemetry::Context.attach(
           ::OpenTelemetry::Trace.context_with_span(span)
         )
-        @event_stack.push([span, token])
+        push_event(span, token)
       end
 
       def finish_event(name, title, body, body_format)
         return if @event_stack.empty?
 
-        span, token = @event_stack.pop
-        write_event_name_attributes(span, name, title)
-        write_event_body_attributes(span, body, body_format)
-        ::OpenTelemetry::Context.detach(token)
-        span.finish
+        frame = @event_stack.pop
+        write_event_name_attributes(frame.span, name, title)
+        write_event_body_attributes(frame.span, body, body_format)
+        write_event_allocation_count(frame)
+        ::OpenTelemetry::Context.detach(frame.token)
+        frame.span.finish
       end
 
       # `opentelemetry_kind` is set at span creation (kind is immutable in OTel),
@@ -108,6 +120,10 @@ module Appsignal
         )
         write_event_name_attributes(span, name, title)
         write_event_body_attributes(span, body, body_format)
+        # A recorded event has no start hook, so we never measured its
+        # allocations. We deliberately set no allocation attribute rather than a
+        # misleading zero. Its allocations instead fall into the enclosing
+        # event's own count, matching agent mode.
         span.finish
       end
 
@@ -117,6 +133,7 @@ module Appsignal
         # the collector treats the span name as authoritative for display.
         @span.name = action
         @span.set_attribute("appsignal.action_name", action)
+        @action = action
         @action_set = true
       end
 
@@ -251,10 +268,11 @@ module Appsignal
         # `teardown` sets `@completed`, so this guard also makes the body
         # idempotent across a double `complete`, and skips it on `discard`.
         unless @completed
-          # The queue metric is only emitted for a transaction that set an
+          # Aggregate metrics are only emitted for a transaction that set an
           # action to group by. An actionless transaction is never reported in
           # agent mode, so it must contribute to no aggregate here either.
           emit_queue_duration_metric if @action_set
+          report_allocation_count
           ignore_subtrace_without_action
         end
         teardown
@@ -301,9 +319,9 @@ module Appsignal
         # Release any event span left unfinished by an aborted flow, so the
         # root context can detach in LIFO order.
         until @event_stack.empty?
-          span, token = @event_stack.pop
-          ::OpenTelemetry::Context.detach(token)
-          span.finish
+          frame = @event_stack.pop
+          ::OpenTelemetry::Context.detach(frame.token)
+          frame.span.finish
         end
         ::OpenTelemetry::Context.detach(@context_token) if @context_token
         @span&.finish
@@ -346,6 +364,113 @@ module Appsignal
         )
       end
 
+      # Sets the transaction's allocation counts on the root span, and, when the
+      # transaction has an action to group by, emits the total as a counter
+      # metric. The counter is read once so the attributes and the metric share
+      # the same value.
+      #
+      # The root's total is `appsignal.transaction_allocation_count`, named apart
+      # from the events' `appsignal.allocation_count`, because the count resets
+      # per transaction. The nearest ancestor carrying a
+      # `transaction_allocation_count` (or the span itself) is the whole against
+      # which a span's `self_allocation_count` is a part, so the distinct name
+      # marks that denominator, including across a distributed trace. The root's
+      # own `appsignal.self_allocation_count` reuses the events' name because it
+      # means the same thing: the transaction's allocations that happened outside
+      # any event. There is no separate use for a distinct name here.
+      #
+      # Both attributes are always set, even on an actionless (ignored) subtrace,
+      # where they are harmless because the collector drops the subtrace. The
+      # metric is emitted in the per-namespace and per-namespace-and-action
+      # series the allocation graph reads. It mirrors the shape the agent
+      # pipeline produces: a counter, never host-tagged. Nothing downstream fans
+      # these out, so emit both ourselves.
+      def report_allocation_count
+        return unless @allocation_start
+
+        count = Appsignal::Extension.allocation_count - @allocation_start
+        return if allocation_count_reversed?(count)
+
+        @span&.set_attribute("appsignal.transaction_allocation_count", count)
+        @span&.set_attribute(
+          "appsignal.self_allocation_count",
+          count - @root_child_allocation_count
+        )
+
+        return unless @action_set && count.positive?
+
+        namespace = display_namespace(@namespace)
+        Appsignal::Metrics::OpenTelemetryBackend.increment_counter(
+          "transaction_allocation_count", count, :namespace => namespace
+        )
+        Appsignal::Metrics::OpenTelemetryBackend.increment_counter(
+          "transaction_allocation_count", count,
+          :namespace => namespace, :action => @action
+        )
+      end
+
+      # Sets a finished event's allocation counts and rolls its full count up to
+      # its parent. `appsignal.allocation_count` is the full count for the
+      # event's whole subtree (the delta since it started).
+      # `appsignal.self_allocation_count` excludes the event's children, so
+      # consumers can attribute allocations to a layer without walking the span
+      # tree. Adding the full count to the parent's accumulator is what lets the
+      # parent compute its own self; only the immediate parent is updated,
+      # because each event's full count already includes its whole subtree.
+      # `allocation_start` is nil when tracking is off, in which case nothing is
+      # set.
+      def write_event_allocation_count(frame)
+        return unless frame.allocation_start
+
+        full = Appsignal::Extension.allocation_count - frame.allocation_start
+        return if allocation_count_reversed?(full)
+
+        self_count = full - frame.child_allocation_count
+        # Roll the full count up to the parent so it can compute its own self.
+        # A top-level event has no parent event; its full count belongs to the
+        # transaction, so credit the root accumulator instead.
+        if (parent = @event_stack.last)
+          parent.child_allocation_count += full
+        else
+          @root_child_allocation_count += full
+        end
+        frame.span.set_attribute("appsignal.allocation_count", full)
+        frame.span.set_attribute("appsignal.self_allocation_count", self_count)
+      end
+
+      # The allocation counter is thread-local and only ever increases, so a
+      # negative delta means the transaction or event finished on a different
+      # thread than it started on. The count is then meaningless, so warn and
+      # tell the caller to drop it rather than report a wrong value.
+      def allocation_count_reversed?(delta)
+        return false unless delta.negative?
+
+        Appsignal.internal_logger.warn(
+          "Not reporting an allocation count in transaction " \
+            "'#{@transaction_id}'. The thread-local allocation counter decreased " \
+            "between the start and finish, which happens when the work starts and " \
+            "finishes on different threads."
+        )
+        true
+      end
+
+      # The thread's cumulative object allocation count, or nil when allocation
+      # tracking is off. Callers snapshot this at a start boundary and subtract
+      # it from a later read to get the allocations made in between; a nil
+      # snapshot disables allocation reporting for that transaction or event.
+      def current_allocation_count
+        Appsignal::Extension.allocation_count if allocation_tracking?
+      end
+
+      # Allocation tracking runs only when enabled by config and not on JRuby,
+      # matching the condition under which `Appsignal.start` installs the
+      # allocation event hook that feeds the counter.
+      def allocation_tracking?
+        return false unless Appsignal.config&.[](:enable_allocation_tracking)
+
+        !Appsignal::System.jruby?
+      end
+
       def hostname
         Appsignal.config&.[](:hostname) || Socket.gethostname
       end
@@ -357,8 +482,13 @@ module Appsignal
       # The open event span, or the root span when no event is open. Not the OTel
       # current span, which may belong to another instrumentation.
       def current_span
-        span, _token = @event_stack.last
-        span || @span
+        @event_stack.last&.span || @span
+      end
+
+      # Pushes an open event onto the stack, snapshotting the allocation counter
+      # so `finish_event` can measure the event's allocations as the delta since.
+      def push_event(span, token)
+        @event_stack.push(EventFrame.new(span, token, current_allocation_count, 0))
       end
 
       def placeholder_span_name(namespace)
