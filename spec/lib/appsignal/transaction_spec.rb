@@ -2835,6 +2835,9 @@ describe Appsignal::Transaction do
 
       it "in collector mode", :collector_mode do
         start_collector_agent
+        # An action is required for the aggregate metric to be emitted; an
+        # actionless transaction contributes to no metric in collector mode.
+        transaction.set_action("PagesController#show")
         # An epoch-ms timestamp shortly before the transaction started, so the
         # duration comes out to a known positive delta.
         start_time = transaction.backend.instance_variable_get(:@start_time)

@@ -270,6 +270,7 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
 
     it "emits the queue duration metric in two series on completion" do
       backend = create_backend("background_job")
+      backend.set_action("BackgroundJob#perform")
       start_time = backend.instance_variable_get(:@start_time)
       queue_start = ((start_time.to_f * 1000) - 5_000).round
 
@@ -285,9 +286,20 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
       backend.complete
     end
 
+    it "does not emit the queue duration metric when no action was set" do
+      expect(metrics).to_not receive(:add_distribution_value)
+      backend = create_backend("background_job")
+      start_time = backend.instance_variable_get(:@start_time)
+      queue_start = ((start_time.to_f * 1000) - 5_000).round
+
+      backend.set_queue_start(queue_start)
+      backend.complete
+    end
+
     it "ignores values below the epoch-ms floor" do
       expect(metrics).to_not receive(:add_distribution_value)
       backend = create_backend
+      backend.set_action("PagesController#show")
       backend.set_queue_start(10)
       backend.complete
 

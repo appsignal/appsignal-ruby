@@ -251,7 +251,10 @@ module Appsignal
         # `teardown` sets `@completed`, so this guard also makes the body
         # idempotent across a double `complete`, and skips it on `discard`.
         unless @completed
-          emit_queue_duration_metric
+          # The queue metric is only emitted for a transaction that set an
+          # action to group by. An actionless transaction is never reported in
+          # agent mode, so it must contribute to no aggregate here either.
+          emit_queue_duration_metric if @action_set
           ignore_subtrace_without_action
         end
         teardown
@@ -315,8 +318,9 @@ module Appsignal
       # under that shared placeholder action. Mirror agent mode by flagging the
       # subtrace so the collector drops it, exactly as `discard` does. The flag
       # must be set before `teardown` finishes the span, since attributes set on
-      # an ended span are dropped. This is orthogonal to the queue-duration
-      # metric above, which is a namespace-level signal on its own stream.
+      # an ended span are dropped. The aggregate metrics in `complete` are gated
+      # on this same missing action, so an actionless transaction contributes to
+      # no metric either, matching agent mode.
       def ignore_subtrace_without_action
         return if @action_set
 
