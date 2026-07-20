@@ -35,8 +35,26 @@ module Appsignal
           return unless record_event?(name)
 
           Appsignal::Transaction.current.start_event(
-            :opentelemetry_kind => CLIENT_EVENT_NAMES.include?(name.to_s) ? :client : nil
+            :opentelemetry_kind => CLIENT_EVENT_NAMES.include?(name.to_s) ? :client : nil,
+            :opentelemetry_scope => scope_for(name)
           )
+        end
+
+        # ActiveSupport::Notifications bridges many Rails components through this
+        # one path (`sql.active_record`, `render_template.action_view`, ...), so
+        # derive the instrumentation scope from the event name's group: the part
+        # after the last dot. That gives each Rails component its own scope
+        # (`appsignal-ruby-active_record`, `appsignal-ruby-action_view`, ...)
+        # rather than lumping them under one. A name without a group falls back
+        # to the default scope in the backend.
+        def scope_for(name)
+          # Only names with a group (a dot) map to a component scope. A name
+          # without one has no component to attribute it to, so it falls back to
+          # the default scope in the backend (returning nil here).
+          parts = name.to_s.split(".")
+          return if parts.length < 2 || parts.last.empty?
+
+          ["appsignal-ruby-#{parts.last}", Appsignal::VERSION]
         end
 
         def finish_event(name, payload = {})
