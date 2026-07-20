@@ -45,11 +45,25 @@ if DependencyHelper.opentelemetry_present?
       # `db.system.name` is set so the collector can sanitize.
       expect(attribute_value(sql, "db.query.text")).to eq("SELECT * FROM users")
       expect(attribute_value(sql, "db.system.name")).to eq("other_sql")
+
+      # Allocation counts: the transaction total on the root span and a per-event
+      # count on each event span. The values are real allocations, so assert the
+      # wiring (present and non-negative) rather than exact counts. The monitored
+      # block always allocates, so the transaction total is positive.
+      expect(int_attribute_value(root, "appsignal.transaction_allocation_count")).to be > 0
+      expect(int_attribute_value(root, "appsignal.self_allocation_count")).to be >= 0
+      expect(int_attribute_value(sql, "appsignal.allocation_count")).to be >= 0
+      expect(int_attribute_value(sql, "appsignal.self_allocation_count")).to be >= 0
     end
 
     def attribute_value(span, key)
       pair = span.attributes.find { |attr| attr.key == key }
       pair&.value&.string_value
+    end
+
+    def int_attribute_value(span, key)
+      pair = span.attributes.find { |attr| attr.key == key }
+      pair&.value&.int_value
     end
   end
 end

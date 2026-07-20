@@ -834,8 +834,21 @@ static VALUE add_distribution_value(VALUE self, VALUE key, VALUE value, VALUE ta
   return Qnil;
 }
 
+// Per-thread running total of object allocations, incremented on every Ruby
+// NEWOBJ event. Thread-local because MRI maps each Ruby thread to its own OS
+// thread, so this attributes allocations to the thread doing the work, which is
+// the thread the transaction runs on. Collector mode reads it through
+// Appsignal::Extension.allocation_count and diffs two snapshots to get the
+// allocations made during a transaction or an event.
+static __thread unsigned long long appsignal_thread_allocation_count = 0;
+
 static void track_allocation(rb_event_flag_t flag, VALUE arg1, VALUE arg2, ID arg3, VALUE arg4) {
+  appsignal_thread_allocation_count++;
   appsignal_track_allocation();
+}
+
+static VALUE allocation_count(VALUE self) {
+  return ULL2NUM(appsignal_thread_allocation_count);
 }
 
 static VALUE install_allocation_event_hook(VALUE self) {
@@ -956,6 +969,7 @@ void Init_appsignal_extension(void) {
 
   // Other helper methods
   rb_define_singleton_method(Extension, "install_allocation_event_hook", install_allocation_event_hook, 0);
+  rb_define_singleton_method(Extension, "allocation_count", allocation_count, 0);
   rb_define_singleton_method(Extension, "running_in_container?", running_in_container, 0);
   rb_define_singleton_method(Extension, "set_environment_metadata", set_environment_metadata, 2);
 
