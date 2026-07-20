@@ -22,7 +22,7 @@ module Appsignal
           else
             "#{data[:method].to_s.upcase} #{data[:scheme]}://#{data[:host]}"
           end
-        Appsignal.instrument(rails_name, title, &block)
+        Appsignal.instrument(rails_name, title, :opentelemetry_kind => :client, &block)
       end
     end
   end

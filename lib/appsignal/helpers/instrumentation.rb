@@ -238,7 +238,7 @@ module Appsignal
 
         transaction =
           Appsignal::Transaction.new(Appsignal::Transaction::HTTP_REQUEST)
-        transaction.set_error(error, &block)
+        transaction.set_error(error, :source => "Appsignal.send_error", &block)
 
         transaction.complete
       end
@@ -373,7 +373,7 @@ module Appsignal
             Appsignal::Transaction.new(Appsignal::Transaction::HTTP_REQUEST)
           end
 
-        transaction.add_error(exception, &block)
+        transaction.add_error(exception, :source => "Appsignal.report_error", &block)
 
         transaction.complete unless has_parent_transaction
       end
@@ -715,7 +715,7 @@ module Appsignal
       # Breadcrumbs can be used to trace what path a user has taken
       # before encountering an error.
       #
-      # Only the last 20 added breadcrumbs will be saved.
+      # At most 20 of the added breadcrumbs will be saved.
       #
       # @example
       #   Appsignal.add_breadcrumb(
@@ -800,10 +800,18 @@ module Appsignal
         title = nil,
         body = nil,
         body_format = Appsignal::EventFormatter::DEFAULT,
+        opentelemetry_kind: nil,
         &block
       )
         Appsignal::Transaction.current
-          .instrument(name, title, body, body_format, &block)
+          .instrument(
+            name,
+            title,
+            body,
+            body_format,
+            :opentelemetry_kind => opentelemetry_kind,
+            &block
+          )
       end
 
       # Instrumentation helper for SQL queries.

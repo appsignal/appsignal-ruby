@@ -8,8 +8,17 @@ module Appsignal
         logger.warn message
       end
 
+      def self.error(message, logger = Appsignal.internal_logger)
+        Kernel.warn "appsignal ERROR: #{message}"
+        logger.error message
+      end
+
       def stdout_and_logger_warning(message, logger = Appsignal.internal_logger)
         Appsignal::Utils::StdoutAndLoggerMessage.warning(message, logger)
+      end
+
+      def stdout_and_logger_error(message, logger = Appsignal.internal_logger)
+        Appsignal::Utils::StdoutAndLoggerMessage.error(message, logger)
       end
     end
   end

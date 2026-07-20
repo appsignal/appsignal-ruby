@@ -254,25 +254,62 @@ if DependencyHelper.rails_present?
 
     if Rails.respond_to?(:error)
       describe "Rails error reporter" do
-        before { start_agent }
-        around { |example| keep_transactions { example.run } }
-
-        it "reports the error when the error is not handled (reraises the error)" do
-          with_rails_error_reporter do
-            expect do
-              Rails.error.record { raise ExampleStandardError, "error message" }
-            end.to raise_error(ExampleStandardError, "error message")
+        describe "reports the error when the error is not handled (reraises the error)" do
+          def perform
+            with_rails_error_reporter do
+              expect do
+                Rails.error.record { raise ExampleStandardError, "error message" }
+              end.to raise_error(ExampleStandardError, "error message")
+            end
           end
 
-          expect(last_transaction).to have_error("ExampleStandardError", "error message")
+          it "in agent mode", :agent_mode do
+            start_agent
+            perform
+
+            expect(last_transaction).to have_error("ExampleStandardError", "error message")
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            perform
+
+            event = root_span.events.find { |e| e.name == "exception" }
+            expect(event).not_to be_nil
+            expect(event.attributes["exception.type"]).to eq("ExampleStandardError")
+            expect(event.attributes["exception.message"]).to eq("error message")
+            expect(event.attributes["exception.stacktrace"]).to be_a(String)
+            expect(event.attributes["appsignal.alert_this_error"]).to eq(true)
+            expect(root_span.status.code).to eq(::OpenTelemetry::Trace::Status::ERROR)
+          end
         end
 
-        it "reports the error when the error is handled (not reraised)" do
-          with_rails_error_reporter do
-            Rails.error.handle { raise ExampleStandardError, "error message" }
+        describe "reports the error when the error is handled (not reraised)" do
+          def perform
+            with_rails_error_reporter do
+              Rails.error.handle { raise ExampleStandardError, "error message" }
+            end
           end
 
-          expect(last_transaction).to have_error("ExampleStandardError", "error message")
+          it "in agent mode", :agent_mode do
+            start_agent
+            perform
+
+            expect(last_transaction).to have_error("ExampleStandardError", "error message")
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            perform
+
+            event = root_span.events.find { |e| e.name == "exception" }
+            expect(event).not_to be_nil
+            expect(event.attributes["exception.type"]).to eq("ExampleStandardError")
+            expect(event.attributes["exception.message"]).to eq("error message")
+            expect(event.attributes["exception.stacktrace"]).to be_a(String)
+            expect(event.attributes["appsignal.alert_this_error"]).to eq(true)
+            expect(root_span.status.code).to eq(::OpenTelemetry::Trace::Status::ERROR)
+          end
         end
 
         context "Sidekiq internal errors" do
@@ -281,37 +318,92 @@ if DependencyHelper.rails_present?
             require "sidekiq/job_retry"
           end
 
-          it "ignores Sidekiq::JobRetry::Handled errors" do
-            with_rails_error_reporter do
-              Rails.error.handle { raise Sidekiq::JobRetry::Handled, "error message" }
+          describe "ignores Sidekiq::JobRetry::Handled errors" do
+            def perform
+              with_rails_error_reporter do
+                Rails.error.handle { raise Sidekiq::JobRetry::Handled, "error message" }
+              end
             end
 
-            expect(last_transaction).to_not have_error
+            it "in agent mode", :agent_mode do
+              start_agent
+              perform
+
+              expect(last_transaction).to_not have_error
+            end
+
+            it "in collector mode", :collector_mode do
+              start_collector_agent
+              perform
+
+              expect(exception_events).to be_empty
+            end
           end
 
-          it "ignores Sidekiq::JobRetry::Skip errors" do
-            with_rails_error_reporter do
-              Rails.error.handle { raise Sidekiq::JobRetry::Skip, "error message" }
+          describe "ignores Sidekiq::JobRetry::Skip errors" do
+            def perform
+              with_rails_error_reporter do
+                Rails.error.handle { raise Sidekiq::JobRetry::Skip, "error message" }
+              end
             end
 
-            expect(last_transaction).to_not have_error
+            it "in agent mode", :agent_mode do
+              start_agent
+              perform
+
+              expect(last_transaction).to_not have_error
+            end
+
+            it "in collector mode", :collector_mode do
+              start_collector_agent
+              perform
+
+              expect(exception_events).to be_empty
+            end
           end
 
-          it "doesn't crash when no Sidekiq error classes are found" do
-            hide_const("Sidekiq::JobRetry")
-            with_rails_error_reporter do
-              Rails.error.handle { raise ExampleStandardError, "error message" }
+          describe "doesn't crash when no Sidekiq error classes are found" do
+            def perform
+              hide_const("Sidekiq::JobRetry")
+              with_rails_error_reporter do
+                Rails.error.handle { raise ExampleStandardError, "error message" }
+              end
             end
 
-            expect(last_transaction).to have_error("ExampleStandardError", "error message")
+            it "in agent mode", :agent_mode do
+              start_agent
+              perform
+
+              expect(last_transaction).to have_error("ExampleStandardError", "error message")
+            end
+
+            it "in collector mode", :collector_mode do
+              start_collector_agent
+              perform
+
+              event = root_span.events.find { |e| e.name == "exception" }
+              expect(event).not_to be_nil
+              expect(event.attributes["exception.type"]).to eq("ExampleStandardError")
+              expect(event.attributes["exception.message"]).to eq("error message")
+              expect(event.attributes["exception.stacktrace"]).to be_a(String)
+              expect(event.attributes["appsignal.alert_this_error"]).to eq(true)
+              expect(root_span.status.code).to eq(::OpenTelemetry::Trace::Status::ERROR)
+            end
           end
         end
 
         context "when no transaction is active" do
-          it "reports the error on a new transaction" do
-            with_rails_error_reporter do
-              expect do
+          describe "reports the error on a new transaction" do
+            def perform
+              with_rails_error_reporter do
                 Rails.error.handle { raise ExampleStandardError, "error message" }
+              end
+            end
+
+            it "in agent mode", :agent_mode do
+              start_agent
+              expect do
+                perform
               end.to change { created_transactions.count }.by(1)
 
               transaction = last_transaction
@@ -319,158 +411,349 @@ if DependencyHelper.rails_present?
               expect(transaction).to_not have_action
               expect(transaction).to have_error("ExampleStandardError", "error message")
             end
+
+            it "in collector mode", :collector_mode do
+              start_collector_agent
+              expect do
+                perform
+              end.to change { created_transactions.count }.by(1)
+
+              expect(root_span.kind).to eq(:server)
+              expect(root_span.attributes["appsignal.namespace"])
+                .to eq("web")
+              expect(root_span.attributes).to_not have_key("appsignal.action_name")
+              event = root_span.events.find { |e| e.name == "exception" }
+              expect(event).not_to be_nil
+              expect(event.attributes["exception.type"]).to eq("ExampleStandardError")
+              expect(event.attributes["exception.message"]).to eq("error message")
+              expect(event.attributes["exception.stacktrace"]).to be_a(String)
+              expect(event.attributes["appsignal.alert_this_error"]).to eq(true)
+              expect(root_span.status.code).to eq(::OpenTelemetry::Trace::Status::ERROR)
+            end
           end
         end
 
         context "when a transaction is active" do
-          it "reports the error on the transaction when a transaction is active" do
-            current_transaction = http_request_transaction
-            current_transaction.set_namespace "custom"
-            current_transaction.set_action "CustomAction"
-            current_transaction.add_tags(:duplicated_tag => "duplicated value")
-
-            with_rails_error_reporter do
-              with_current_transaction current_transaction do
-                Rails.error.handle { raise ExampleStandardError, "error message" }
-                expect do
-                  current_transaction.complete
-                end.to_not(change { created_transactions.count })
-
-                transaction = current_transaction
-                expect(transaction).to have_namespace("custom")
-                expect(transaction).to have_action("CustomAction")
-                expect(transaction).to have_error("ExampleStandardError", "error message")
-                expect(transaction).to include_tags(
-                  "reported_by" => "rails_error_reporter",
-                  "duplicated_tag" => "duplicated value",
-                  "severity" => "warning"
-                )
-              end
-            end
-          end
-
-          context "when the current transaction has an error" do
-            it "reports the error on a new transaction" do
-              current_transaction = http_request_transaction
-              current_transaction.set_namespace "custom"
-              current_transaction.set_action "CustomAction"
-              current_transaction.add_tags(:duplicated_tag => "duplicated value")
-              current_transaction.add_error(ExampleStandardError.new("error message"))
-
+          describe "reports the error on the transaction when a transaction is active" do
+            def perform(current_transaction)
               with_rails_error_reporter do
                 with_current_transaction current_transaction do
-                  Rails.error.handle { raise ExampleStandardError, "other message" }
-                  expect do
-                    current_transaction.complete
-                  end.to change { created_transactions.count }.by(1)
-
-                  expect(current_transaction)
-                    .to_not include_tags("reported_by" => "rails_error_reporter")
-
-                  transaction = last_transaction
-                  expect(transaction).to have_namespace("custom")
-                  expect(transaction).to have_action("CustomAction")
-                  expect(transaction).to have_error("ExampleStandardError", "other message")
-                  expect(transaction).to include_tags(
-                    "reported_by" => "rails_error_reporter",
-                    "duplicated_tag" => "duplicated value",
-                    "severity" => "warning"
-                  )
+                  Rails.error.handle { raise ExampleStandardError, "error message" }
                 end
               end
             end
 
-            it "reports the error on a new transaction with the given context" do
+            it "in agent mode", :agent_mode do
+              start_agent
               current_transaction = http_request_transaction
               current_transaction.set_namespace "custom"
               current_transaction.set_action "CustomAction"
               current_transaction.add_tags(:duplicated_tag => "duplicated value")
-              current_transaction.add_custom_data(:original => "custom value")
-              current_transaction.add_error(ExampleStandardError.new("error message"))
 
+              expect do
+                perform(current_transaction)
+              end.to_not(change { created_transactions.count })
+              current_transaction.complete
+
+              expect(current_transaction).to have_namespace("custom")
+              expect(current_transaction).to have_action("CustomAction")
+              expect(current_transaction).to have_error("ExampleStandardError", "error message")
+              expect(current_transaction).to include_tags(
+                "reported_by" => "rails_error_reporter",
+                "duplicated_tag" => "duplicated value",
+                "severity" => "warning"
+              )
+            end
+
+            it "in collector mode", :collector_mode do
+              start_collector_agent
+              current_transaction = http_request_transaction
+              current_transaction.set_namespace "custom"
+              current_transaction.set_action "CustomAction"
+              current_transaction.add_tags(:duplicated_tag => "duplicated value")
+
+              expect do
+                perform(current_transaction)
+              end.to_not(change { created_transactions.count })
+              current_transaction.complete
+
+              expect(root_span.attributes["appsignal.namespace"]).to eq("custom")
+              expect(root_span.attributes["appsignal.action_name"]).to eq("CustomAction")
+              event = root_span.events.find { |e| e.name == "exception" }
+              expect(event).not_to be_nil
+              expect(event.attributes["exception.type"]).to eq("ExampleStandardError")
+              expect(event.attributes["exception.message"]).to eq("error message")
+              expect(event.attributes["exception.stacktrace"]).to be_a(String)
+              expect(event.attributes["appsignal.alert_this_error"]).to eq(true)
+              expect(root_span.status.code).to eq(::OpenTelemetry::Trace::Status::ERROR)
+              expect(root_span.attributes["appsignal.tag.reported_by"])
+                .to eq("rails_error_reporter")
+              expect(root_span.attributes["appsignal.tag.duplicated_tag"])
+                .to eq("duplicated value")
+              expect(root_span.attributes["appsignal.tag.severity"]).to eq("warning")
+            end
+          end
+
+          context "when the current transaction has an error" do
+            describe "reports the error (new transaction in agent, span in collector)" do
+              it "in agent mode", :agent_mode do
+                start_agent
+                current_transaction = http_request_transaction
+                current_transaction.set_namespace "custom"
+                current_transaction.set_action "CustomAction"
+                current_transaction.add_tags(:duplicated_tag => "duplicated value")
+                current_transaction.add_error(ExampleStandardError.new("error message"))
+
+                with_rails_error_reporter do
+                  with_current_transaction current_transaction do
+                    Rails.error.handle { raise ExampleStandardError, "other message" }
+                    expect do
+                      current_transaction.complete
+                    end.to change { created_transactions.count }.by(1)
+
+                    expect(current_transaction)
+                      .to_not include_tags("reported_by" => "rails_error_reporter")
+
+                    transaction = last_transaction
+                    expect(transaction).to have_namespace("custom")
+                    expect(transaction).to have_action("CustomAction")
+                    expect(transaction).to have_error("ExampleStandardError", "other message")
+                    expect(transaction).to include_tags(
+                      "reported_by" => "rails_error_reporter",
+                      "duplicated_tag" => "duplicated value",
+                      "severity" => "warning"
+                    )
+                  end
+                end
+              end
+
+              it "in collector mode", :collector_mode do
+                start_collector_agent
+                current_transaction = http_request_transaction
+                current_transaction.set_namespace "custom"
+                current_transaction.set_action "CustomAction"
+                current_transaction.add_tags(:duplicated_tag => "duplicated value")
+                current_transaction.add_error(ExampleStandardError.new("error message"))
+
+                with_rails_error_reporter do
+                  with_current_transaction current_transaction do
+                    Rails.error.handle { raise ExampleStandardError, "other message" }
+                    # In collector mode both errors collapse onto one span — no
+                    # duplicate transaction is created.
+                    expect do
+                      current_transaction.complete
+                    end.to_not(change { created_transactions.count })
+
+                    expect(root_span.attributes["appsignal.namespace"]).to eq("custom")
+                    expect(root_span.attributes["appsignal.action_name"]).to eq("CustomAction")
+                    # Both errors collapse onto one root span as two exception events.
+                    root_spans = span_exporter.finished_spans.select do |s|
+                      [:server, :consumer].include?(s.kind)
+                    end
+                    expect(root_spans.size).to eq(1)
+                    events = root_spans.first.events.select { |e| e.name == "exception" }
+                    expect(events.map { |e| e.attributes["exception.message"] })
+                      .to contain_exactly("error message", "other message")
+                    expect(root_span.status.code).to eq(::OpenTelemetry::Trace::Status::ERROR)
+                    expect(root_span.attributes["appsignal.tag.reported_by"])
+                      .to eq("rails_error_reporter")
+                    expect(root_span.attributes["appsignal.tag.duplicated_tag"])
+                      .to eq("duplicated value")
+                    expect(root_span.attributes["appsignal.tag.severity"]).to eq("warning")
+                  end
+                end
+              end
+            end
+
+            describe "reports the error on a new transaction with the given context (agent) / merges context onto the span (collector)" do # rubocop:disable Layout/LineLength
+              it "in agent mode", :agent_mode do
+                start_agent
+                current_transaction = http_request_transaction
+                current_transaction.set_namespace "custom"
+                current_transaction.set_action "CustomAction"
+                current_transaction.add_tags(:duplicated_tag => "duplicated value")
+                current_transaction.add_custom_data(:original => "custom value")
+                current_transaction.add_error(ExampleStandardError.new("error message"))
+
+                with_rails_error_reporter do
+                  with_current_transaction current_transaction do
+                    given_context = {
+                      :appsignal => {
+                        :namespace => "context",
+                        :action => "ContextAction",
+                        :custom_data => { :context => "context data" }
+
+                      }
+                    }
+                    Rails.error.handle(:context => given_context) do
+                      raise ExampleStandardError, "other message"
+                    end
+                    expect do
+                      current_transaction.complete
+                    end.to change { created_transactions.count }.by(1)
+
+                    transaction = last_transaction
+                    expect(transaction).to have_namespace("context")
+                    expect(transaction).to have_action("ContextAction")
+                    expect(transaction).to have_error("ExampleStandardError", "other message")
+                    expect(transaction).to include_tags(
+                      "reported_by" => "rails_error_reporter",
+                      "duplicated_tag" => "duplicated value",
+                      "severity" => "warning"
+                    )
+                    expect(transaction).to include_custom_data(
+                      "original" => "custom value",
+                      "context" => "context data"
+                    )
+                  end
+                end
+              end
+
+              it "in collector mode", :collector_mode do
+                start_collector_agent
+                current_transaction = http_request_transaction
+                current_transaction.set_namespace "custom"
+                current_transaction.set_action "CustomAction"
+                current_transaction.add_tags(:duplicated_tag => "duplicated value")
+                current_transaction.add_custom_data(:original => "custom value")
+                current_transaction.add_error(ExampleStandardError.new("error message"))
+
+                with_rails_error_reporter do
+                  with_current_transaction current_transaction do
+                    given_context = {
+                      :appsignal => {
+                        :namespace => "context",
+                        :action => "ContextAction",
+                        :custom_data => { :context => "context data" }
+                      }
+                    }
+                    Rails.error.handle(:context => given_context) do
+                      raise ExampleStandardError, "other message"
+                    end
+                    # In collector mode both errors collapse onto one span — no
+                    # duplicate transaction is created. The reporter's block
+                    # overrides namespace/action on the existing span.
+                    expect do
+                      current_transaction.complete
+                    end.to_not(change { created_transactions.count })
+
+                    expect(root_span.attributes["appsignal.namespace"]).to eq("context")
+                    expect(root_span.attributes["appsignal.action_name"]).to eq("ContextAction")
+                    # Both errors collapse onto one root span as two exception events.
+                    root_spans = span_exporter.finished_spans.select do |s|
+                      [:server, :consumer].include?(s.kind)
+                    end
+                    expect(root_spans.size).to eq(1)
+                    events = root_spans.first.events.select { |e| e.name == "exception" }
+                    expect(events.map { |e| e.attributes["exception.message"] })
+                      .to contain_exactly("error message", "other message")
+                    expect(root_span.status.code).to eq(::OpenTelemetry::Trace::Status::ERROR)
+                    expect(root_span.attributes["appsignal.tag.reported_by"])
+                      .to eq("rails_error_reporter")
+                    expect(root_span.attributes["appsignal.tag.duplicated_tag"])
+                      .to eq("duplicated value")
+                    expect(root_span.attributes["appsignal.tag.severity"]).to eq("warning")
+                    custom_data = JSON.parse(root_span.attributes["appsignal.custom_data"])
+                    expect(custom_data).to include(
+                      "original" => "custom value",
+                      "context" => "context data"
+                    )
+                  end
+                end
+              end
+            end
+          end
+
+          describe "overwrites duplicate tags with tags from context" do
+            def perform(current_transaction)
+              with_rails_error_reporter do
+                with_current_transaction current_transaction do
+                  given_context = { :tag1 => "value1", :tag2 => "value2" }
+                  Rails.error.handle(:context => given_context) { raise ExampleStandardError }
+                  current_transaction.complete
+                end
+              end
+            end
+
+            it "in agent mode", :agent_mode do
+              start_agent
+              current_transaction = http_request_transaction
+              current_transaction.add_tags(:tag1 => "duplicated value")
+
+              perform(current_transaction)
+
+              expect(current_transaction).to include_tags(
+                "reported_by" => "rails_error_reporter",
+                "tag1" => "value1",
+                "tag2" => "value2",
+                "severity" => "warning"
+              )
+            end
+
+            it "in collector mode", :collector_mode do
+              start_collector_agent
+              current_transaction = http_request_transaction
+              current_transaction.add_tags(:tag1 => "duplicated value")
+
+              perform(current_transaction)
+
+              expect(root_span.attributes["appsignal.tag.reported_by"])
+                .to eq("rails_error_reporter")
+              expect(root_span.attributes["appsignal.tag.tag1"]).to eq("value1")
+              expect(root_span.attributes["appsignal.tag.tag2"]).to eq("value2")
+              expect(root_span.attributes["appsignal.tag.severity"]).to eq("warning")
+            end
+          end
+
+          describe "sets namespace, action and custom data with values from context" do
+            def perform(current_transaction)
               with_rails_error_reporter do
                 with_current_transaction current_transaction do
                   given_context = {
                     :appsignal => {
                       :namespace => "context",
                       :action => "ContextAction",
-                      :custom_data => { :context => "context data" }
-
+                      :custom_data => { :data => "context data" }
                     }
                   }
-                  Rails.error.handle(:context => given_context) do
-                    raise ExampleStandardError, "other message"
-                  end
-                  expect do
-                    current_transaction.complete
-                  end.to change { created_transactions.count }.by(1)
-
-                  transaction = last_transaction
-                  expect(transaction).to have_namespace("context")
-                  expect(transaction).to have_action("ContextAction")
-                  expect(transaction).to have_error("ExampleStandardError", "other message")
-                  expect(transaction).to include_tags(
-                    "reported_by" => "rails_error_reporter",
-                    "duplicated_tag" => "duplicated value",
-                    "severity" => "warning"
-                  )
-                  expect(transaction).to include_custom_data(
-                    "original" => "custom value",
-                    "context" => "context data"
-                  )
+                  Rails.error.handle(:context => given_context) { raise ExampleStandardError }
+                  current_transaction.complete
                 end
               end
             end
-          end
 
-          it "overwrites duplicate tags with tags from context" do
-            current_transaction = http_request_transaction
-            current_transaction.add_tags(:tag1 => "duplicated value")
+            it "in agent mode", :agent_mode do
+              start_agent
+              current_transaction = http_request_transaction
+              current_transaction.set_namespace "custom"
+              current_transaction.set_action "CustomAction"
 
-            with_rails_error_reporter do
-              with_current_transaction current_transaction do
-                given_context = { :tag1 => "value1", :tag2 => "value2" }
-                Rails.error.handle(:context => given_context) { raise ExampleStandardError }
-                current_transaction.complete
+              perform(current_transaction)
 
-                expect(current_transaction).to include_tags(
-                  "reported_by" => "rails_error_reporter",
-                  "tag1" => "value1",
-                  "tag2" => "value2",
-                  "severity" => "warning"
-                )
-              end
+              expect(current_transaction).to have_namespace("context")
+              expect(current_transaction).to have_action("ContextAction")
+              expect(current_transaction).to include_custom_data("data" => "context data")
             end
-          end
 
-          it "sets namespace, action and custom data with values from context" do
-            current_transaction = http_request_transaction
-            current_transaction.set_namespace "custom"
-            current_transaction.set_action "CustomAction"
+            it "in collector mode", :collector_mode do
+              start_collector_agent
+              current_transaction = http_request_transaction
+              current_transaction.set_namespace "custom"
+              current_transaction.set_action "CustomAction"
 
-            with_rails_error_reporter do
-              with_current_transaction current_transaction do
-                given_context = {
-                  :appsignal => {
-                    :namespace => "context",
-                    :action => "ContextAction",
-                    :custom_data => { :data => "context data" }
-                  }
-                }
-                Rails.error.handle(:context => given_context) { raise ExampleStandardError }
-                current_transaction.complete
+              perform(current_transaction)
 
-                expect(current_transaction).to have_namespace("context")
-                expect(current_transaction).to have_action("ContextAction")
-                expect(current_transaction).to include_custom_data("data" => "context data")
-              end
+              expect(root_span.attributes["appsignal.namespace"]).to eq("context")
+              expect(root_span.attributes["appsignal.action_name"]).to eq("ContextAction")
+              expect(JSON.parse(root_span.attributes["appsignal.custom_data"]))
+                .to include("data" => "context data")
             end
           end
         end
 
         if DependencyHelper.rails7_1_present?
-          it "sets the namespace to 'runner' if the source is the Rails runner" do
-            expect do
+          describe "sets the namespace to 'runner' if the source is the Rails runner" do
+            def perform
               with_rails_error_reporter do
                 expect do
                   Rails.error.record(:source => "application.runner.railties") do
@@ -478,35 +761,82 @@ if DependencyHelper.rails_present?
                   end
                 end.to raise_error(ExampleStandardError, "error message")
               end
-            end.to change { created_transactions.count }.by(1)
+            end
 
-            transaction = last_transaction
-            expect(transaction).to have_namespace("runner")
-            expect(transaction).to_not have_action
-            expect(transaction).to have_error("ExampleStandardError", "error message")
-            expect(transaction).to include_tags(
-              "reported_by" => "rails_error_reporter",
-              "source" => "application.runner.railties"
-            )
+            it "in agent mode", :agent_mode do
+              start_agent
+              expect do
+                perform
+              end.to change { created_transactions.count }.by(1)
+
+              transaction = last_transaction
+              expect(transaction).to have_namespace("runner")
+              expect(transaction).to_not have_action
+              expect(transaction).to have_error("ExampleStandardError", "error message")
+              expect(transaction).to include_tags(
+                "reported_by" => "rails_error_reporter",
+                "source" => "application.runner.railties"
+              )
+            end
+
+            it "in collector mode", :collector_mode do
+              start_collector_agent
+              expect do
+                perform
+              end.to change { created_transactions.count }.by(1)
+
+              expect(root_span.kind).to eq(:server)
+              expect(root_span.attributes["appsignal.namespace"]).to eq("runner")
+              expect(root_span.attributes).to_not have_key("appsignal.action_name")
+              event = root_span.events.find { |e| e.name == "exception" }
+              expect(event).not_to be_nil
+              expect(event.attributes["exception.type"]).to eq("ExampleStandardError")
+              expect(event.attributes["exception.message"]).to eq("error message")
+              expect(event.attributes["exception.stacktrace"]).to be_a(String)
+              expect(event.attributes["appsignal.alert_this_error"]).to eq(true)
+              expect(root_span.status.code).to eq(::OpenTelemetry::Trace::Status::ERROR)
+              expect(root_span.attributes["appsignal.tag.reported_by"])
+                .to eq("rails_error_reporter")
+              expect(root_span.attributes["appsignal.tag.source"])
+                .to eq("application.runner.railties")
+            end
           end
         end
 
-        it "sets the error context as tags" do
-          given_context = {
-            :appsignal => { :something => "not used" }, # Not set as tag
-            :tag1 => "value1",
-            :tag2 => "value2"
-          }
-          with_rails_error_reporter do
-            Rails.error.handle(:context => given_context) { raise ExampleStandardError }
+        describe "sets the error context as tags" do
+          def perform
+            given_context = {
+              :appsignal => { :something => "not used" }, # Not set as tag
+              :tag1 => "value1",
+              :tag2 => "value2"
+            }
+            with_rails_error_reporter do
+              Rails.error.handle(:context => given_context) { raise ExampleStandardError }
+            end
           end
 
-          expect(last_transaction).to include_tags(
-            "reported_by" => "rails_error_reporter",
-            "tag1" => "value1",
-            "tag2" => "value2",
-            "severity" => "warning"
-          )
+          it "in agent mode", :agent_mode do
+            start_agent
+            perform
+
+            expect(last_transaction).to include_tags(
+              "reported_by" => "rails_error_reporter",
+              "tag1" => "value1",
+              "tag2" => "value2",
+              "severity" => "warning"
+            )
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            perform
+
+            expect(root_span.attributes["appsignal.tag.reported_by"])
+              .to eq("rails_error_reporter")
+            expect(root_span.attributes["appsignal.tag.tag1"]).to eq("value1")
+            expect(root_span.attributes["appsignal.tag.tag2"]).to eq("value2")
+            expect(root_span.attributes["appsignal.tag.severity"]).to eq("warning")
+          end
         end
       end
     end
