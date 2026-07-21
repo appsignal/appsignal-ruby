@@ -20,6 +20,10 @@ module Appsignal
         @options = options
         @request_class = options.fetch(:request_class, ::Rack::Request)
         @instrument_event_name = options.fetch(:instrument_event_name, nil)
+        # The OpenTelemetry instrumentation scope for the request's spans in
+        # collector mode. Each framework middleware sets its own; nil falls back
+        # to the default scope in the backend.
+        @opentelemetry_scope = options.fetch(:opentelemetry_scope, nil)
         @report_errors = options.fetch(:report_errors, DEFAULT_ERROR_REPORTING)
       end
 
@@ -35,7 +39,8 @@ module Appsignal
             else
               Appsignal::Transaction.create(
                 Appsignal::Transaction::HTTP_REQUEST,
-                :opentelemetry_context => Appsignal::OpenTelemetry.extract_rack_context(env)
+                :opentelemetry_context => Appsignal::OpenTelemetry.extract_rack_context(env),
+                :opentelemetry_scope => @opentelemetry_scope
               )
             end
 
@@ -82,7 +87,10 @@ module Appsignal
       # @see #instrument_app_call_with_exception_handling
       def instrument_app_call(env, transaction)
         if @instrument_event_name
-          Appsignal.instrument(@instrument_event_name) do
+          Appsignal.instrument(
+            @instrument_event_name,
+            :opentelemetry_scope => @opentelemetry_scope
+          ) do
             call_app(env, transaction)
           end
         else
