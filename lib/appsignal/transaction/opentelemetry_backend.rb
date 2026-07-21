@@ -54,10 +54,12 @@ module Appsignal
       # queue duration when `queue_start_ms > 946_681_200_000`.
       QUEUE_START_MIN = 946_681_200_000
 
-      def initialize(transaction_id, namespace, opentelemetry_context: nil, **)
+      def initialize(transaction_id, namespace,
+        opentelemetry_context: nil, opentelemetry_scope: nil, **)
         super()
         @transaction_id = transaction_id
         @namespace = namespace
+        @scope = opentelemetry_scope
         @completed = false
         @event_stack = []
         @breadcrumb_count = 0
@@ -79,8 +81,9 @@ module Appsignal
       # `opentelemetry_kind` (e.g. `:client` for an outgoing HTTP request) is set
       # at span creation because OTel span kind is immutable afterwards. `nil`
       # leaves the SDK default (INTERNAL).
-      def start_event(opentelemetry_kind: nil)
-        span = tracer.start_span(EVENT_SPAN_PLACEHOLDER_NAME, :kind => opentelemetry_kind)
+      def start_event(opentelemetry_kind: nil, opentelemetry_scope: nil)
+        span = tracer_for(opentelemetry_scope)
+          .start_span(EVENT_SPAN_PLACEHOLDER_NAME, :kind => opentelemetry_kind)
         token = ::OpenTelemetry::Context.attach(
           ::OpenTelemetry::Trace.context_with_span(span)
         )
@@ -99,9 +102,12 @@ module Appsignal
 
       # `opentelemetry_kind` is set at span creation (kind is immutable in OTel),
       # mirroring `start_event`. `nil` leaves the SDK default (INTERNAL).
-      def record_event(name, title, body, body_format, duration, opentelemetry_kind: nil) # rubocop:disable Metrics/ParameterLists
+      def record_event( # rubocop:disable Metrics/ParameterLists
+        name, title, body, body_format, duration,
+        opentelemetry_kind: nil, opentelemetry_scope: nil
+      )
         start_time = Time.now - (duration / 1_000_000_000.0)
-        span = tracer.start_span(
+        span = tracer_for(opentelemetry_scope).start_span(
           EVENT_SPAN_PLACEHOLDER_NAME,
           :start_timestamp => start_time,
           :kind => opentelemetry_kind
@@ -346,8 +352,24 @@ module Appsignal
         Appsignal.config&.[](:hostname) || Socket.gethostname
       end
 
-      def tracer
-        ::OpenTelemetry.tracer_provider.tracer(TRACER_NAME, Appsignal::VERSION)
+      # Resolve the tracer for an instrumentation scope. `scope` is a
+      # `[name, version]` pair supplied by the integration that created the
+      # span, or nil. A nil scope, a nil/blank name, or a nil version each fall
+      # back to the default AppSignal scope, so every span always carries a
+      # scope (the collector drops scope-less spans). The tracer provider caches
+      # tracers by `(name, version)`, so this resolves rather than rebuilds.
+      def tracer_for(scope)
+        name, version = scope
+        if name.nil? || name.to_s.empty?
+          # A nil scope or one with a blank name is unusable, so fall back to
+          # the default scope entirely rather than pairing the default name with
+          # a stray version.
+          name = TRACER_NAME
+          version = Appsignal::VERSION
+        else
+          version ||= Appsignal::VERSION
+        end
+        ::OpenTelemetry.tracer_provider.tracer(name, version)
       end
 
       # The open event span, or the root span when no event is open. Not the OTel
@@ -375,6 +397,7 @@ module Appsignal
       def start_transaction_span(namespace, kind, opentelemetry_context)
         name = placeholder_span_name(namespace)
         remote = remote_span_context(opentelemetry_context)
+        tracer = tracer_for(@scope)
 
         if remote && kind == :server
           tracer.start_span(name, :with_parent => opentelemetry_context, :kind => kind)
