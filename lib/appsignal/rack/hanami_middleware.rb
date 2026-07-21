@@ -7,6 +7,7 @@ module Appsignal
       def initialize(app, options = {})
         options[:params_method] = nil
         options[:instrument_event_name] ||= "process_action.hanami"
+        options[:opentelemetry_scope] ||= ["appsignal-ruby-hanami", Appsignal::VERSION]
         super
       end
 

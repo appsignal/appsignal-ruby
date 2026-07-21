@@ -20,7 +20,8 @@ module Appsignal
         Padrino.before_load do
           Padrino.use Appsignal::Rack::EventMiddleware
           Padrino.use Appsignal::Rack::SinatraBaseInstrumentation,
-            :instrument_event_name => "process_action.padrino"
+            :instrument_event_name => "process_action.padrino",
+            :opentelemetry_scope => ["appsignal-ruby-padrino", Appsignal::VERSION]
         end
       end
 

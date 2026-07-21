@@ -65,9 +65,12 @@ module Appsignal
 
           transaction = Appsignal::Transaction.create(
             Appsignal::Transaction::HTTP_REQUEST,
-            :opentelemetry_context => Appsignal::OpenTelemetry.extract_rack_context(request.env)
+            :opentelemetry_context => Appsignal::OpenTelemetry.extract_rack_context(request.env),
+            :opentelemetry_scope => ["appsignal-ruby-rack", Appsignal::VERSION]
           )
-          transaction.start_event
+          transaction.start_event(
+            :opentelemetry_scope => ["appsignal-ruby-rack", Appsignal::VERSION]
+          )
           request.env[APPSIGNAL_TRANSACTION] = transaction
 
           request.env[RACK_AFTER_REPLY] ||= []

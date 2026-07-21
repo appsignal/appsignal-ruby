@@ -48,7 +48,10 @@ module Appsignal
         # of the body has already closed itself (as prescribed) we do not
         # attempt to close it twice
         if !@body_already_closed && @body.respond_to?(:close)
-          Appsignal.instrument("close_response_body.rack") { @body.close }
+          Appsignal.instrument(
+            "close_response_body.rack",
+            :opentelemetry_scope => ["appsignal-ruby-rack", Appsignal::VERSION]
+          ) { @body.close }
         end
         @body_already_closed = true
       rescue *IGNORED_ERRORS # Do not report
@@ -104,7 +107,11 @@ module Appsignal
         # in a blockless way it is still a good idea to have it in place.
         return enum_for(:each) unless block_given?
 
-        Appsignal.instrument("process_response_body.rack", "Process Rack response body (#each)") do
+        Appsignal.instrument(
+          "process_response_body.rack",
+          "Process Rack response body (#each)",
+          :opentelemetry_scope => ["appsignal-ruby-rack", Appsignal::VERSION]
+        ) do
           @body.each(&blk)
         end
       rescue *IGNORED_ERRORS # Do not report
@@ -125,7 +132,11 @@ module Appsignal
       def call(stream)
         # `stream` will be closed by the app we are calling, no need for us
         # to close it ourselves
-        Appsignal.instrument("process_response_body.rack", "Process Rack response body (#call)") do
+        Appsignal.instrument(
+          "process_response_body.rack",
+          "Process Rack response body (#call)",
+          :opentelemetry_scope => ["appsignal-ruby-rack", Appsignal::VERSION]
+        ) do
           @body.call(stream)
         end
       rescue *IGNORED_ERRORS # Do not report
@@ -150,7 +161,8 @@ module Appsignal
         @body_already_closed = true
         Appsignal.instrument(
           "process_response_body.rack",
-          "Process Rack response body (#to_ary)"
+          "Process Rack response body (#to_ary)",
+          :opentelemetry_scope => ["appsignal-ruby-rack", Appsignal::VERSION]
         ) do
           @body.to_ary
         end
@@ -168,7 +180,8 @@ module Appsignal
       def to_path
         Appsignal.instrument(
           "process_response_body.rack",
-          "Process Rack response body (#to_path)"
+          "Process Rack response body (#to_path)",
+          :opentelemetry_scope => ["appsignal-ruby-rack", Appsignal::VERSION]
         ) do
           @body.to_path
         end

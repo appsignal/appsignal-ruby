@@ -8,6 +8,7 @@ module Appsignal
         options[:request_class] ||= ActionDispatch::Request
         options[:params_method] ||= :filtered_parameters
         options[:instrument_event_name] = nil
+        options[:opentelemetry_scope] = ["appsignal-ruby-rails", Appsignal::VERSION]
         options[:report_errors] = true
         super
       end
