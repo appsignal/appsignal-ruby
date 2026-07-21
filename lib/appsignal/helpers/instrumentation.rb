@@ -112,7 +112,7 @@ module Appsignal
       #
       # @see https://docs.appsignal.com/ruby/instrumentation/background-jobs.html
       #   Monitor guide
-      def monitor(action:, namespace: nil)
+      def monitor(action:, namespace: nil, opentelemetry_scope: nil)
         return yield unless Appsignal.active?
 
         has_parent_transaction = Appsignal::Transaction.current?
@@ -133,7 +133,10 @@ module Appsignal
           if has_parent_transaction
             Appsignal::Transaction.current
           else
-            Appsignal::Transaction.create(namespace || Appsignal::Transaction::HTTP_REQUEST)
+            Appsignal::Transaction.create(
+              namespace || Appsignal::Transaction::HTTP_REQUEST,
+              :opentelemetry_scope => opentelemetry_scope
+            )
           end
 
         begin
@@ -175,13 +178,18 @@ module Appsignal
       # @return [Object, nil] The value of the given block is returned.
       #
       # @see monitor
-      def monitor_and_stop(action:, namespace: nil, &block)
+      def monitor_and_stop(action:, namespace: nil, opentelemetry_scope: nil, &block)
         Appsignal::Utils::StdoutAndLoggerMessage.warning \
           "The `Appsignal.monitor_and_stop` helper is deprecated. " \
             "Use the `Appsignal.monitor` along with our `enable_at_exit_hook` " \
             "option instead."
 
-        monitor(:namespace => namespace, :action => action, &block)
+        monitor(
+          :namespace => namespace,
+          :action => action,
+          :opentelemetry_scope => opentelemetry_scope,
+          &block
+        )
       ensure
         Appsignal.stop("monitor_and_stop")
       end
@@ -226,7 +234,7 @@ module Appsignal
       #
       # @see https://docs.appsignal.com/ruby/instrumentation/exception-handling.html
       #   Exception handling guide
-      def send_error(error, &block)
+      def send_error(error, opentelemetry_scope: nil, &block)
         return unless Appsignal.active?
 
         unless error.is_a?(Exception)
@@ -237,7 +245,10 @@ module Appsignal
         end
 
         transaction =
-          Appsignal::Transaction.new(Appsignal::Transaction::HTTP_REQUEST)
+          Appsignal::Transaction.new(
+            Appsignal::Transaction::HTTP_REQUEST,
+            :opentelemetry_scope => opentelemetry_scope
+          )
         transaction.set_error(error, :source => "Appsignal.send_error", &block)
 
         transaction.complete
@@ -356,7 +367,7 @@ module Appsignal
       #
       # @see https://docs.appsignal.com/ruby/instrumentation/exception-handling.html
       #   Exception handling guide
-      def report_error(exception, &block)
+      def report_error(exception, opentelemetry_scope: nil, &block)
         unless exception.is_a?(Exception)
           Appsignal.internal_logger.error "Appsignal.report_error: " \
             "Cannot add error. " \
@@ -370,7 +381,10 @@ module Appsignal
           if has_parent_transaction
             Appsignal::Transaction.current
           else
-            Appsignal::Transaction.new(Appsignal::Transaction::HTTP_REQUEST)
+            Appsignal::Transaction.new(
+              Appsignal::Transaction::HTTP_REQUEST,
+              :opentelemetry_scope => opentelemetry_scope
+            )
           end
 
         transaction.add_error(exception, :source => "Appsignal.report_error", &block)
@@ -795,12 +809,13 @@ module Appsignal
       #   AppSignal custom instrumentation guide
       # @see https://docs.appsignal.com/api/event-names.html
       #   AppSignal event naming guide
-      def instrument(
+      def instrument( # rubocop:disable Metrics/ParameterLists
         name,
         title = nil,
         body = nil,
         body_format = Appsignal::EventFormatter::DEFAULT,
         opentelemetry_kind: nil,
+        opentelemetry_scope: nil,
         &block
       )
         Appsignal::Transaction.current
@@ -810,6 +825,7 @@ module Appsignal
             body,
             body_format,
             :opentelemetry_kind => opentelemetry_kind,
+            :opentelemetry_scope => opentelemetry_scope,
             &block
           )
       end
@@ -844,12 +860,13 @@ module Appsignal
       #   AppSignal custom instrumentation guide
       # @see https://docs.appsignal.com/api/event-names.html
       #   AppSignal event naming guide
-      def instrument_sql(name, title = nil, body = nil, &block)
+      def instrument_sql(name, title = nil, body = nil, opentelemetry_scope: nil, &block)
         instrument(
           name,
           title,
           body,
           Appsignal::EventFormatter::SQL_BODY_FORMAT,
+          :opentelemetry_scope => opentelemetry_scope,
           &block
         )
       end

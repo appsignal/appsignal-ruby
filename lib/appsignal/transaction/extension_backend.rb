@@ -20,9 +20,11 @@ module Appsignal
       # @!visibility private
       attr_writer :breadcrumbs
 
-      # `opentelemetry_context` is an incoming trace context used only in
-      # collector mode; agent mode has no notion of it, so it's ignored here.
-      def initialize(transaction_id, namespace, handle: nil, opentelemetry_context: nil) # rubocop:disable Lint/UnusedMethodArgument
+      # `opentelemetry_context` is an incoming trace context and
+      # `opentelemetry_scope` an instrumentation scope, both used only in
+      # collector mode; agent mode has no notion of either, so they're ignored
+      # here.
+      def initialize(transaction_id, namespace, handle: nil, opentelemetry_context: nil, opentelemetry_scope: nil) # rubocop:disable Lint/UnusedMethodArgument, Layout/LineLength
         super()
         @handle = handle ||
           Appsignal::Extension.start_transaction(transaction_id, namespace, 0) ||
@@ -30,8 +32,9 @@ module Appsignal
         @breadcrumbs = []
       end
 
-      # Agent mode has no span kind; `opentelemetry_kind` is ignored here.
-      def start_event(opentelemetry_kind: nil) # rubocop:disable Lint/UnusedMethodArgument
+      # Agent mode has no span kind or instrumentation scope;
+      # `opentelemetry_kind` and `opentelemetry_scope` are ignored here.
+      def start_event(opentelemetry_kind: nil, opentelemetry_scope: nil) # rubocop:disable Lint/UnusedMethodArgument
         @handle.start_event(0)
       end
 
@@ -39,8 +42,9 @@ module Appsignal
         @handle.finish_event(name, title, body, body_format, 0)
       end
 
-      # Agent mode has no span kind; `opentelemetry_kind` is ignored here.
-      def record_event(name, title, body, body_format, duration, opentelemetry_kind: nil) # rubocop:disable Lint/UnusedMethodArgument, Metrics/ParameterLists
+      # Agent mode has no span kind or instrumentation scope;
+      # `opentelemetry_kind` and `opentelemetry_scope` are ignored here.
+      def record_event(name, title, body, body_format, duration, opentelemetry_kind: nil, opentelemetry_scope: nil) # rubocop:disable Lint/UnusedMethodArgument, Metrics/ParameterLists, Layout/LineLength
         @handle.record_event(name, title, body, body_format, duration, 0)
       end
 

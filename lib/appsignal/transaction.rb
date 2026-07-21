@@ -29,7 +29,7 @@ module Appsignal
       #
       # @param namespace [String] Namespace of the to be created transaction.
       # @return [Transaction]
-      def create(namespace, opentelemetry_context: nil)
+      def create(namespace, opentelemetry_context: nil, opentelemetry_scope: nil)
         # Reset the transaction if it was already completed but not cleared
         if Thread.current[:appsignal_transaction]&.completed?
           Thread.current[:appsignal_transaction] = nil
@@ -40,7 +40,8 @@ module Appsignal
           set_current_transaction(
             Appsignal::Transaction.new(
               namespace,
-              :opentelemetry_context => opentelemetry_context
+              :opentelemetry_context => opentelemetry_context,
+              :opentelemetry_scope => opentelemetry_scope
             )
           )
         else
@@ -165,7 +166,8 @@ module Appsignal
     # @param namespace [String] Namespace of the to be created transaction.
     # @see create
     # @!visibility private
-    def initialize(namespace, id: SecureRandom.uuid, backend: nil, opentelemetry_context: nil)
+    def initialize(namespace, id: SecureRandom.uuid, backend: nil,
+      opentelemetry_context: nil, opentelemetry_scope: nil)
       @transaction_id = id
       @action = nil
       @namespace = namespace
@@ -196,7 +198,8 @@ module Appsignal
       @backend = backend || Appsignal::Backends.transaction.new(
         @transaction_id,
         @namespace,
-        :opentelemetry_context => opentelemetry_context
+        :opentelemetry_context => opentelemetry_context,
+        :opentelemetry_scope => opentelemetry_scope
       )
 
       run_after_create_hooks
@@ -665,10 +668,13 @@ module Appsignal
 
     # @!visibility private
     # @see Helpers::Instrumentation#instrument
-    def start_event(opentelemetry_kind: nil)
+    def start_event(opentelemetry_kind: nil, opentelemetry_scope: nil)
       return if paused?
 
-      @backend.start_event(:opentelemetry_kind => opentelemetry_kind)
+      @backend.start_event(
+        :opentelemetry_kind => opentelemetry_kind,
+        :opentelemetry_scope => opentelemetry_scope
+      )
     end
 
     # @!visibility private
@@ -692,7 +698,8 @@ module Appsignal
       body,
       duration,
       body_format = Appsignal::EventFormatter::DEFAULT,
-      opentelemetry_kind: nil
+      opentelemetry_kind: nil,
+      opentelemetry_scope: nil
     )
       return if paused?
 
@@ -702,20 +709,25 @@ module Appsignal
         body || BLANK,
         body_format || Appsignal::EventFormatter::DEFAULT,
         duration,
-        :opentelemetry_kind => opentelemetry_kind
+        :opentelemetry_kind => opentelemetry_kind,
+        :opentelemetry_scope => opentelemetry_scope
       )
     end
 
     # @!visibility private
     # @see Helpers::Instrumentation#instrument
-    def instrument(
+    def instrument( # rubocop:disable Metrics/ParameterLists
       name,
       title = nil,
       body = nil,
       body_format = Appsignal::EventFormatter::DEFAULT,
-      opentelemetry_kind: nil
+      opentelemetry_kind: nil,
+      opentelemetry_scope: nil
     )
-      start_event(:opentelemetry_kind => opentelemetry_kind)
+      start_event(
+        :opentelemetry_kind => opentelemetry_kind,
+        :opentelemetry_scope => opentelemetry_scope
+      )
       yield if block_given?
     ensure
       finish_event(name, title, body, body_format)

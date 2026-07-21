@@ -39,8 +39,9 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
     expect(@otel_errors).to be_empty unless @expect_otel_errors
   end
 
-  def create_backend(namespace = "http_request")
-    described_class.new("abc-123", namespace).tap { |b| @backends_created << b }
+  def create_backend(namespace = "http_request", opentelemetry_scope: nil)
+    described_class.new("abc-123", namespace, :opentelemetry_scope => opentelemetry_scope)
+      .tap { |b| @backends_created << b }
   end
 
   def foreign_tracer
@@ -65,6 +66,72 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
 
   def event_names(finished)
     Array(finished&.events).map(&:name)
+  end
+
+  describe "instrumentation scope" do
+    def root_span
+      span_exporter.finished_spans.find { |s| [:server, :consumer].include?(s.kind) }
+    end
+
+    def event_spans
+      span_exporter.finished_spans.reject { |s| [:server, :consumer].include?(s.kind) }
+    end
+
+    def scope_of(span)
+      [span.instrumentation_scope.name, span.instrumentation_scope.version]
+    end
+
+    it "puts the root span under the given scope" do
+      backend = create_backend(
+        "http_request",
+        :opentelemetry_scope => ["appsignal-ruby-rack", "1.2.3"]
+      )
+      backend.set_action("MyAction")
+      backend.complete
+
+      expect(scope_of(root_span)).to eq(["appsignal-ruby-rack", "1.2.3"])
+    end
+
+    it "puts an event span under the scope passed at start_event" do
+      backend = create_backend
+      backend.start_event(:opentelemetry_scope => ["appsignal-ruby-redis", "4.5.6"])
+      backend.finish_event("query.redis", "GET foo", nil, Appsignal::EventFormatter::DEFAULT)
+      backend.set_action("MyAction")
+      backend.complete
+
+      expect(scope_of(event_spans.first)).to eq(["appsignal-ruby-redis", "4.5.6"])
+    end
+
+    it "puts a recorded event span under the scope passed at record_event" do
+      backend = create_backend
+      backend.record_event(
+        "query.data_mapper", "DM Query", nil, Appsignal::EventFormatter::DEFAULT, 1000,
+        :opentelemetry_scope => ["appsignal-ruby-data_mapper", "7.8.9"]
+      )
+      backend.set_action("MyAction")
+      backend.complete
+
+      expect(scope_of(event_spans.first)).to eq(["appsignal-ruby-data_mapper", "7.8.9"])
+    end
+
+    it "falls back to the default scope when none is given" do
+      backend = create_backend
+      backend.start_event
+      backend.finish_event("query.redis", "GET foo", nil, Appsignal::EventFormatter::DEFAULT)
+      backend.set_action("MyAction")
+      backend.complete
+
+      expect(scope_of(root_span)).to eq(["appsignal-ruby", Appsignal::VERSION])
+      expect(scope_of(event_spans.first)).to eq(["appsignal-ruby", Appsignal::VERSION])
+    end
+
+    it "falls back to the default scope when the name is blank" do
+      backend = create_backend("http_request", :opentelemetry_scope => ["", "1.2.3"])
+      backend.set_action("MyAction")
+      backend.complete
+
+      expect(scope_of(root_span)).to eq(["appsignal-ruby", Appsignal::VERSION])
+    end
   end
 
   describe "#initialize" do

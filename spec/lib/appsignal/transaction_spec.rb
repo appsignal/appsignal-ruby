@@ -4473,16 +4473,24 @@ describe Appsignal::Transaction do
 
     it "starts the event in the extension" do
       expect(transaction.backend).to receive(:start_event)
-        .with(:opentelemetry_kind => nil).and_call_original
+        .with(:opentelemetry_kind => nil, :opentelemetry_scope => nil).and_call_original
 
       transaction.start_event
     end
 
     it "passes the opentelemetry_kind to the backend" do
       expect(transaction.backend).to receive(:start_event)
-        .with(:opentelemetry_kind => :client).and_call_original
+        .with(:opentelemetry_kind => :client, :opentelemetry_scope => nil).and_call_original
 
       transaction.start_event(:opentelemetry_kind => :client)
+    end
+
+    it "passes the opentelemetry_scope to the backend" do
+      expect(transaction.backend).to receive(:start_event)
+        .with(:opentelemetry_kind => nil, :opentelemetry_scope => ["appsignal-ruby-redis", "1.0"])
+        .and_call_original
+
+      transaction.start_event(:opentelemetry_scope => ["appsignal-ruby-redis", "1.0"])
     end
 
     context "when transaction is paused" do
@@ -4550,7 +4558,8 @@ describe Appsignal::Transaction do
         "body",
         1,
         1000,
-        :opentelemetry_kind => nil
+        :opentelemetry_kind => nil,
+        :opentelemetry_scope => nil
       ).and_call_original
 
       transaction.record_event(
@@ -4562,6 +4571,27 @@ describe Appsignal::Transaction do
       )
     end
 
+    it "passes the opentelemetry_scope to the backend" do
+      expect(transaction.backend).to receive(:record_event).with(
+        "name",
+        "title",
+        "body",
+        1,
+        1000,
+        :opentelemetry_kind => nil,
+        :opentelemetry_scope => ["appsignal-ruby-data_mapper", "1.0"]
+      ).and_call_original
+
+      transaction.record_event(
+        "name",
+        "title",
+        "body",
+        1000,
+        1,
+        :opentelemetry_scope => ["appsignal-ruby-data_mapper", "1.0"]
+      )
+    end
+
     it "should finish the event in the extension with nil arguments" do
       expect(transaction.backend).to receive(:record_event).with(
         "name",
@@ -4569,7 +4599,8 @@ describe Appsignal::Transaction do
         "",
         0,
         1000,
-        :opentelemetry_kind => nil
+        :opentelemetry_kind => nil,
+        :opentelemetry_scope => nil
       ).and_call_original
 
       transaction.record_event(
