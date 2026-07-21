@@ -349,7 +349,7 @@ module Appsignal
   # ```
   # 
   # _@see_ `https://docs.appsignal.com/ruby/instrumentation/background-jobs.html` — Monitor guide
-  def self.monitor: (action: (String | Symbol | NilClass), ?namespace: (String | Symbol)?) ?{ () -> Object } -> Object?
+  def self.monitor: (action: (String | Symbol | NilClass), ?namespace: (String | Symbol)?, ?opentelemetry_scope: untyped) ?{ () -> Object } -> Object?
 
   # Instrument a block of code and stop AppSignal.
   # 
@@ -366,7 +366,7 @@ module Appsignal
   # _@return_ — The value of the given block is returned.
   # 
   # _@see_ `monitor`
-  def self.monitor_and_stop: (action: (String | Symbol | NilClass), ?namespace: (String | Symbol)?) ?{ () -> Object } -> Object?
+  def self.monitor_and_stop: (action: (String | Symbol | NilClass), ?namespace: (String | Symbol)?, ?opentelemetry_scope: untyped) ?{ () -> Object } -> Object?
 
   # Send an error to AppSignal regardless of the context.
   # 
@@ -405,7 +405,7 @@ module Appsignal
   # ```
   # 
   # _@see_ `https://docs.appsignal.com/ruby/instrumentation/exception-handling.html` — Exception handling guide
-  def self.send_error: (Exception error) ?{ (Transaction transaction) -> void } -> void
+  def self.send_error: (Exception error, ?opentelemetry_scope: untyped) ?{ (Transaction transaction) -> void } -> void
 
   # Set an error on the current transaction.
   # 
@@ -498,7 +498,7 @@ module Appsignal
   # ```
   # 
   # _@see_ `https://docs.appsignal.com/ruby/instrumentation/exception-handling.html` — Exception handling guide
-  def self.report_error: (Exception exception) ?{ (Transaction transaction) -> void } -> void
+  def self.report_error: (Exception exception, ?opentelemetry_scope: untyped) ?{ (Transaction transaction) -> void } -> void
 
   # Set a custom action name for the current transaction.
   # 
@@ -863,7 +863,8 @@ module Appsignal
                          ?String? title,
                          ?String? body,
                          ?Integer body_format,
-                         ?opentelemetry_kind: untyped
+                         ?opentelemetry_kind: untyped,
+                         ?opentelemetry_scope: untyped
                        ) -> Object
 
   # Instrumentation helper for SQL queries.
@@ -899,7 +900,12 @@ module Appsignal
   # _@see_ `https://docs.appsignal.com/ruby/instrumentation/instrumentation.html` — AppSignal custom instrumentation guide
   # 
   # _@see_ `https://docs.appsignal.com/api/event-names.html` — AppSignal event naming guide
-  def self.instrument_sql: (String name, ?String? title, ?String? body) -> Object
+  def self.instrument_sql: (
+                             String name,
+                             ?String? title,
+                             ?String? body,
+                             ?opentelemetry_scope: untyped
+                           ) -> Object
 
   # Convenience method for ignoring instrumentation events in a block of
   # code.
@@ -1557,7 +1563,7 @@ module Appsignal
     # transaction.
     # 
     # _@param_ `namespace` — Namespace of the to be created transaction.
-    def self.create: (String namespace, ?opentelemetry_context: untyped) -> Transaction
+    def self.create: (String namespace, ?opentelemetry_context: untyped, ?opentelemetry_scope: untyped) -> Transaction
 
     # Returns currently active transaction or a {NilTransaction} if none is
     # active.
@@ -1920,7 +1926,7 @@ module Appsignal
       # ```
       # 
       # _@see_ `https://docs.appsignal.com/ruby/instrumentation/background-jobs.html` — Monitor guide
-      def monitor: (action: (String | Symbol | NilClass), ?namespace: (String | Symbol)?) ?{ () -> Object } -> Object?
+      def monitor: (action: (String | Symbol | NilClass), ?namespace: (String | Symbol)?, ?opentelemetry_scope: untyped) ?{ () -> Object } -> Object?
 
       # Instrument a block of code and stop AppSignal.
       # 
@@ -1937,7 +1943,7 @@ module Appsignal
       # _@return_ — The value of the given block is returned.
       # 
       # _@see_ `monitor`
-      def monitor_and_stop: (action: (String | Symbol | NilClass), ?namespace: (String | Symbol)?) ?{ () -> Object } -> Object?
+      def monitor_and_stop: (action: (String | Symbol | NilClass), ?namespace: (String | Symbol)?, ?opentelemetry_scope: untyped) ?{ () -> Object } -> Object?
 
       # Send an error to AppSignal regardless of the context.
       # 
@@ -1976,7 +1982,7 @@ module Appsignal
       # ```
       # 
       # _@see_ `https://docs.appsignal.com/ruby/instrumentation/exception-handling.html` — Exception handling guide
-      def send_error: (Exception error) ?{ (Transaction transaction) -> void } -> void
+      def send_error: (Exception error, ?opentelemetry_scope: untyped) ?{ (Transaction transaction) -> void } -> void
 
       # Set an error on the current transaction.
       # 
@@ -2069,7 +2075,7 @@ module Appsignal
       # ```
       # 
       # _@see_ `https://docs.appsignal.com/ruby/instrumentation/exception-handling.html` — Exception handling guide
-      def report_error: (Exception exception) ?{ (Transaction transaction) -> void } -> void
+      def report_error: (Exception exception, ?opentelemetry_scope: untyped) ?{ (Transaction transaction) -> void } -> void
 
       # Set a custom action name for the current transaction.
       # 
@@ -2434,7 +2440,8 @@ module Appsignal
                         ?String? title,
                         ?String? body,
                         ?Integer body_format,
-                        ?opentelemetry_kind: untyped
+                        ?opentelemetry_kind: untyped,
+                        ?opentelemetry_scope: untyped
                       ) -> Object
 
       # Instrumentation helper for SQL queries.
@@ -2470,7 +2477,12 @@ module Appsignal
       # _@see_ `https://docs.appsignal.com/ruby/instrumentation/instrumentation.html` — AppSignal custom instrumentation guide
       # 
       # _@see_ `https://docs.appsignal.com/api/event-names.html` — AppSignal event naming guide
-      def instrument_sql: (String name, ?String? title, ?String? body) -> Object
+      def instrument_sql: (
+                            String name,
+                            ?String? title,
+                            ?String? body,
+                            ?opentelemetry_scope: untyped
+                          ) -> Object
 
       # Convenience method for ignoring instrumentation events in a block of
       # code.

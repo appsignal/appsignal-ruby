@@ -103,6 +103,12 @@ RSpec.shared_context "collector mode", :collector_mode do
     span_exporter.finished_spans.reject { |s| [:server, :consumer].include?(s.kind) }
   end
 
+  # The `[name, version]` instrumentation scope a finished span was recorded
+  # under. Integrations tag their spans with their own scope in collector mode.
+  def scope_of(span)
+    [span.instrumentation_scope.name, span.instrumentation_scope.version]
+  end
+
   # The OpenTelemetry `exception` events recorded across all finished spans
   # (errors attach to the span that was current when they were set, which may
   # be the root span or an event span).
