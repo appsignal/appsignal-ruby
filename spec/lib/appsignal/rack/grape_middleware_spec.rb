@@ -129,6 +129,7 @@ if DependencyHelper.grape_present?
 
           expect(root_span.name).to eq("GET::GrapeExample::Api#/hello")
           expect(root_span.kind).to eq(:server)
+          expect(scope_of(root_span)).to eq(["appsignal-ruby-grape", Appsignal::VERSION])
           expect(root_span.attributes["appsignal.action_name"])
             .to eq("GET::GrapeExample::Api#/hello")
           expect(root_span.attributes["appsignal.tag.path"]).to eq("/hello")

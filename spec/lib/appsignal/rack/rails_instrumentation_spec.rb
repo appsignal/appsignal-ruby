@@ -172,6 +172,20 @@ if DependencyHelper.rails_present?
       end
     end
 
+    describe "the instrumentation scope" do
+      # When no parent transaction is present, this middleware creates the
+      # transaction itself and tags it with the Rails scope. In a full Rails
+      # stack the Rack event handler usually creates it first, under the Rack
+      # scope, and this middleware wraps that instead.
+      it "records under the Rails scope when it creates the transaction",
+        :collector_mode do
+        start_collector_agent
+        make_request
+
+        expect(scope_of(root_span)).to eq(["appsignal-ruby-rails", Appsignal::VERSION])
+      end
+    end
+
     describe "sets request metadata on the transaction" do
       def perform
         setup_transaction

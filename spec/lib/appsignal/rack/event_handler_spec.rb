@@ -105,6 +105,7 @@ describe Appsignal::Rack::EventHandler do
         expect(root_span.attributes["appsignal.namespace"])
           .to eq("web")
         expect(root_span.kind).to eq(:server)
+        expect(scope_of(root_span)).to eq(["appsignal-ruby-rack", Appsignal::VERSION])
       end
     end
 
