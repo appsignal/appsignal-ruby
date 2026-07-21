@@ -87,13 +87,12 @@ RSpec.shared_context "collector mode", :collector_mode do
     # across examples.
     Appsignal::OpenTelemetry.shutdown
     # Swap in the in-memory providers so the test can read spans/metrics/
-    # logs back, and reset the metrics/logger backends so their cached
-    # meter/logger re-resolve against these providers on the next emit.
+    # logs back, and reset the metrics backend so its cached instruments
+    # re-resolve against this meter provider on the next emit.
     ::OpenTelemetry.tracer_provider = tracer_provider
     ::OpenTelemetry.meter_provider = meter_provider
     ::OpenTelemetry.logger_provider = logger_provider
     Appsignal::Metrics::OpenTelemetryBackend.reset!
-    Appsignal::Logger::OpenTelemetryBackend.reset!
   end
 
   def root_span
