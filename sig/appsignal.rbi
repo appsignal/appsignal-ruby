@@ -391,8 +391,15 @@ module Appsignal
   # ```
   # 
   # _@see_ `https://docs.appsignal.com/ruby/instrumentation/background-jobs.html` — Monitor guide
-  sig { params(action: T.any(String, Symbol, NilClass), namespace: T.nilable(T.any(String, Symbol)), blk: T.proc.returns(Object)).returns(T.nilable(Object)) }
-  def self.monitor(action:, namespace: nil, &blk); end
+  sig do
+    params(
+      action: T.any(String, Symbol, NilClass),
+      namespace: T.nilable(T.any(String, Symbol)),
+      opentelemetry_scope: T.untyped,
+      blk: T.proc.returns(Object)
+    ).returns(T.nilable(Object))
+  end
+  def self.monitor(action:, namespace: nil, opentelemetry_scope: nil, &blk); end
 
   # Instrument a block of code and stop AppSignal.
   # 
@@ -409,8 +416,15 @@ module Appsignal
   # _@return_ — The value of the given block is returned.
   # 
   # _@see_ `monitor`
-  sig { params(action: T.any(String, Symbol, NilClass), namespace: T.nilable(T.any(String, Symbol)), block: T.proc.returns(Object)).returns(T.nilable(Object)) }
-  def self.monitor_and_stop(action:, namespace: nil, &block); end
+  sig do
+    params(
+      action: T.any(String, Symbol, NilClass),
+      namespace: T.nilable(T.any(String, Symbol)),
+      opentelemetry_scope: T.untyped,
+      block: T.proc.returns(Object)
+    ).returns(T.nilable(Object))
+  end
+  def self.monitor_and_stop(action:, namespace: nil, opentelemetry_scope: nil, &block); end
 
   # Send an error to AppSignal regardless of the context.
   # 
@@ -449,8 +463,8 @@ module Appsignal
   # ```
   # 
   # _@see_ `https://docs.appsignal.com/ruby/instrumentation/exception-handling.html` — Exception handling guide
-  sig { params(error: Exception, block: T.proc.params(transaction: Transaction).void).void }
-  def self.send_error(error, &block); end
+  sig { params(error: Exception, opentelemetry_scope: T.untyped, block: T.proc.params(transaction: Transaction).void).void }
+  def self.send_error(error, opentelemetry_scope: nil, &block); end
 
   # Set an error on the current transaction.
   # 
@@ -544,8 +558,8 @@ module Appsignal
   # ```
   # 
   # _@see_ `https://docs.appsignal.com/ruby/instrumentation/exception-handling.html` — Exception handling guide
-  sig { params(exception: Exception, block: T.proc.params(transaction: Transaction).void).void }
-  def self.report_error(exception, &block); end
+  sig { params(exception: Exception, opentelemetry_scope: T.untyped, block: T.proc.params(transaction: Transaction).void).void }
+  def self.report_error(exception, opentelemetry_scope: nil, &block); end
 
   # Set a custom action name for the current transaction.
   # 
@@ -923,10 +937,11 @@ module Appsignal
       body: T.nilable(String),
       body_format: Integer,
       opentelemetry_kind: T.untyped,
+      opentelemetry_scope: T.untyped,
       block: T.untyped
     ).returns(Object)
   end
-  def self.instrument(name, title = nil, body = nil, body_format = Appsignal::EventFormatter::DEFAULT, opentelemetry_kind: nil, &block); end
+  def self.instrument(name, title = nil, body = nil, body_format = Appsignal::EventFormatter::DEFAULT, opentelemetry_kind: nil, opentelemetry_scope: nil, &block); end
 
   # Instrumentation helper for SQL queries.
   # 
@@ -966,10 +981,11 @@ module Appsignal
       name: String,
       title: T.nilable(String),
       body: T.nilable(String),
+      opentelemetry_scope: T.untyped,
       block: T.untyped
     ).returns(Object)
   end
-  def self.instrument_sql(name, title = nil, body = nil, &block); end
+  def self.instrument_sql(name, title = nil, body = nil, opentelemetry_scope: nil, &block); end
 
   # Convenience method for ignoring instrumentation events in a block of
   # code.
@@ -1695,8 +1711,8 @@ module Appsignal
     # transaction.
     # 
     # _@param_ `namespace` — Namespace of the to be created transaction.
-    sig { params(namespace: String, opentelemetry_context: T.untyped).returns(Transaction) }
-    def self.create(namespace, opentelemetry_context: nil); end
+    sig { params(namespace: String, opentelemetry_context: T.untyped, opentelemetry_scope: T.untyped).returns(Transaction) }
+    def self.create(namespace, opentelemetry_context: nil, opentelemetry_scope: nil); end
 
     # Returns currently active transaction or a {NilTransaction} if none is
     # active.
@@ -2080,8 +2096,15 @@ module Appsignal
       # ```
       # 
       # _@see_ `https://docs.appsignal.com/ruby/instrumentation/background-jobs.html` — Monitor guide
-      sig { params(action: T.any(String, Symbol, NilClass), namespace: T.nilable(T.any(String, Symbol)), blk: T.proc.returns(Object)).returns(T.nilable(Object)) }
-      def monitor(action:, namespace: nil, &blk); end
+      sig do
+        params(
+          action: T.any(String, Symbol, NilClass),
+          namespace: T.nilable(T.any(String, Symbol)),
+          opentelemetry_scope: T.untyped,
+          blk: T.proc.returns(Object)
+        ).returns(T.nilable(Object))
+      end
+      def monitor(action:, namespace: nil, opentelemetry_scope: nil, &blk); end
 
       # Instrument a block of code and stop AppSignal.
       # 
@@ -2098,8 +2121,15 @@ module Appsignal
       # _@return_ — The value of the given block is returned.
       # 
       # _@see_ `monitor`
-      sig { params(action: T.any(String, Symbol, NilClass), namespace: T.nilable(T.any(String, Symbol)), block: T.proc.returns(Object)).returns(T.nilable(Object)) }
-      def monitor_and_stop(action:, namespace: nil, &block); end
+      sig do
+        params(
+          action: T.any(String, Symbol, NilClass),
+          namespace: T.nilable(T.any(String, Symbol)),
+          opentelemetry_scope: T.untyped,
+          block: T.proc.returns(Object)
+        ).returns(T.nilable(Object))
+      end
+      def monitor_and_stop(action:, namespace: nil, opentelemetry_scope: nil, &block); end
 
       # Send an error to AppSignal regardless of the context.
       # 
@@ -2138,8 +2168,8 @@ module Appsignal
       # ```
       # 
       # _@see_ `https://docs.appsignal.com/ruby/instrumentation/exception-handling.html` — Exception handling guide
-      sig { params(error: Exception, block: T.proc.params(transaction: Transaction).void).void }
-      def send_error(error, &block); end
+      sig { params(error: Exception, opentelemetry_scope: T.untyped, block: T.proc.params(transaction: Transaction).void).void }
+      def send_error(error, opentelemetry_scope: nil, &block); end
 
       # Set an error on the current transaction.
       # 
@@ -2233,8 +2263,8 @@ module Appsignal
       # ```
       # 
       # _@see_ `https://docs.appsignal.com/ruby/instrumentation/exception-handling.html` — Exception handling guide
-      sig { params(exception: Exception, block: T.proc.params(transaction: Transaction).void).void }
-      def report_error(exception, &block); end
+      sig { params(exception: Exception, opentelemetry_scope: T.untyped, block: T.proc.params(transaction: Transaction).void).void }
+      def report_error(exception, opentelemetry_scope: nil, &block); end
 
       # Set a custom action name for the current transaction.
       # 
@@ -2612,10 +2642,11 @@ module Appsignal
           body: T.nilable(String),
           body_format: Integer,
           opentelemetry_kind: T.untyped,
+          opentelemetry_scope: T.untyped,
           block: T.untyped
         ).returns(Object)
       end
-      def instrument(name, title = nil, body = nil, body_format = Appsignal::EventFormatter::DEFAULT, opentelemetry_kind: nil, &block); end
+      def instrument(name, title = nil, body = nil, body_format = Appsignal::EventFormatter::DEFAULT, opentelemetry_kind: nil, opentelemetry_scope: nil, &block); end
 
       # Instrumentation helper for SQL queries.
       # 
@@ -2655,10 +2686,11 @@ module Appsignal
           name: String,
           title: T.nilable(String),
           body: T.nilable(String),
+          opentelemetry_scope: T.untyped,
           block: T.untyped
         ).returns(Object)
       end
-      def instrument_sql(name, title = nil, body = nil, &block); end
+      def instrument_sql(name, title = nil, body = nil, opentelemetry_scope: nil, &block); end
 
       # Convenience method for ignoring instrumentation events in a block of
       # code.
