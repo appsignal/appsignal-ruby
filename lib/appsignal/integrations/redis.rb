@@ -16,7 +16,8 @@ module Appsignal
           "query.redis",
           id,
           sanitized_command,
-          :opentelemetry_kind => :client
+          :opentelemetry_kind => :client,
+          :opentelemetry_scope => ["appsignal-ruby-redis", Appsignal::VERSION]
         ) do
           super
         end

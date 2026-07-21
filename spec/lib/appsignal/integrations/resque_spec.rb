@@ -61,6 +61,8 @@ if DependencyHelper.resque_present?
         span = event_spans.find { |s| s.name == "perform.resque" }
         expect(span).not_to be_nil
         expect(span.parent_span_id).to eq(root_span.span_id)
+        expect(scope_of(root_span)).to eq(["appsignal-ruby-resque", Appsignal::VERSION])
+        expect(scope_of(span)).to eq(["appsignal-ruby-resque", Appsignal::VERSION])
       end
     end
 
@@ -145,6 +147,8 @@ if DependencyHelper.resque_present?
         span = event_spans.find { |s| s.name == "perform.resque" }
         expect(span).not_to be_nil
         expect(span.parent_span_id).to eq(root_span.span_id)
+        expect(scope_of(root_span)).to eq(["appsignal-ruby-resque", Appsignal::VERSION])
+        expect(scope_of(span)).to eq(["appsignal-ruby-resque", Appsignal::VERSION])
       end
     end
 
@@ -264,6 +268,7 @@ if DependencyHelper.resque_present?
           # named after the job being enqueued.
           producer = event_spans.find { |s| s.name == "enqueue ResqueTestJob job" }
           expect(producer.attributes["appsignal.category"]).to eq("enqueue.resque")
+          expect(scope_of(producer)).to eq(["appsignal-ruby-resque", Appsignal::VERSION])
           expect(producer.kind).to eq(:producer)
           expect(producer.parent_span_id).to eq(root_span.span_id)
 

@@ -55,6 +55,7 @@ module Appsignal
     class InstrumentationMiddleware < AbstractMiddleware
       def initialize(app, options = {})
         options[:instrument_event_name] ||= "process_request_middleware.rack"
+        options[:opentelemetry_scope] ||= ["appsignal-ruby-rack", Appsignal::VERSION]
         super
       end
     end

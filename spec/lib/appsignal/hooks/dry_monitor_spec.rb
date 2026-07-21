@@ -79,6 +79,7 @@ if DependencyHelper.dry_monitor_present?
         expect(attrs["db.query.text"]).to eq("SELECT * FROM users")
         expect(attrs["db.system.name"]).to eq("other_sql")
         expect(attrs["appsignal.category"]).to eq("query.postgres")
+        expect(scope_of(span)).to eq(["appsignal-ruby-dry_monitor", Appsignal::VERSION])
         expect(attrs).not_to have_key("appsignal.body")
       end
     end

@@ -69,6 +69,9 @@ describe Appsignal::Integrations::PumaServer do
         expect(root_span.status.code).to eq(::OpenTelemetry::Trace::Status::ERROR)
         expect(root_span.kind).to eq(:server)
         expect(root_span.attributes["appsignal.tag.reported_by"]).to eq("puma_lowlevel_error")
+        # The transaction already existed, so report_error reuses it and keeps
+        # its default scope rather than applying the Puma scope.
+        expect(scope_of(root_span)).to eq(["appsignal-ruby", Appsignal::VERSION])
       end
     end
 
@@ -104,6 +107,7 @@ describe Appsignal::Integrations::PumaServer do
         expect(root_span.status.code).to eq(::OpenTelemetry::Trace::Status::ERROR)
         expect(root_span.kind).to eq(:server)
         expect(root_span.attributes["appsignal.tag.reported_by"]).to eq("puma_lowlevel_error")
+        expect(scope_of(root_span)).to eq(["appsignal-ruby-puma", Appsignal::VERSION])
       end
     end
 

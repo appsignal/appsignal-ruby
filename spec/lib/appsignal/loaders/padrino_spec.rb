@@ -48,7 +48,10 @@ if DependencyHelper.padrino_present?
           [
             Appsignal::Rack::SinatraBaseInstrumentation,
             [
-              { :instrument_event_name => "process_action.padrino" }
+              {
+                :instrument_event_name => "process_action.padrino",
+                :opentelemetry_scope => ["appsignal-ruby-padrino", Appsignal::VERSION]
+              }
             ],
             nil
           ]

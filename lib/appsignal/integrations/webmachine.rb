@@ -18,7 +18,8 @@ module Appsignal
               Appsignal::Transaction::HTTP_REQUEST,
               :opentelemetry_context => Appsignal::OpenTelemetry.if_started do
                 ::OpenTelemetry.propagation.extract(request.headers)
-              end
+              end,
+              :opentelemetry_scope => ["appsignal-ruby-webmachine", Appsignal::VERSION]
             )
           end
 
@@ -26,7 +27,10 @@ module Appsignal
           transaction.add_params_if_nil { request.query }
           transaction.add_headers_if_nil { request.headers if request.respond_to?(:headers) }
 
-          Appsignal.instrument("process_action.webmachine") do
+          Appsignal.instrument(
+            "process_action.webmachine",
+            :opentelemetry_scope => ["appsignal-ruby-webmachine", Appsignal::VERSION]
+          ) do
             super
           end
         ensure

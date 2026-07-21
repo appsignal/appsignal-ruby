@@ -39,6 +39,7 @@ if DependencyHelper.excon_present?
         expect(span).not_to be_nil
         expect(span.kind).to eq(:client)
         expect(span.parent_span_id).to eq(root_span.span_id)
+        expect(scope_of(span)).to eq(["appsignal-ruby-excon", Appsignal::VERSION])
 
         # The injected traceparent must reflect the Excon CLIENT event span, not
         # the root span -- proving the middleware runs inside the instrumentor's

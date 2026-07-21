@@ -11,7 +11,10 @@ module Appsignal
         request_id = request.request_id || SecureRandom.uuid
         env[Appsignal::Hooks::ActionCableHook::REQUEST_ID] ||= request_id
 
-        transaction = Appsignal::Transaction.create(Appsignal::Transaction::ACTION_CABLE)
+        transaction = Appsignal::Transaction.create(
+          Appsignal::Transaction::ACTION_CABLE,
+          :opentelemetry_scope => ["appsignal-ruby-action_cable", Appsignal::VERSION]
+        )
 
         begin
           super

@@ -69,6 +69,7 @@ if DependencyHelper.hanami2_present?
           perform
 
           expect(root_span.kind).to eq(:server)
+          expect(scope_of(root_span)).to eq(["appsignal-ruby-hanami", Appsignal::VERSION])
           params = JSON.parse(root_span.attributes["appsignal.request.payload"])
           expect(params).to include("param1" => "value1", "param2" => "value2")
         end

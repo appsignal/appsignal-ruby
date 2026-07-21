@@ -15,7 +15,8 @@ module Appsignal
         Appsignal.instrument(
           "request.net_http",
           "#{request.method} #{use_ssl? ? "https" : "http"}://#{request["host"] || address}",
-          :opentelemetry_kind => :client
+          :opentelemetry_kind => :client,
+          :opentelemetry_scope => ["appsignal-ruby-net_http", Appsignal::VERSION]
         ) do
           # Write trace context onto the outgoing request so the called service
           # joins this trace. No-op outside collector mode. The request object

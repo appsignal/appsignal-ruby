@@ -33,6 +33,7 @@ module Appsignal
         options[:request_class] ||= Sinatra::Request
         options[:params_method] ||= :params
         options[:instrument_event_name] ||= "process_action.sinatra"
+        options[:opentelemetry_scope] ||= ["appsignal-ruby-sinatra", Appsignal::VERSION]
         super
         @raise_errors_on = raise_errors?(app)
       end

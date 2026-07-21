@@ -18,7 +18,8 @@ module Appsignal
         Appsignal.instrument(
           "request.faraday",
           "#{http_method} #{uri.scheme}://#{uri.host}",
-          :opentelemetry_kind => :client
+          :opentelemetry_kind => :client,
+          :opentelemetry_scope => ["appsignal-ruby-faraday", Appsignal::VERSION]
         ) do
           # Write trace context onto the outgoing request so the called service
           # joins this trace. Injected inside the instrument block, so the written

@@ -11,7 +11,8 @@ module Appsignal
           nil,
           sql,
           Appsignal::EventFormatter::SQL_BODY_FORMAT,
-          :opentelemetry_kind => :client
+          :opentelemetry_kind => :client,
+          :opentelemetry_scope => ["appsignal-ruby-sequel", Appsignal::VERSION]
         ) do
           super
         end
@@ -27,7 +28,8 @@ module Appsignal
           nil,
           sql,
           Appsignal::EventFormatter::SQL_BODY_FORMAT,
-          :opentelemetry_kind => :client
+          :opentelemetry_kind => :client,
+          :opentelemetry_scope => ["appsignal-ruby-sequel", Appsignal::VERSION]
         ) do
           super
         end

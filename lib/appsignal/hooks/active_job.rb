@@ -77,7 +77,8 @@ module Appsignal
               # Prefer job_id from provider, instead of ActiveJob's internal ID.
               Appsignal::Transaction.create(
                 Appsignal::Transaction::BACKGROUND_JOB,
-                :opentelemetry_context => Appsignal::OpenTelemetry.extract_job_context(job)
+                :opentelemetry_context => Appsignal::OpenTelemetry.extract_job_context(job),
+                :opentelemetry_scope => ["appsignal-ruby-active_job", Appsignal::VERSION]
               )
             end
 
@@ -168,7 +169,8 @@ module Appsignal
           Appsignal.instrument(
             "enqueue.active_job",
             "enqueue #{self.class.name} job",
-            :opentelemetry_kind => :producer
+            :opentelemetry_kind => :producer,
+            :opentelemetry_scope => ["appsignal-ruby-active_job", Appsignal::VERSION]
           ) do
             Appsignal::OpenTelemetry.inject_context(__otel_headers)
             # Active Job enqueues through an adapter (Sidekiq, Resque, ...) that

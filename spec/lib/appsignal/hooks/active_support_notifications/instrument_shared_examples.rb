@@ -38,6 +38,8 @@ shared_examples "activesupport instrument override" do
       expect(span.attributes["db.query.text"]).to eq("SQL")
       expect(span.attributes["db.system.name"]).to eq("other_sql")
       expect(span.attributes["appsignal.category"]).to eq("sql.active_record")
+      # The scope is derived from the event group (the part after the last dot).
+      expect(scope_of(span)).to eq(["appsignal-ruby-active_record", Appsignal::VERSION])
       expect(span.attributes).not_to have_key("appsignal.body")
     end
   end
@@ -85,6 +87,7 @@ shared_examples "activesupport instrument override" do
       expect(span.attributes["db.query.text"]).to eq("SQL")
       expect(span.attributes["db.system.name"]).to eq("other_sql")
       expect(span.attributes["appsignal.category"]).to eq("sql.sequel")
+      expect(scope_of(span)).to eq(["appsignal-ruby-sequel", Appsignal::VERSION])
       expect(span.attributes).not_to have_key("appsignal.body")
     end
   end
@@ -127,6 +130,7 @@ shared_examples "activesupport instrument override" do
       expect(span.kind).to eq(:internal)
       expect(span.attributes).not_to have_key("appsignal.body")
       expect(span.attributes["appsignal.category"]).to eq("no-registered.formatter")
+      expect(scope_of(span)).to eq(["appsignal-ruby-formatter", Appsignal::VERSION])
       expect(span.attributes).not_to have_key("db.query.text")
       expect(span.attributes).not_to have_key("db.system.name")
     end
@@ -167,6 +171,8 @@ shared_examples "activesupport instrument override" do
       expect(event_spans.map(&:name)).to include("not_a_string")
       span = event_spans.find { |s| s.name == "not_a_string" }
       expect(span.attributes["appsignal.category"]).to eq("not_a_string")
+      # No group (no dot) in the name, so it falls back to the default scope.
+      expect(scope_of(span)).to eq(["appsignal-ruby", Appsignal::VERSION])
     end
   end
 

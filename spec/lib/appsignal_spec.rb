@@ -1181,6 +1181,39 @@ describe Appsignal do
           expect(exception_events).to be_empty
           expect(event_spans).to be_empty
           expect(last_transaction).to be_completed
+          # No scope given, so the transaction uses the default scope.
+          expect(scope_of(root_span)).to eq(["appsignal-ruby", Appsignal::VERSION])
+        end
+      end
+
+      describe "passing an OpenTelemetry scope" do
+        let(:scope) { ["appsignal-ruby-custom", "1.2.3"] }
+
+        it "monitor records the transaction under that scope", :collector_mode do
+          start_collector_agent
+          Appsignal.monitor(:action => "MyAction", :opentelemetry_scope => scope)
+
+          expect(scope_of(root_span)).to eq(scope)
+        end
+
+        it "send_error records the error transaction under that scope", :collector_mode do
+          start_collector_agent
+          Appsignal.send_error(
+            ExampleException.new("error"),
+            :opentelemetry_scope => scope
+          )
+
+          expect(scope_of(root_span)).to eq(scope)
+        end
+
+        it "report_error records the error transaction under that scope", :collector_mode do
+          start_collector_agent
+          Appsignal.report_error(
+            ExampleException.new("error"),
+            :opentelemetry_scope => scope
+          ) { |t| t.set_action("MyAction") }
+
+          expect(scope_of(root_span)).to eq(scope)
         end
       end
 

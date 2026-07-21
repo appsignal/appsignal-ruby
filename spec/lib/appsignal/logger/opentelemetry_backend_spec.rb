@@ -15,10 +15,7 @@ describe Appsignal::Logger::OpenTelemetryBackend, :if => DependencyHelper.opente
 
   before do
     ::OpenTelemetry.logger_provider = logger_provider
-    described_class.reset!
   end
-
-  after { described_class.reset! }
 
   def emitted_records
     exporter.emitted_log_records
@@ -126,18 +123,9 @@ describe Appsignal::Logger::OpenTelemetryBackend, :if => DependencyHelper.opente
     end
   end
 
-  describe "logger caching" do
-    it "fetches the OTel logger once and reuses it across emits" do
-      expect(::OpenTelemetry.logger_provider).to receive(:logger)
-        .with(:name => "appsignal-logger").once.and_call_original
-
+  describe "logger resolution" do
+    it "picks up a swapped logger provider on the next emit" do
       described_class.emit("g", ::Logger::INFO, Appsignal::Logger::PLAINTEXT, "a", {})
-      described_class.emit("g", ::Logger::INFO, Appsignal::Logger::PLAINTEXT, "b", {})
-    end
-
-    it "rebuilds the logger after reset! to pick up a new provider" do
-      described_class.emit("g", ::Logger::INFO, Appsignal::Logger::PLAINTEXT, "a", {})
-      described_class.reset!
 
       new_provider = ::OpenTelemetry::SDK::Logs::LoggerProvider.new
       new_exporter = ::OpenTelemetry::SDK::Logs::Export::InMemoryLogRecordExporter.new

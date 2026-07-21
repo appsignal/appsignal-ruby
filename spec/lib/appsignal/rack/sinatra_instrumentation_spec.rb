@@ -145,6 +145,8 @@ if DependencyHelper.sinatra_present?
               span = event_spans.find { |s| s.name == "process_action.sinatra" }
               expect(span).not_to be_nil
               expect(span.parent_span_id).to eq(root_span.span_id)
+              expect(scope_of(root_span)).to eq(["appsignal-ruby-sinatra", Appsignal::VERSION])
+              expect(scope_of(span)).to eq(["appsignal-ruby-sinatra", Appsignal::VERSION])
             end
           end
         end

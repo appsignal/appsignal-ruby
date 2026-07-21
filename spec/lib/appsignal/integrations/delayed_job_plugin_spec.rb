@@ -60,6 +60,7 @@ if DependencyHelper.delayed_job_present?
           # producer span is not linked to the later perform.
           producer = event_spans.find { |s| s.name == "enqueue DelayedTestJob job" }
           expect(producer.attributes["appsignal.category"]).to eq("enqueue.delayed_job")
+          expect(scope_of(producer)).to eq(["appsignal-ruby-delayed_job", Appsignal::VERSION])
           expect(producer.kind).to eq(:producer)
           expect(producer.parent_span_id).to eq(root_span.span_id)
         end
@@ -166,6 +167,9 @@ if DependencyHelper.delayed_job_present?
           expect(root_span.attributes["appsignal.action_name"]).to eq("DelayedTestJob#perform")
           expect(root_span.attributes["appsignal.namespace"]).to eq("background")
           expect(event_spans.map(&:name)).to include("perform_job.delayed_job")
+          perform_span = event_spans.find { |s| s.name == "perform_job.delayed_job" }
+          expect(scope_of(root_span)).to eq(["appsignal-ruby-delayed_job", Appsignal::VERSION])
+          expect(scope_of(perform_span)).to eq(["appsignal-ruby-delayed_job", Appsignal::VERSION])
         end
       end
 

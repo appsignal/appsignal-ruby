@@ -29,6 +29,8 @@ describe Appsignal::Rack::InstrumentationMiddleware do
         span = event_spans.find { |s| s.name == "process_request_middleware.rack" }
         expect(span).not_to be_nil
         expect(span.parent_span_id).to eq(root_span.span_id)
+        expect(scope_of(root_span)).to eq(["appsignal-ruby-rack", Appsignal::VERSION])
+        expect(scope_of(span)).to eq(["appsignal-ruby-rack", Appsignal::VERSION])
       end
     end
   end

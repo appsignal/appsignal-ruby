@@ -22,7 +22,10 @@ module Appsignal
           end
 
         begin
-          Appsignal.instrument "task.rake" do
+          Appsignal.instrument(
+            "task.rake",
+            :opentelemetry_scope => ["appsignal-ruby-rake", Appsignal::VERSION]
+          ) do
             super
           end
         rescue Exception => error
@@ -47,7 +50,10 @@ module Appsignal
       private
 
       def _appsignal_create_transaction
-        Appsignal::Transaction.create("rake")
+        Appsignal::Transaction.create(
+          "rake",
+          :opentelemetry_scope => ["appsignal-ruby-rake", Appsignal::VERSION]
+        )
       end
     end
 

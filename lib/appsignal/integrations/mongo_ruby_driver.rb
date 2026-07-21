@@ -22,7 +22,10 @@ module Appsignal
         store[event.request_id] = command
 
         # Start this event. The query is an outgoing client call.
-        transaction.start_event(:opentelemetry_kind => :client)
+        transaction.start_event(
+          :opentelemetry_kind => :client,
+          :opentelemetry_scope => ["appsignal-ruby-mongo", Appsignal::VERSION]
+        )
       end
 
       # Called by Mongo::Monitor when query succeeds

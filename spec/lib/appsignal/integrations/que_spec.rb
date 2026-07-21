@@ -89,6 +89,8 @@ if DependencyHelper.que_present?
             expect(span.parent_span_id).to eq(root_span.span_id)
             expect(span.attributes).not_to have_key("appsignal.body")
             expect(span.attributes["appsignal.category"]).to eq("perform_job.que")
+            expect(scope_of(root_span)).to eq(["appsignal-ruby-que", Appsignal::VERSION])
+            expect(scope_of(span)).to eq(["appsignal-ruby-que", Appsignal::VERSION])
             expected_params = { "arguments" => %w[post_id_123 user_id_123] }
             expected_params["keyword_arguments"] = {} if DependencyHelper.que2_present?
             expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
@@ -408,6 +410,7 @@ if DependencyHelper.que_present?
         # named after the job being enqueued.
         producer = event_spans.find { |s| s.name == "enqueue MyQueJob job" }
         expect(producer.attributes["appsignal.category"]).to eq("enqueue.que")
+        expect(scope_of(producer)).to eq(["appsignal-ruby-que", Appsignal::VERSION])
         expect(producer.kind).to eq(:producer)
         expect(producer.parent_span_id).to eq(root_span.span_id)
 

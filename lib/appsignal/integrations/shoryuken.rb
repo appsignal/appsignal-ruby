@@ -79,10 +79,15 @@ module Appsignal
 
         transaction = Appsignal::Transaction.create(
           Appsignal::Transaction::BACKGROUND_JOB,
-          :opentelemetry_context => context
+          :opentelemetry_context => context,
+          :opentelemetry_scope => ["appsignal-ruby-shoryuken", Appsignal::VERSION]
         )
 
-        Appsignal.instrument("perform_job.shoryuken", &block)
+        Appsignal.instrument(
+          "perform_job.shoryuken",
+          :opentelemetry_scope => ["appsignal-ruby-shoryuken", Appsignal::VERSION],
+          &block
+        )
       rescue Exception => error
         transaction.set_error(error)
         raise
@@ -170,7 +175,8 @@ module Appsignal
         Appsignal.instrument(
           "enqueue.shoryuken",
           enqueue_title(options),
-          :opentelemetry_kind => :producer
+          :opentelemetry_kind => :producer,
+          :opentelemetry_scope => ["appsignal-ruby-shoryuken", Appsignal::VERSION]
         ) do
           ShoryukenTraceContext.inject(options)
           yield

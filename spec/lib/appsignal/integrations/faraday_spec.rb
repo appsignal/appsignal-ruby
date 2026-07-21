@@ -46,6 +46,7 @@ if DependencyHelper.faraday_present?
         expect(faraday_span).not_to be_nil
         expect(faraday_span.kind).to eq(:client)
         expect(faraday_span.parent_span_id).to eq(root_span.span_id)
+        expect(scope_of(faraday_span)).to eq(["appsignal-ruby-faraday", Appsignal::VERSION])
 
         # Net::HTTP is suppressed, so there's no nested net_http span.
         expect(event_span("request.net_http")).to be_nil
