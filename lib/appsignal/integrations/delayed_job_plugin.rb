@@ -35,7 +35,8 @@ module Appsignal
         Appsignal.instrument(
           "enqueue.delayed_job",
           "enqueue #{enqueue_name(job)} job",
-          :opentelemetry_kind => :producer
+          :opentelemetry_kind => :producer,
+          :opentelemetry_scope => ["appsignal-ruby-delayed_job", Appsignal::VERSION]
         ) do
           block.call(job)
         end
@@ -57,10 +58,16 @@ module Appsignal
 
       def self.invoke_with_instrumentation(job, block)
         transaction =
-          Appsignal::Transaction.create(Appsignal::Transaction::BACKGROUND_JOB)
+          Appsignal::Transaction.create(
+            Appsignal::Transaction::BACKGROUND_JOB,
+            :opentelemetry_scope => ["appsignal-ruby-delayed_job", Appsignal::VERSION]
+          )
 
         begin
-          Appsignal.instrument("perform_job.delayed_job") do
+          Appsignal.instrument(
+            "perform_job.delayed_job",
+            :opentelemetry_scope => ["appsignal-ruby-delayed_job", Appsignal::VERSION]
+          ) do
             block.call(job)
           end
         rescue Exception => error

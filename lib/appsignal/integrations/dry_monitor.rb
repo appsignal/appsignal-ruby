@@ -9,7 +9,8 @@ module Appsignal
       # kind is immutable, so it has to be set here at event start.
       def instrument(event_id, payload = {}, &block)
         Appsignal::Transaction.current.start_event(
-          :opentelemetry_kind => event_id.to_s == "sql" ? :client : nil
+          :opentelemetry_kind => event_id.to_s == "sql" ? :client : nil,
+          :opentelemetry_scope => ["appsignal-ruby-dry_monitor", Appsignal::VERSION]
         )
 
         super

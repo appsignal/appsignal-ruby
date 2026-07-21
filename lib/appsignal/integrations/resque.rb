@@ -9,10 +9,14 @@ module Appsignal
         # enqueuer. No-op outside collector mode.
         transaction = Appsignal::Transaction.create(
           Appsignal::Transaction::BACKGROUND_JOB,
-          :opentelemetry_context => Appsignal::OpenTelemetry.extract_job_context(payload)
+          :opentelemetry_context => Appsignal::OpenTelemetry.extract_job_context(payload),
+          :opentelemetry_scope => ["appsignal-ruby-resque", Appsignal::VERSION]
         )
 
-        Appsignal.instrument "perform.resque" do
+        Appsignal.instrument(
+          "perform.resque",
+          :opentelemetry_scope => ["appsignal-ruby-resque", Appsignal::VERSION]
+        ) do
           super
         end
       rescue Exception => exception
@@ -54,7 +58,8 @@ module Appsignal
         Appsignal.instrument(
           "enqueue.resque",
           "enqueue #{item["class"]} job",
-          :opentelemetry_kind => :producer
+          :opentelemetry_kind => :producer,
+          :opentelemetry_scope => ["appsignal-ruby-resque", Appsignal::VERSION]
         ) do
           Appsignal::OpenTelemetry.inject_context(item)
           super

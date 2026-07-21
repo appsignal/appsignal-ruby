@@ -38,7 +38,10 @@ module Appsignal
 
           report_error = true
 
-          Appsignal.report_error(error) do |transaction|
+          Appsignal.report_error(
+            error,
+            :opentelemetry_scope => ["appsignal-ruby-at_exit", Appsignal::VERSION]
+          ) do |transaction|
             transaction.set_namespace("unhandled")
           end
         ensure

@@ -13,7 +13,10 @@ module Appsignal
           end
 
         unless PumaServerHelper.ignored_error?(error)
-          Appsignal.report_error(error) do |transaction|
+          Appsignal.report_error(
+            error,
+            :opentelemetry_scope => ["appsignal-ruby-puma", Appsignal::VERSION]
+          ) do |transaction|
             Appsignal::Rack::ApplyRackRequest
               .new(::Rack::Request.new(env))
               .apply_to(transaction)

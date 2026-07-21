@@ -96,7 +96,10 @@ module Appsignal
           is_rails_runner = source == "application.runner.railties"
           namespace, action_name, tags, custom_data = context_for(context.dup)
 
-          Appsignal.report_error(error) do |transaction|
+          Appsignal.report_error(
+            error,
+            :opentelemetry_scope => ["appsignal-ruby-rails", Appsignal::VERSION]
+          ) do |transaction|
             if namespace
               transaction.set_namespace(namespace)
             elsif is_rails_runner

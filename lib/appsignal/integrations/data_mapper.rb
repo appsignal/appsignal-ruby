@@ -29,7 +29,8 @@ module Appsignal
           body_content,
           message.duration,
           body_format,
-          :opentelemetry_kind => :client
+          :opentelemetry_kind => :client,
+          :opentelemetry_scope => ["appsignal-ruby-data_mapper", Appsignal::VERSION]
         )
         super
       end

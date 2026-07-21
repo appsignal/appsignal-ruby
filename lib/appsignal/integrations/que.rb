@@ -71,11 +71,15 @@ module Appsignal
         transaction =
           Appsignal::Transaction.create(
             Appsignal::Transaction::BACKGROUND_JOB,
-            :opentelemetry_context => QueTraceContext.extract(local_attrs.dig(:data, :tags))
+            :opentelemetry_context => QueTraceContext.extract(local_attrs.dig(:data, :tags)),
+            :opentelemetry_scope => ["appsignal-ruby-que", Appsignal::VERSION]
           )
 
         begin
-          Appsignal.instrument("perform_job.que") { super }
+          Appsignal.instrument(
+            "perform_job.que",
+            :opentelemetry_scope => ["appsignal-ruby-que", Appsignal::VERSION]
+          ) { super }
         rescue Exception => error
           transaction.set_error(error)
           raise error
@@ -139,7 +143,12 @@ module Appsignal
           return yield job_options_with_context(job_options)
         end
 
-        Appsignal.instrument(event_name, title, :opentelemetry_kind => :producer) do
+        Appsignal.instrument(
+          event_name,
+          title,
+          :opentelemetry_kind => :producer,
+          :opentelemetry_scope => ["appsignal-ruby-que", Appsignal::VERSION]
+        ) do
           yield job_options_with_context(job_options)
         end
       end

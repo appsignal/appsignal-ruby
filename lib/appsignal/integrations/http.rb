@@ -13,6 +13,7 @@ module Appsignal
           "request.http_rb",
           "#{verb.to_s.upcase} #{request_uri}",
           :opentelemetry_kind => :client,
+          :opentelemetry_scope => ["appsignal-ruby-http_rb", Appsignal::VERSION],
           &block
         )
       end

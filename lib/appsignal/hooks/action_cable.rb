@@ -37,10 +37,16 @@ module Appsignal
           env[Appsignal::Hooks::ActionCableHook::REQUEST_ID] ||= request_id
 
           transaction =
-            Appsignal::Transaction.create(Appsignal::Transaction::ACTION_CABLE)
+            Appsignal::Transaction.create(
+              Appsignal::Transaction::ACTION_CABLE,
+              :opentelemetry_scope => ["appsignal-ruby-action_cable", Appsignal::VERSION]
+            )
 
           begin
-            Appsignal.instrument "subscribed.action_cable" do
+            Appsignal.instrument(
+              "subscribed.action_cable",
+              :opentelemetry_scope => ["appsignal-ruby-action_cable", Appsignal::VERSION]
+            ) do
               inner.call
             end
           rescue Exception => exception
@@ -73,10 +79,16 @@ module Appsignal
           env[Appsignal::Hooks::ActionCableHook::REQUEST_ID] ||= request_id
 
           transaction =
-            Appsignal::Transaction.create(Appsignal::Transaction::ACTION_CABLE)
+            Appsignal::Transaction.create(
+              Appsignal::Transaction::ACTION_CABLE,
+              :opentelemetry_scope => ["appsignal-ruby-action_cable", Appsignal::VERSION]
+            )
 
           begin
-            Appsignal.instrument "unsubscribed.action_cable" do
+            Appsignal.instrument(
+              "unsubscribed.action_cable",
+              :opentelemetry_scope => ["appsignal-ruby-action_cable", Appsignal::VERSION]
+            ) do
               inner.call
             end
           rescue Exception => exception
