@@ -140,6 +140,7 @@ if DependencyHelper.sidekiq_present?
             perform
 
             expect(root_span.kind).to eq(:consumer)
+            expect(scope_of(root_span)).to eq(["appsignal-ruby-sidekiq", Appsignal::VERSION])
             expect(root_span.attributes["appsignal.action_name"])
               .to eq("SidekiqInternal")
             event = root_span.events.find { |e| e.name == "exception" }
@@ -362,6 +363,7 @@ if DependencyHelper.sidekiq_present?
         expect(producer.attributes["appsignal.category"]).to eq("enqueue.sidekiq")
         expect(producer.kind).to eq(:producer)
         expect(producer.parent_span_id).to eq(root_span.span_id)
+        expect(scope_of(producer)).to eq(["appsignal-ruby-sidekiq", Appsignal::VERSION])
 
         # The job carries the producer span's trace context, so the job that
         # performs can link back to it.
@@ -901,6 +903,11 @@ if DependencyHelper.sidekiq_present?
           expect(span.parent_span_id).to eq(root_span.span_id)
           expect(span.attributes).not_to have_key("appsignal.body")
           expect(span.attributes["appsignal.category"]).to eq("perform_job.sidekiq")
+
+          # Both the job's root span and its perform event carry the Sidekiq
+          # instrumentation scope.
+          expect(scope_of(root_span)).to eq(["appsignal-ruby-sidekiq", Appsignal::VERSION])
+          expect(scope_of(span)).to eq(["appsignal-ruby-sidekiq", Appsignal::VERSION])
         end
       end
     end

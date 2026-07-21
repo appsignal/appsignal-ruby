@@ -74,6 +74,9 @@ describe Appsignal::Hooks::RakeHook do
             expect(root_span.attributes["appsignal.action_name"]).to eq("task:name")
             expect(exception_events).to be_empty
             expect(event_spans.map(&:name)).to include("task.rake")
+            expect(scope_of(root_span)).to eq(["appsignal-ruby-rake", Appsignal::VERSION])
+            task_span = event_spans.find { |s| s.name == "task.rake" }
+            expect(scope_of(task_span)).to eq(["appsignal-ruby-rake", Appsignal::VERSION])
             expect(last_transaction).to be_completed
           end
         end

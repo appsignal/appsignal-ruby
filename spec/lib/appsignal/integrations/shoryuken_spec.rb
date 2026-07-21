@@ -90,6 +90,8 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
           expect(span.parent_span_id).to eq(root_span.span_id)
           expect(span.attributes).not_to have_key("appsignal.body")
           expect(span.attributes["appsignal.category"]).to eq("perform_job.shoryuken")
+          expect(scope_of(root_span)).to eq(["appsignal-ruby-shoryuken", Appsignal::VERSION])
+          expect(scope_of(span)).to eq(["appsignal-ruby-shoryuken", Appsignal::VERSION])
           expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
             .to eq("foo" => "Foo", "bar" => "Bar")
           expect(root_span.attributes["appsignal.tag.message_id"]).to eq("msg1")
@@ -409,6 +411,7 @@ describe Appsignal::Integrations::ShoryukenClientMiddleware do
         # named after the worker being enqueued.
         producer = event_spans.find { |s| s.name == "enqueue MyShoryukenWorker job" }
         expect(producer.attributes["appsignal.category"]).to eq("enqueue.shoryuken")
+        expect(scope_of(producer)).to eq(["appsignal-ruby-shoryuken", Appsignal::VERSION])
         expect(producer.kind).to eq(:producer)
         expect(producer.parent_span_id).to eq(root_span.span_id)
 

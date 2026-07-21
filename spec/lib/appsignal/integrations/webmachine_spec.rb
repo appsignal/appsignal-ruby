@@ -70,6 +70,7 @@ if DependencyHelper.webmachine_present?
           expect(root_span.name).to eq("MyResource#GET")
           expect(root_span.kind).to eq(:server)
           expect(root_span.attributes["appsignal.action_name"]).to eq("MyResource#GET")
+          expect(scope_of(root_span)).to eq(["appsignal-ruby-webmachine", Appsignal::VERSION])
         end
       end
 

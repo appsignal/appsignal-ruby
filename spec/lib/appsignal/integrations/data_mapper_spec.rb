@@ -62,6 +62,7 @@ describe Appsignal::Hooks::DataMapperLogListener do
         expect(attrs["db.query.text"]).to eq("SELECT * from users")
         expect(attrs["db.system.name"]).to eq("other_sql")
         expect(attrs["appsignal.category"]).to eq("query.data_mapper")
+        expect(scope_of(span)).to eq(["appsignal-ruby-data_mapper", Appsignal::VERSION])
         expect(attrs).not_to have_key("appsignal.body")
         observed = span.end_timestamp - span.start_timestamp
         expect(observed).to be_within(50_000_000).of(100_000_000)
@@ -108,6 +109,7 @@ describe Appsignal::Hooks::DataMapperLogListener do
         expect(span.parent_span_id).to eq(root_span.span_id)
         attrs = span.attributes
         expect(attrs["appsignal.category"]).to eq("query.data_mapper")
+        expect(scope_of(span)).to eq(["appsignal-ruby-data_mapper", Appsignal::VERSION])
         expect(attrs).not_to have_key("appsignal.body")
         expect(attrs).not_to have_key("db.query.text")
         expect(attrs).not_to have_key("db.system.name")

@@ -105,6 +105,7 @@ describe Appsignal::Hooks::RedisHook do
                   expect(span.parent_span_id).to eq(root_span.span_id)
                   expect(span.attributes["appsignal.body"]).to eq("get ?")
                   expect(span.attributes["appsignal.category"]).to eq("query.redis")
+                  expect(scope_of(span)).to eq(["appsignal-ruby-redis", Appsignal::VERSION])
                   expect(span.attributes).not_to have_key("db.query.text")
                 end
               end

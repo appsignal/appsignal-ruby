@@ -281,6 +281,7 @@ if DependencyHelper.rails_present?
             expect(event.attributes["exception.stacktrace"]).to be_a(String)
             expect(event.attributes["appsignal.alert_this_error"]).to eq(true)
             expect(root_span.status.code).to eq(::OpenTelemetry::Trace::Status::ERROR)
+            expect(scope_of(root_span)).to eq(["appsignal-ruby-rails", Appsignal::VERSION])
           end
         end
 

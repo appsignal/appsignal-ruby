@@ -83,6 +83,7 @@ describe Appsignal::Hooks::AtExit::AtExitCallback do
         expect { perform }.to change { created_transactions.count }.by(1)
 
         expect(root_span.attributes["appsignal.namespace"]).to eq("unhandled")
+        expect(scope_of(root_span)).to eq(["appsignal-ruby-at_exit", Appsignal::VERSION])
         event = root_span.events.find { |e| e.name == "exception" }
         expect(event).not_to be_nil
         expect(event.attributes["exception.type"]).to eq("ExampleException")

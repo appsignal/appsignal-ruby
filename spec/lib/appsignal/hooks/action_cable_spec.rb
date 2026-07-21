@@ -108,6 +108,7 @@ describe Appsignal::Hooks::ActionCableHook do
               expect(root_span.attributes["appsignal.namespace"])
                 .to eq(Appsignal::Transaction::ACTION_CABLE)
               expect(root_span.attributes["appsignal.action_name"]).to eq("MyChannel#speak")
+              expect(scope_of(root_span)).to eq(["appsignal-ruby-action_cable", Appsignal::VERSION])
               expect(exception_events).to be_empty
               expect(root_span.attributes["appsignal.tag.method"]).to eq("websocket")
               expect(root_span.attributes["appsignal.tag.path"]).to eq("/blog")
@@ -276,6 +277,8 @@ describe Appsignal::Hooks::ActionCableHook do
               span = event_spans.find { |s| s.name == "subscribed.action_cable" }
               expect(span).not_to be_nil
               expect(span.parent_span_id).to eq(root_span.span_id)
+              expect(scope_of(root_span)).to eq(["appsignal-ruby-action_cable", Appsignal::VERSION])
+              expect(scope_of(span)).to eq(["appsignal-ruby-action_cable", Appsignal::VERSION])
               expect(JSON.parse(root_span.attributes["appsignal.request.session_data"]))
                 .to eq("user_id" => "123", "session" => "yes")
               expect(root_span.attributes["appsignal.tag.request_id"]).to eq(request_id)

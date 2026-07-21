@@ -154,6 +154,7 @@ if DependencyHelper.active_job_present?
         last_transaction.complete
 
         expect(root_span.kind).to eq(:consumer)
+        expect(scope_of(root_span)).to eq(["appsignal-ruby-active_job", Appsignal::VERSION])
         expect(root_span.attributes["appsignal.namespace"]).to eq("background")
         expect(root_span.attributes["appsignal.action_name"]).to eq("ActiveJobTestJob#perform")
         expect(exception_events).to be_empty
@@ -599,6 +600,7 @@ if DependencyHelper.active_job_present?
           # transaction, named after the job being enqueued.
           producer = event_spans.find { |s| s.name == "enqueue ActiveJobTestJob job" }
           expect(producer.attributes["appsignal.category"]).to eq("enqueue.active_job")
+          expect(scope_of(producer)).to eq(["appsignal-ruby-active_job", Appsignal::VERSION])
           expect(producer.kind).to eq(:producer)
           expect(producer.parent_span_id).to eq(root_span.span_id)
 

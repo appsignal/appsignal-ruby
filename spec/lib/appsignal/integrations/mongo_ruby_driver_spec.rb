@@ -91,6 +91,7 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
         expect(span.kind).to eq(:client)
         expect(span.parent_span_id).to eq(root_span.span_id)
         expect(span.attributes["appsignal.category"]).to eq("query.mongodb")
+        expect(scope_of(span)).to eq(["appsignal-ruby-mongo", Appsignal::VERSION])
         expect(span.attributes["appsignal.body"]).to eq("{\"foo\":\"?\"}")
 
         snapshot = metric_snapshot("mongodb_query_duration")
@@ -135,6 +136,7 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
         expect(span.name).to eq("find | test | FAILED")
         expect(span.kind).to eq(:client)
         expect(span.attributes["appsignal.category"]).to eq("query.mongodb")
+        expect(scope_of(span)).to eq(["appsignal-ruby-mongo", Appsignal::VERSION])
         expect(span.attributes["appsignal.body"]).to eq("{\"foo\":\"?\"}")
       end
     end

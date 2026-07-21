@@ -50,6 +50,7 @@ describe Appsignal::Hooks::SequelHook do
         expect(span.attributes["db.system.name"]).to eq("other_sql")
         expect(span.attributes).not_to have_key("appsignal.body")
         expect(span.attributes["appsignal.category"]).to eq("sql.sequel")
+        expect(scope_of(span)).to eq(["appsignal-ruby-sequel", Appsignal::VERSION])
       end
     end
   else
