@@ -38,8 +38,6 @@ module Appsignal
         Appsignal::Logger::AUTODETECT => "autodetect"
       }.freeze
 
-      MUTEX = Mutex.new
-
       class << self
         def emit(group, severity, format, message, attributes)
           number, text = OTEL_SEVERITY_MAP.fetch(severity, [0, nil])
@@ -54,23 +52,13 @@ module Appsignal
           )
         end
 
-        # @!visibility private
-        #
-        # Test-only. Drops the cached logger so the next call re-resolves
-        # `OpenTelemetry.logger_provider`.
-        def reset!
-          MUTEX.synchronize { @logger = nil }
-        end
-
         private
 
-        # Double-checked locking: read the cached logger without the
-        # mutex on the hot path, take the lock and re-check only on the
-        # first call.
+        # Resolve the OTel logger on each emit. The logger provider caches it
+        # by name, so this is a registry lookup rather than a rebuild, and it
+        # always reflects the currently configured provider.
         def logger
-          @logger || MUTEX.synchronize do
-            @logger ||= ::OpenTelemetry.logger_provider.logger(:name => "appsignal-logger")
-          end
+          ::OpenTelemetry.logger_provider.logger(:name => "appsignal-logger")
         end
       end
     end
