@@ -80,7 +80,9 @@ module Appsignal
         transaction = Appsignal::Transaction.create(
           Appsignal::Transaction::BACKGROUND_JOB,
           :opentelemetry_context => context,
-          :opentelemetry_scope => ["appsignal-ruby/shoryuken", Appsignal::VERSION]
+          :opentelemetry_scope => ["appsignal-ruby/shoryuken", Appsignal::VERSION],
+          :opentelemetry_kind => :consumer,
+          :opentelemetry_relationship => :link
         )
 
         Appsignal.instrument(
