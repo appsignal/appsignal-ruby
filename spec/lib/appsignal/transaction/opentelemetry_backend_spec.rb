@@ -1104,7 +1104,7 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
 
         # Both drained spans keep the placeholder name; root span keeps its own.
         names = span_exporter.finished_spans.map(&:name)
-        expect(names.count("appsignal.event")).to eq(2)
+        expect(names.count("[unfinished transaction event]")).to eq(2)
       end
     end
   end
