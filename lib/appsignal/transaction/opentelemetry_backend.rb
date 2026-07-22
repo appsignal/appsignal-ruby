@@ -39,10 +39,12 @@ module Appsignal
       }.freeze
 
       # Placeholder name an event span carries between `start_event` and
-      # `finish_event`. `finish_event` overwrites it with the AS::N event
-      # name; only surfaces if `complete` has to drain a span that was
-      # started but never finished.
-      EVENT_SPAN_PLACEHOLDER_NAME = "appsignal.event"
+      # `finish_event`. `finish_event` overwrites it with the AS::N event name,
+      # so it only surfaces when `complete` has to drain a span that was started
+      # but never finished. It is deliberately an obvious placeholder rather
+      # than a plausible event name, so such a span reads as the unfinished
+      # event it is and is not mistaken for a real one.
+      EVENT_SPAN_PLACEHOLDER_NAME = "[unfinished transaction event]"
 
       # Sentinel value the AppSignal collector recognizes as "a SQL system
       # we don't know the specific dialect of" — sufficient to trigger SQL
