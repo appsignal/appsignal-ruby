@@ -1188,6 +1188,36 @@ describe Appsignal do
         expect(Appsignal.monitor(:action => nil) { :return_value }).to eq(:return_value)
       end
 
+      describe "OpenTelemetry attributes" do
+        it "threads the OpenTelemetry attributes to the created transaction" do
+          start_agent
+
+          otel_context = "some-otel-context"
+          expect(Appsignal::Transaction).to receive(:create).with(
+            Appsignal::Transaction::BACKGROUND_JOB,
+            :opentelemetry_context => otel_context,
+            :opentelemetry_kind => :consumer,
+            :opentelemetry_relationship => :both
+          ).and_call_original
+
+          Appsignal.monitor(
+            :action => "MyAction",
+            :namespace => Appsignal::Transaction::BACKGROUND_JOB,
+            :opentelemetry_context => otel_context,
+            :opentelemetry_kind => :consumer,
+            :opentelemetry_relationship => :both
+          )
+        end
+
+        it "uses the given opentelemetry_kind for the span", :collector_mode do
+          start_collector_agent
+
+          Appsignal.monitor(:action => "MyAction", :opentelemetry_kind => :consumer)
+
+          expect(root_span.kind).to eq(:consumer)
+        end
+      end
+
       describe "setting a custom namespace via the namespace argument" do
         def perform
           Appsignal.monitor(:namespace => "custom", :action => nil)
@@ -2044,6 +2074,36 @@ describe Appsignal do
         keep_transactions { example.run }
       end
 
+      describe "OpenTelemetry attributes" do
+        it "threads the OpenTelemetry attributes to the created transaction" do
+          start_agent
+          allow(Appsignal::Transaction).to receive(:new).and_call_original
+
+          otel_context = "some-otel-context"
+          Appsignal.send_error(
+            error,
+            :opentelemetry_context => otel_context,
+            :opentelemetry_kind => :consumer,
+            :opentelemetry_relationship => :both
+          )
+
+          expect(Appsignal::Transaction).to have_received(:new).with(
+            Appsignal::Transaction::HTTP_REQUEST,
+            :opentelemetry_context => otel_context,
+            :opentelemetry_kind => :consumer,
+            :opentelemetry_relationship => :both
+          )
+        end
+
+        it "uses the given opentelemetry_kind for the span", :collector_mode do
+          start_collector_agent
+
+          Appsignal.send_error(error, :opentelemetry_kind => :consumer)
+
+          expect(root_span.kind).to eq(:consumer)
+        end
+      end
+
       describe "sending the error" do
         def perform
           Appsignal.send_error(error)
@@ -2356,6 +2416,37 @@ describe Appsignal do
       let(:stderr) { err_stream.read }
       let(:error) { ExampleException.new("error message") }
       around { |example| keep_transactions { example.run } }
+
+      describe "OpenTelemetry attributes" do
+        it "threads the OpenTelemetry attributes to a newly created transaction" do
+          start_agent
+          allow(Appsignal::Transaction).to receive(:new).and_call_original
+
+          otel_context = "some-otel-context"
+          Appsignal.report_error(
+            error,
+            :opentelemetry_context => otel_context,
+            :opentelemetry_kind => :consumer,
+            :opentelemetry_relationship => :both
+          )
+
+          expect(Appsignal::Transaction).to have_received(:new).with(
+            Appsignal::Transaction::HTTP_REQUEST,
+            :opentelemetry_context => otel_context,
+            :opentelemetry_kind => :consumer,
+            :opentelemetry_relationship => :both
+          )
+        end
+
+        it "uses the given opentelemetry_kind for the span", :collector_mode do
+          start_collector_agent
+
+          Appsignal.report_error(error, :opentelemetry_kind => :consumer)
+          Appsignal::Transaction.complete_current!
+
+          expect(root_span.kind).to eq(:consumer)
+        end
+      end
 
       context "when the error is not an Exception" do
         let(:error) { Object.new }

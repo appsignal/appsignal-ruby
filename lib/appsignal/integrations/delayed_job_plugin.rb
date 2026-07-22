@@ -57,7 +57,11 @@ module Appsignal
 
       def self.invoke_with_instrumentation(job, block)
         transaction =
-          Appsignal::Transaction.create(Appsignal::Transaction::BACKGROUND_JOB)
+          Appsignal::Transaction.create(
+            Appsignal::Transaction::BACKGROUND_JOB,
+            :opentelemetry_kind => :consumer,
+            :opentelemetry_relationship => :link
+          )
 
         begin
           Appsignal.instrument("perform_job.delayed_job") do

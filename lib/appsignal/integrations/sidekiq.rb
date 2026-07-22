@@ -38,7 +38,11 @@ module Appsignal
           # Sidekiq error outside of the middleware scope.
           # Can be a job JSON parse error or some other error happening in
           # Sidekiq.
-          transaction = Appsignal::Transaction.create(Appsignal::Transaction::BACKGROUND_JOB)
+          transaction = Appsignal::Transaction.create(
+            Appsignal::Transaction::BACKGROUND_JOB,
+            :opentelemetry_kind => :consumer,
+            :opentelemetry_relationship => :link
+          )
           transaction.set_action_if_nil("SidekiqInternal")
           transaction.set_metadata("sidekiq_error", sidekiq_context[:context])
           transaction.add_params_if_nil(:jobstr => sidekiq_context[:jobstr])
@@ -150,7 +154,9 @@ module Appsignal
         # enqueuer. No-op outside collector mode.
         transaction = Appsignal::Transaction.create(
           Appsignal::Transaction::BACKGROUND_JOB,
-          :opentelemetry_context => Appsignal::OpenTelemetry.extract_job_context(item)
+          :opentelemetry_context => Appsignal::OpenTelemetry.extract_job_context(item),
+          :opentelemetry_kind => :consumer,
+          :opentelemetry_relationship => :link
         )
         transaction.set_action_if_nil(action_name)
 

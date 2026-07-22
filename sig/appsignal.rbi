@@ -301,6 +301,12 @@ module Appsignal
   # 
   # _@param_ `action` — The action name for the transaction. The action name is required to be set for the transaction to be reported. The argument can be set to `nil` or `:set_later` if the action is set within the block with {#set_action}. This will not update the active transaction's action if {.monitor} is called when another transaction is already active.
   # 
+  # _@param_ `opentelemetry_kind` — In collector mode, the OpenTelemetry span kind: one of `:server`, `:consumer`, `:producer` or `:internal`. Defaults to `:server`.
+  # 
+  # _@param_ `opentelemetry_relationship` — In collector mode, how an incoming `opentelemetry_context` relates to this transaction's span: one of `:parent`, `:link`, `:both` or `:none`. Defaults to `:parent`.
+  # 
+  # _@param_ `opentelemetry_context` — In collector mode, an incoming OpenTelemetry trace context to relate this transaction's span to.
+  # 
   # _@return_ — The value of the given block is returned.
   # Returns `nil` if there already is a transaction active and no block
   # was given.
@@ -391,8 +397,17 @@ module Appsignal
   # ```
   # 
   # _@see_ `https://docs.appsignal.com/ruby/instrumentation/background-jobs.html` — Monitor guide
-  sig { params(action: T.any(String, Symbol, NilClass), namespace: T.nilable(T.any(String, Symbol)), blk: T.proc.returns(Object)).returns(T.nilable(Object)) }
-  def self.monitor(action:, namespace: nil, &blk); end
+  sig do
+    params(
+      action: T.any(String, Symbol, NilClass),
+      namespace: T.nilable(T.any(String, Symbol)),
+      opentelemetry_context: T.untyped,
+      opentelemetry_kind: T.nilable(Symbol),
+      opentelemetry_relationship: T.nilable(Symbol),
+      blk: T.proc.returns(Object)
+    ).returns(T.nilable(Object))
+  end
+  def self.monitor(action:, namespace: nil, opentelemetry_context: nil, opentelemetry_kind: nil, opentelemetry_relationship: nil, &blk); end
 
   # Instrument a block of code and stop AppSignal.
   # 
@@ -429,6 +444,12 @@ module Appsignal
   # 
   # _@param_ `error` — The error to send to AppSignal.
   # 
+  # _@param_ `opentelemetry_kind` — In collector mode, the OpenTelemetry span kind: one of `:server`, `:consumer`, `:producer` or `:internal`. Defaults to `:server`.
+  # 
+  # _@param_ `opentelemetry_relationship` — In collector mode, how an incoming `opentelemetry_context` relates to this transaction's span: one of `:parent`, `:link`, `:both` or `:none`. Defaults to `:parent`.
+  # 
+  # _@param_ `opentelemetry_context` — In collector mode, an incoming OpenTelemetry trace context to relate this transaction's span to.
+  # 
   # Send an exception
   # ```ruby
   # begin
@@ -449,8 +470,16 @@ module Appsignal
   # ```
   # 
   # _@see_ `https://docs.appsignal.com/ruby/instrumentation/exception-handling.html` — Exception handling guide
-  sig { params(error: Exception, block: T.proc.params(transaction: Transaction).void).void }
-  def self.send_error(error, &block); end
+  sig do
+    params(
+      error: Exception,
+      opentelemetry_context: T.untyped,
+      opentelemetry_kind: T.nilable(Symbol),
+      opentelemetry_relationship: T.nilable(Symbol),
+      block: T.proc.params(transaction: Transaction).void
+    ).void
+  end
+  def self.send_error(error, opentelemetry_context: nil, opentelemetry_kind: nil, opentelemetry_relationship: nil, &block); end
 
   # Set an error on the current transaction.
   # 
@@ -523,6 +552,12 @@ module Appsignal
   # 
   # _@param_ `exception` — The error to add to the current transaction.
   # 
+  # _@param_ `opentelemetry_kind` — In collector mode, the OpenTelemetry span kind: one of `:server`, `:consumer`, `:producer` or `:internal`. Defaults to `:server`. Only used when a new transaction is created.
+  # 
+  # _@param_ `opentelemetry_relationship` — In collector mode, how an incoming `opentelemetry_context` relates to this transaction's span: one of `:parent`, `:link`, `:both` or `:none`. Defaults to `:parent`. Only used when a new transaction is created.
+  # 
+  # _@param_ `opentelemetry_context` — In collector mode, an incoming OpenTelemetry trace context to relate this transaction's span to. Only used when a new transaction is created.
+  # 
   # ```ruby
   # class SomeController < ApplicationController
   #   def create
@@ -544,8 +579,16 @@ module Appsignal
   # ```
   # 
   # _@see_ `https://docs.appsignal.com/ruby/instrumentation/exception-handling.html` — Exception handling guide
-  sig { params(exception: Exception, block: T.proc.params(transaction: Transaction).void).void }
-  def self.report_error(exception, &block); end
+  sig do
+    params(
+      exception: Exception,
+      opentelemetry_context: T.untyped,
+      opentelemetry_kind: T.nilable(Symbol),
+      opentelemetry_relationship: T.nilable(Symbol),
+      block: T.proc.params(transaction: Transaction).void
+    ).void
+  end
+  def self.report_error(exception, opentelemetry_context: nil, opentelemetry_kind: nil, opentelemetry_relationship: nil, &block); end
 
   # Set a custom action name for the current transaction.
   # 
@@ -1695,8 +1738,21 @@ module Appsignal
     # transaction.
     # 
     # _@param_ `namespace` — Namespace of the to be created transaction.
-    sig { params(namespace: String, opentelemetry_context: T.untyped).returns(Transaction) }
-    def self.create(namespace, opentelemetry_context: nil); end
+    # 
+    # _@param_ `opentelemetry_kind` — In collector mode, the OpenTelemetry span kind: one of `:server`, `:consumer`, `:producer` or `:internal`. Defaults to `:server`.
+    # 
+    # _@param_ `opentelemetry_relationship` — In collector mode, how an incoming `opentelemetry_context` relates to this transaction's span: one of `:parent`, `:link`, `:both` or `:none`. Defaults to `:parent`.
+    # 
+    # _@param_ `opentelemetry_context` — In collector mode, an incoming OpenTelemetry trace context to relate this transaction's span to.
+    sig do
+      params(
+        namespace: String,
+        opentelemetry_context: T.untyped,
+        opentelemetry_kind: T.nilable(Symbol),
+        opentelemetry_relationship: T.nilable(Symbol)
+      ).returns(Transaction)
+    end
+    def self.create(namespace, opentelemetry_context: nil, opentelemetry_kind: nil, opentelemetry_relationship: nil); end
 
     # Returns currently active transaction or a {NilTransaction} if none is
     # active.
@@ -1990,6 +2046,12 @@ module Appsignal
       # 
       # _@param_ `action` — The action name for the transaction. The action name is required to be set for the transaction to be reported. The argument can be set to `nil` or `:set_later` if the action is set within the block with {#set_action}. This will not update the active transaction's action if {.monitor} is called when another transaction is already active.
       # 
+      # _@param_ `opentelemetry_kind` — In collector mode, the OpenTelemetry span kind: one of `:server`, `:consumer`, `:producer` or `:internal`. Defaults to `:server`.
+      # 
+      # _@param_ `opentelemetry_relationship` — In collector mode, how an incoming `opentelemetry_context` relates to this transaction's span: one of `:parent`, `:link`, `:both` or `:none`. Defaults to `:parent`.
+      # 
+      # _@param_ `opentelemetry_context` — In collector mode, an incoming OpenTelemetry trace context to relate this transaction's span to.
+      # 
       # _@return_ — The value of the given block is returned.
       # Returns `nil` if there already is a transaction active and no block
       # was given.
@@ -2080,8 +2142,17 @@ module Appsignal
       # ```
       # 
       # _@see_ `https://docs.appsignal.com/ruby/instrumentation/background-jobs.html` — Monitor guide
-      sig { params(action: T.any(String, Symbol, NilClass), namespace: T.nilable(T.any(String, Symbol)), blk: T.proc.returns(Object)).returns(T.nilable(Object)) }
-      def monitor(action:, namespace: nil, &blk); end
+      sig do
+        params(
+          action: T.any(String, Symbol, NilClass),
+          namespace: T.nilable(T.any(String, Symbol)),
+          opentelemetry_context: T.untyped,
+          opentelemetry_kind: T.nilable(Symbol),
+          opentelemetry_relationship: T.nilable(Symbol),
+          blk: T.proc.returns(Object)
+        ).returns(T.nilable(Object))
+      end
+      def monitor(action:, namespace: nil, opentelemetry_context: nil, opentelemetry_kind: nil, opentelemetry_relationship: nil, &blk); end
 
       # Instrument a block of code and stop AppSignal.
       # 
@@ -2118,6 +2189,12 @@ module Appsignal
       # 
       # _@param_ `error` — The error to send to AppSignal.
       # 
+      # _@param_ `opentelemetry_kind` — In collector mode, the OpenTelemetry span kind: one of `:server`, `:consumer`, `:producer` or `:internal`. Defaults to `:server`.
+      # 
+      # _@param_ `opentelemetry_relationship` — In collector mode, how an incoming `opentelemetry_context` relates to this transaction's span: one of `:parent`, `:link`, `:both` or `:none`. Defaults to `:parent`.
+      # 
+      # _@param_ `opentelemetry_context` — In collector mode, an incoming OpenTelemetry trace context to relate this transaction's span to.
+      # 
       # Send an exception
       # ```ruby
       # begin
@@ -2138,8 +2215,16 @@ module Appsignal
       # ```
       # 
       # _@see_ `https://docs.appsignal.com/ruby/instrumentation/exception-handling.html` — Exception handling guide
-      sig { params(error: Exception, block: T.proc.params(transaction: Transaction).void).void }
-      def send_error(error, &block); end
+      sig do
+        params(
+          error: Exception,
+          opentelemetry_context: T.untyped,
+          opentelemetry_kind: T.nilable(Symbol),
+          opentelemetry_relationship: T.nilable(Symbol),
+          block: T.proc.params(transaction: Transaction).void
+        ).void
+      end
+      def send_error(error, opentelemetry_context: nil, opentelemetry_kind: nil, opentelemetry_relationship: nil, &block); end
 
       # Set an error on the current transaction.
       # 
@@ -2212,6 +2297,12 @@ module Appsignal
       # 
       # _@param_ `exception` — The error to add to the current transaction.
       # 
+      # _@param_ `opentelemetry_kind` — In collector mode, the OpenTelemetry span kind: one of `:server`, `:consumer`, `:producer` or `:internal`. Defaults to `:server`. Only used when a new transaction is created.
+      # 
+      # _@param_ `opentelemetry_relationship` — In collector mode, how an incoming `opentelemetry_context` relates to this transaction's span: one of `:parent`, `:link`, `:both` or `:none`. Defaults to `:parent`. Only used when a new transaction is created.
+      # 
+      # _@param_ `opentelemetry_context` — In collector mode, an incoming OpenTelemetry trace context to relate this transaction's span to. Only used when a new transaction is created.
+      # 
       # ```ruby
       # class SomeController < ApplicationController
       #   def create
@@ -2233,8 +2324,16 @@ module Appsignal
       # ```
       # 
       # _@see_ `https://docs.appsignal.com/ruby/instrumentation/exception-handling.html` — Exception handling guide
-      sig { params(exception: Exception, block: T.proc.params(transaction: Transaction).void).void }
-      def report_error(exception, &block); end
+      sig do
+        params(
+          exception: Exception,
+          opentelemetry_context: T.untyped,
+          opentelemetry_kind: T.nilable(Symbol),
+          opentelemetry_relationship: T.nilable(Symbol),
+          block: T.proc.params(transaction: Transaction).void
+        ).void
+      end
+      def report_error(exception, opentelemetry_context: nil, opentelemetry_kind: nil, opentelemetry_relationship: nil, &block); end
 
       # Set a custom action name for the current transaction.
       # 

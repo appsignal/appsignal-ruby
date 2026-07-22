@@ -55,6 +55,38 @@ describe Appsignal::Transaction do
       end
     end
 
+    context "with OpenTelemetry attributes" do
+      it "passes the OpenTelemetry context, kind and relationship to the backend" do
+        otel_context = "some-otel-context"
+        expect(Appsignal::Backends.transaction).to receive(:new).with(
+          kind_of(String),
+          default_namespace,
+          :opentelemetry_context => otel_context,
+          :opentelemetry_kind => :consumer,
+          :opentelemetry_relationship => :both
+        ).and_call_original
+
+        Appsignal::Transaction.create(
+          default_namespace,
+          :opentelemetry_context => otel_context,
+          :opentelemetry_kind => :consumer,
+          :opentelemetry_relationship => :both
+        )
+      end
+
+      it "defaults the OpenTelemetry attributes to nil" do
+        expect(Appsignal::Backends.transaction).to receive(:new).with(
+          kind_of(String),
+          default_namespace,
+          :opentelemetry_context => nil,
+          :opentelemetry_kind => nil,
+          :opentelemetry_relationship => nil
+        ).and_call_original
+
+        Appsignal::Transaction.create(default_namespace)
+      end
+    end
+
     context "when a transaction is already running" do
       before do
         allow(SecureRandom).to receive(:uuid)
@@ -121,7 +153,7 @@ describe Appsignal::Transaction do
     end
 
     describe "OpenTelemetry root span" do
-      it "starts a root span with SpanKind::SERVER for HTTP_REQUEST", :collector_mode do
+      it "defaults to a SERVER span named after the namespace", :collector_mode do
         start_collector_agent
         create_transaction(Appsignal::Transaction::HTTP_REQUEST)
         Appsignal::Transaction.complete_current!
@@ -132,30 +164,15 @@ describe Appsignal::Transaction do
         expect(span.name).to eq("appsignal.transaction http_request")
       end
 
-      it "uses SpanKind::CONSUMER for BACKGROUND_JOB", :collector_mode do
+      it "uses the given opentelemetry_kind", :collector_mode do
         start_collector_agent
-        create_transaction(Appsignal::Transaction::BACKGROUND_JOB)
+        Appsignal::Transaction.create(
+          Appsignal::Transaction::HTTP_REQUEST,
+          :opentelemetry_kind => :consumer
+        )
         Appsignal::Transaction.complete_current!
 
         expect(span_exporter.finished_spans.first.kind).to eq(:consumer)
-      end
-
-      it "uses SpanKind::SERVER for ACTION_CABLE", :collector_mode do
-        start_collector_agent
-        create_transaction(Appsignal::Transaction::ACTION_CABLE)
-        Appsignal::Transaction.complete_current!
-
-        expect(span_exporter.finished_spans.first.kind).to eq(:server)
-      end
-
-      it "uses SpanKind::SERVER for an unknown custom namespace", :collector_mode do
-        start_collector_agent
-        create_transaction("my_custom_namespace")
-        Appsignal::Transaction.complete_current!
-
-        span = span_exporter.finished_spans.first
-        expect(span.kind).to eq(:server)
-        expect(span.name).to eq("appsignal.transaction my_custom_namespace")
       end
     end
 

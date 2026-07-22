@@ -20,15 +20,27 @@ module Appsignal
       # @!visibility private
       attr_writer :breadcrumbs
 
-      # `opentelemetry_context` is an incoming trace context used only in
-      # collector mode; agent mode has no notion of it, so it's ignored here.
-      def initialize(transaction_id, namespace, handle: nil, opentelemetry_context: nil) # rubocop:disable Lint/UnusedMethodArgument
+      # The `opentelemetry_*` keyword arguments (context, kind and
+      # relationship) shape the OpenTelemetry span in collector mode. Agent mode
+      # has no notion of them, so they are accepted and ignored. They are listed
+      # explicitly, rather than swallowed with `**`, so an unexpected keyword
+      # still raises, matching the OpenTelemetry backend.
+      # rubocop:disable Metrics/ParameterLists, Lint/UnusedMethodArgument
+      def initialize(
+        transaction_id,
+        namespace,
+        handle: nil,
+        opentelemetry_context: nil,
+        opentelemetry_kind: nil,
+        opentelemetry_relationship: nil
+      )
         super()
         @handle = handle ||
           Appsignal::Extension.start_transaction(transaction_id, namespace, 0) ||
           Appsignal::Extension::MockTransaction.new
         @breadcrumbs = []
       end
+      # rubocop:enable Metrics/ParameterLists, Lint/UnusedMethodArgument
 
       # Agent mode has no span kind; `opentelemetry_kind` is ignored here.
       def start_event(opentelemetry_kind: nil) # rubocop:disable Lint/UnusedMethodArgument
