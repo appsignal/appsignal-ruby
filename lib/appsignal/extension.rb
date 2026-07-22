@@ -46,6 +46,10 @@ module Appsignal
         def data_array_new
           Appsignal::Extension::MockData.new
         end
+
+        def allocation_count
+          0
+        end
       end
     end
 

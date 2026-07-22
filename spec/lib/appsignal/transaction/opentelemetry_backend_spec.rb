@@ -270,6 +270,7 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
 
     it "emits the queue duration metric in two series on completion" do
       backend = create_backend("background_job")
+      backend.set_action("BackgroundJob#perform")
       start_time = backend.instance_variable_get(:@start_time)
       queue_start = ((start_time.to_f * 1000) - 5_000).round
 
@@ -285,14 +286,277 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
       backend.complete
     end
 
+    it "does not emit the queue duration metric when no action was set" do
+      expect(metrics).to_not receive(:add_distribution_value)
+      backend = create_backend("background_job")
+      start_time = backend.instance_variable_get(:@start_time)
+      queue_start = ((start_time.to_f * 1000) - 5_000).round
+
+      backend.set_queue_start(queue_start)
+      backend.complete
+    end
+
     it "ignores values below the epoch-ms floor" do
       expect(metrics).to_not receive(:add_distribution_value)
       backend = create_backend
+      backend.set_action("PagesController#show")
       backend.set_queue_start(10)
       backend.complete
 
       expect(Array(span_exporter.finished_spans.first.events).map(&:name))
         .to_not include("appsignal.queue_start")
+    end
+  end
+
+  describe "allocation counts" do
+    let(:metrics) { Appsignal::Metrics::OpenTelemetryBackend }
+
+    before do
+      configure(:options => { :enable_allocation_tracking => true })
+      allow(metrics).to receive(:increment_counter)
+      # Drive the thread's allocation counter by hand so deltas are exact.
+      @allocations = 0
+      allow(Appsignal::Extension).to receive(:allocation_count) { @allocations }
+    end
+
+    def event_span(category)
+      span_exporter.finished_spans.find { |s| s.attributes["appsignal.category"] == category }
+    end
+
+    it "sets the transaction total on the root span from the delta since start" do
+      @allocations = 100
+      backend = create_backend
+      backend.set_action("PagesController#show")
+      @allocations = 450
+      span = backend.instance_variable_get(:@span)
+      backend.complete
+
+      attributes = finished_span(span).attributes
+      expect(attributes["appsignal.transaction_allocation_count"]).to eq(350)
+      # No events, so all of it is the transaction's own self.
+      expect(attributes["appsignal.self_allocation_count"]).to eq(350)
+    end
+
+    it "sets the root self to the transaction's allocations outside any event" do
+      @allocations = 100
+      backend = create_backend
+      backend.set_action("PagesController#show")
+      @allocations = 130 # 30 before the event
+      backend.start_event
+      @allocations = 175 # 45 inside the event
+      backend.finish_event("sql.query", "SQL", "SELECT 1", 0)
+      @allocations = 200 # 25 after the event
+      span = backend.instance_variable_get(:@span)
+      backend.complete
+
+      attributes = finished_span(span).attributes
+      # Total 100 -> 200 = 100; the event took 45, so 55 happened outside it.
+      expect(attributes["appsignal.transaction_allocation_count"]).to eq(100)
+      expect(attributes["appsignal.self_allocation_count"]).to eq(55)
+    end
+
+    it "sets a childless event's full and self counts to the delta over the event" do
+      @allocations = 100
+      backend = create_backend
+      @allocations = 130
+      backend.start_event
+      @allocations = 175
+      backend.finish_event("sql.query", "SQL", "SELECT 1", 0)
+
+      attributes = event_span("sql.query").attributes
+      expect(attributes["appsignal.allocation_count"]).to eq(45)
+      expect(attributes["appsignal.self_allocation_count"]).to eq(45)
+    end
+
+    it "excludes a child event's allocations from the parent's self count" do
+      @allocations = 100
+      backend = create_backend
+      @allocations = 110
+      backend.start_event # outer
+      @allocations = 130
+      backend.start_event # inner
+      @allocations = 175
+      backend.finish_event("sql.query", "SQL", "SELECT 1", 0)
+      @allocations = 200
+      backend.finish_event("template.render", "Render", "", 0)
+
+      inner = event_span("sql.query").attributes
+      outer = event_span("template.render").attributes
+      # Inner: full == self == 45 (no children).
+      expect(inner["appsignal.allocation_count"]).to eq(45)
+      expect(inner["appsignal.self_allocation_count"]).to eq(45)
+      # Outer: full 90 covers the inner event; self 45 excludes it.
+      expect(outer["appsignal.allocation_count"]).to eq(90)
+      expect(outer["appsignal.self_allocation_count"]).to eq(45)
+    end
+
+    it "sets no allocation attribute for a recorded event" do
+      backend = create_backend
+      backend.record_event("sql.query", "SQL", "SELECT 1", 0, 1_000_000)
+
+      attributes = event_span("sql.query").attributes
+      expect(attributes).to_not have_key("appsignal.allocation_count")
+      expect(attributes).to_not have_key("appsignal.self_allocation_count")
+    end
+
+    # Exercises a tree deeper and wider than a single parent-child: three levels
+    # of nesting, two siblings, allocations by the parent between its children,
+    # and a recorded event whose allocations must fall into the enclosing event.
+    # A two-level test can't catch a parent credited with a child's self instead
+    # of its full count, because a childless child has self == full; here `e2`
+    # has its own child, so the two differ.
+    #
+    #   transaction root                          (start 0)
+    #     e1                                       (start 10)
+    #       e2                                     (start 15)
+    #         e3   full 15, self 15               (20 -> 35)
+    #       e2 own work: 5 before + 7 after e3 -> self 12, full 27
+    #       r (recorded): its 8 allocs stay in e1 (42 -> 50)
+    #       e4   full 12, self 12                 (58 -> 70)
+    #     e1 own: 5 + 8 (r) + 8 + 10 = 31 self, full 70
+    #   10 allocs happen before e1 starts, so the transaction total is 80.
+    it "computes self correctly across a deep, wide tree with a recorded event" do
+      @allocations = 0
+      backend = create_backend
+      backend.set_action("PagesController#show")
+
+      @allocations = 10
+      backend.start_event # e1
+      @allocations = 15
+      backend.start_event # e2
+      @allocations = 20
+      backend.start_event # e3
+      @allocations = 35
+      backend.finish_event("e3", "e3", "", 0)
+      @allocations = 42
+      backend.finish_event("e2", "e2", "", 0)
+      @allocations = 50 # e1's own allocations, recorded below (must not be excluded)
+      backend.record_event("r", "r", "", 0, 1_000_000)
+      @allocations = 58
+      backend.start_event # e4
+      @allocations = 70
+      backend.finish_event("e4", "e4", "", 0)
+      @allocations = 80
+      backend.finish_event("e1", "e1", "", 0)
+
+      span = backend.instance_variable_get(:@span)
+      backend.complete
+
+      # [full, self] for an event span, by category name.
+      counts = lambda do |category|
+        attributes = event_span(category).attributes
+        [attributes["appsignal.allocation_count"], attributes["appsignal.self_allocation_count"]]
+      end
+
+      expect(counts.call("e3")).to eq([15, 15])
+      expect(counts.call("e2")).to eq([27, 12])
+      expect(counts.call("e4")).to eq([12, 12])
+      # e1's self (31) includes the recorded event's 8 allocations and excludes
+      # both e2 (27, which itself includes e3) and e4 (12).
+      expect(counts.call("e1")).to eq([70, 31])
+
+      expect(event_span("r").attributes).to_not have_key("appsignal.allocation_count")
+      root = finished_span(span).attributes
+      # Transaction total spans everything, including the 10 allocations before e1.
+      expect(root["appsignal.transaction_allocation_count"]).to eq(80)
+      # Root self excludes e1 (the only top-level event, full 70), leaving the 10
+      # allocations that happened before any event started.
+      expect(root["appsignal.self_allocation_count"]).to eq(10)
+    end
+
+    it "emits the allocation count metric in two series when an action was set" do
+      @allocations = 100
+      backend = create_backend
+      backend.set_action("PagesController#show")
+      @allocations = 300
+
+      expect(metrics).to receive(:increment_counter).with(
+        "transaction_allocation_count", 200, :namespace => "web"
+      )
+      expect(metrics).to receive(:increment_counter).with(
+        "transaction_allocation_count", 200,
+        :namespace => "web", :action => "PagesController#show"
+      )
+
+      backend.complete
+    end
+
+    it "does not emit the allocation count metric when no action was set" do
+      @allocations = 100
+      backend = create_backend
+      @allocations = 300
+      expect(metrics).to_not receive(:increment_counter)
+
+      backend.complete
+    end
+
+    it "does not emit the allocation count metric when the delta is zero" do
+      @allocations = 100
+      backend = create_backend
+      backend.set_action("PagesController#show")
+      expect(metrics).to_not receive(:increment_counter)
+
+      backend.complete
+    end
+
+    it "does not emit the allocation count metric when discarded" do
+      @allocations = 100
+      backend = create_backend
+      backend.set_action("PagesController#show")
+      @allocations = 300
+      expect(metrics).to_not receive(:increment_counter)
+
+      backend.discard
+    end
+
+    # The counter is thread-local and only climbs, so a lower value at finish
+    # than at start means the work moved threads. The delta is meaningless.
+    it "drops an event's allocation counts and warns when the counter reversed" do
+      @allocations = 200
+      backend = create_backend
+      @allocations = 250
+      backend.start_event
+      @allocations = 100 # finished on another thread: counter went backwards
+      logs = capture_logs { backend.finish_event("sql.query", "SQL", "SELECT 1", 0) }
+
+      attributes = event_span("sql.query").attributes
+      expect(attributes).to_not have_key("appsignal.allocation_count")
+      expect(attributes).to_not have_key("appsignal.self_allocation_count")
+      expect(logs).to include("allocation counter decreased")
+    end
+
+    it "drops the transaction allocation counts and warns when the counter reversed" do
+      @allocations = 500
+      backend = create_backend
+      backend.set_action("PagesController#show")
+      @allocations = 100 # finished on another thread: counter went backwards
+      span = backend.instance_variable_get(:@span)
+      expect(metrics).to_not receive(:increment_counter)
+
+      logs = capture_logs { backend.complete }
+
+      attributes = finished_span(span).attributes
+      expect(attributes).to_not have_key("appsignal.transaction_allocation_count")
+      expect(attributes).to_not have_key("appsignal.self_allocation_count")
+      expect(logs).to include("allocation counter decreased")
+    end
+
+    context "when allocation tracking is disabled" do
+      before { configure(:options => { :enable_allocation_tracking => false }) }
+
+      it "sets no allocation attributes and emits no metric" do
+        @allocations = 100
+        backend = create_backend
+        backend.set_action("PagesController#show")
+        @allocations = 300
+        span = backend.instance_variable_get(:@span)
+        expect(metrics).to_not receive(:increment_counter)
+
+        backend.complete
+
+        expect(finished_span(span).attributes)
+          .to_not have_key("appsignal.transaction_allocation_count")
+      end
     end
   end
 
@@ -840,7 +1104,7 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
 
         # Both drained spans keep the placeholder name; root span keeps its own.
         names = span_exporter.finished_spans.map(&:name)
-        expect(names.count("appsignal.event")).to eq(2)
+        expect(names.count("[unfinished transaction event]")).to eq(2)
       end
     end
   end
