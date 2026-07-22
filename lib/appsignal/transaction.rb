@@ -28,8 +28,22 @@ module Appsignal
       # transaction.
       #
       # @param namespace [String] Namespace of the to be created transaction.
+      # @param opentelemetry_kind [Symbol] In collector mode, the OpenTelemetry
+      #   span kind: one of `:server`, `:consumer`, `:producer` or `:internal`.
+      #   Defaults to `:server`.
+      # @param opentelemetry_relationship [Symbol] In collector mode, how an
+      #   incoming `opentelemetry_context` relates to this transaction's span:
+      #   one of `:parent`, `:link`, `:both` or `:none`. Defaults to `:parent`.
+      # @param opentelemetry_context In collector mode, an incoming OpenTelemetry
+      #   trace context to relate this transaction's span to.
       # @return [Transaction]
-      def create(namespace, opentelemetry_context: nil, opentelemetry_scope: nil)
+      def create(
+        namespace,
+        opentelemetry_context: nil,
+        opentelemetry_scope: nil,
+        opentelemetry_kind: nil,
+        opentelemetry_relationship: nil
+      )
         # Reset the transaction if it was already completed but not cleared
         if Thread.current[:appsignal_transaction]&.completed?
           Thread.current[:appsignal_transaction] = nil
@@ -41,7 +55,9 @@ module Appsignal
             Appsignal::Transaction.new(
               namespace,
               :opentelemetry_context => opentelemetry_context,
-              :opentelemetry_scope => opentelemetry_scope
+              :opentelemetry_scope => opentelemetry_scope,
+              :opentelemetry_kind => opentelemetry_kind,
+              :opentelemetry_relationship => opentelemetry_relationship
             )
           )
         else
@@ -166,8 +182,15 @@ module Appsignal
     # @param namespace [String] Namespace of the to be created transaction.
     # @see create
     # @!visibility private
-    def initialize(namespace, id: SecureRandom.uuid, backend: nil,
-      opentelemetry_context: nil, opentelemetry_scope: nil)
+    def initialize( # rubocop:disable Metrics/ParameterLists
+      namespace,
+      id: SecureRandom.uuid,
+      backend: nil,
+      opentelemetry_context: nil,
+      opentelemetry_scope: nil,
+      opentelemetry_kind: nil,
+      opentelemetry_relationship: nil
+    )
       @transaction_id = id
       @action = nil
       @namespace = namespace
@@ -199,7 +222,9 @@ module Appsignal
         @transaction_id,
         @namespace,
         :opentelemetry_context => opentelemetry_context,
-        :opentelemetry_scope => opentelemetry_scope
+        :opentelemetry_scope => opentelemetry_scope,
+        :opentelemetry_kind => opentelemetry_kind,
+        :opentelemetry_relationship => opentelemetry_relationship
       )
 
       run_after_create_hooks
