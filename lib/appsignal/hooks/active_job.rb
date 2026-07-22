@@ -77,7 +77,9 @@ module Appsignal
               # Prefer job_id from provider, instead of ActiveJob's internal ID.
               Appsignal::Transaction.create(
                 Appsignal::Transaction::BACKGROUND_JOB,
-                :opentelemetry_context => Appsignal::OpenTelemetry.extract_job_context(job)
+                :opentelemetry_context => Appsignal::OpenTelemetry.extract_job_context(job),
+                :opentelemetry_kind => :consumer,
+                :opentelemetry_relationship => :link
               )
             end
 

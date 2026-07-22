@@ -71,7 +71,9 @@ module Appsignal
         transaction =
           Appsignal::Transaction.create(
             Appsignal::Transaction::BACKGROUND_JOB,
-            :opentelemetry_context => QueTraceContext.extract(local_attrs.dig(:data, :tags))
+            :opentelemetry_context => QueTraceContext.extract(local_attrs.dig(:data, :tags)),
+            :opentelemetry_kind => :consumer,
+            :opentelemetry_relationship => :link
           )
 
         begin

@@ -9,7 +9,9 @@ module Appsignal
         # enqueuer. No-op outside collector mode.
         transaction = Appsignal::Transaction.create(
           Appsignal::Transaction::BACKGROUND_JOB,
-          :opentelemetry_context => Appsignal::OpenTelemetry.extract_job_context(payload)
+          :opentelemetry_context => Appsignal::OpenTelemetry.extract_job_context(payload),
+          :opentelemetry_kind => :consumer,
+          :opentelemetry_relationship => :link
         )
 
         Appsignal.instrument "perform.resque" do
