@@ -60,7 +60,9 @@ module Appsignal
         transaction =
           Appsignal::Transaction.create(
             Appsignal::Transaction::BACKGROUND_JOB,
-            :opentelemetry_scope => ["appsignal-ruby/delayed_job", Appsignal::VERSION]
+            :opentelemetry_scope => ["appsignal-ruby/delayed_job", Appsignal::VERSION],
+            :opentelemetry_kind => :consumer,
+            :opentelemetry_relationship => :link
           )
 
         begin

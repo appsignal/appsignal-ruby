@@ -10,7 +10,9 @@ module Appsignal
         transaction = Appsignal::Transaction.create(
           Appsignal::Transaction::BACKGROUND_JOB,
           :opentelemetry_context => Appsignal::OpenTelemetry.extract_job_context(payload),
-          :opentelemetry_scope => ["appsignal-ruby/resque", Appsignal::VERSION]
+          :opentelemetry_scope => ["appsignal-ruby/resque", Appsignal::VERSION],
+          :opentelemetry_kind => :consumer,
+          :opentelemetry_relationship => :link
         )
 
         Appsignal.instrument(
