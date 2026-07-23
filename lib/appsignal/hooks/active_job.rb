@@ -80,7 +80,7 @@ module Appsignal
                 :opentelemetry_context => Appsignal::OpenTelemetry.extract_job_context(job),
                 :opentelemetry_scope => ["appsignal-ruby/active_job", Appsignal::VERSION],
                 :opentelemetry_kind => :consumer,
-                :opentelemetry_relationship => :link
+                :opentelemetry_relationship => :both
               )
             end
 
