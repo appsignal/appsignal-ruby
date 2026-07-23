@@ -49,7 +49,7 @@ describe Appsignal::Hooks::SequelHook do
         expect(span.parent_span_id).to eq(root_span.span_id)
         expect(span.attributes["db.system.name"]).to eq("other_sql")
         expect(span.attributes).not_to have_key("appsignal.body")
-        expect(span.attributes["appsignal.category"]).to eq("sql.sequel")
+        expect(event_category(span)).to eq("sql.sequel")
       end
     end
   else

@@ -85,12 +85,12 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
         perform
         Appsignal::Transaction.complete_current!
 
-        span = event_spans.find { |s| s.attributes["appsignal.category"] == "query.mongodb" }
+        span = event_span_for("query.mongodb")
         expect(span).not_to be_nil
-        expect(span.name).to eq("find | test | SUCCEEDED")
+        expect(span.name).to eq("query.mongodb (find | test | SUCCEEDED)")
         expect(span.kind).to eq(:client)
         expect(span.parent_span_id).to eq(root_span.span_id)
-        expect(span.attributes["appsignal.category"]).to eq("query.mongodb")
+        expect(event_category(span)).to eq("query.mongodb")
         expect(span.attributes["appsignal.body"]).to eq("{\"foo\":\"?\"}")
 
         snapshot = metric_snapshot("mongodb_query_duration")
@@ -130,11 +130,11 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
         perform
         Appsignal::Transaction.complete_current!
 
-        span = event_spans.find { |s| s.attributes["appsignal.category"] == "query.mongodb" }
+        span = event_span_for("query.mongodb")
         expect(span).not_to be_nil
-        expect(span.name).to eq("find | test | FAILED")
+        expect(span.name).to eq("query.mongodb (find | test | FAILED)")
         expect(span.kind).to eq(:client)
-        expect(span.attributes["appsignal.category"]).to eq("query.mongodb")
+        expect(event_category(span)).to eq("query.mongodb")
         expect(span.attributes["appsignal.body"]).to eq("{\"foo\":\"?\"}")
       end
     end

@@ -104,6 +104,25 @@ RSpec.shared_context "collector mode", :collector_mode do
     span_exporter.finished_spans.reject { |s| [:server, :consumer].include?(s.kind) }
   end
 
+  # In collector mode the event's category (its AppSignal event name, such as
+  # "sql.active_record") is no longer emitted as an attribute. It leads the
+  # span name instead, either on its own or followed by the human-readable
+  # title as "category (title)". This returns the category back out of an
+  # event span's name, ignoring any title, so specs can match on it.
+  def event_category(span)
+    span.name.sub(/ \(.*\)\z/, "")
+  end
+
+  # The event spans whose category matches, regardless of their title.
+  def event_spans_for(category)
+    event_spans.select { |span| event_category(span) == category }
+  end
+
+  # The first event span whose category matches, regardless of its title.
+  def event_span_for(category)
+    event_spans_for(category).first
+  end
+
   # The OpenTelemetry `exception` events recorded across all finished spans
   # (errors attach to the span that was current when they were set, which may
   # be the root span or an event span).

@@ -30,10 +30,10 @@ describe Appsignal::Integrations::NetHttpIntegration do
 
       expect(event_spans.size).to eq(1)
       span = event_spans.first
-      expect(span.name).to eq("GET http://www.google.com")
+      expect(span.name).to eq("request.net_http (GET http://www.google.com)")
       expect(span.kind).to eq(:client)
       expect(span.parent_span_id).to eq(root_span.span_id)
-      expect(span.attributes["appsignal.category"]).to eq("request.net_http")
+      expect(event_category(span)).to eq("request.net_http")
       expect(span.attributes).not_to have_key("appsignal.body")
 
       # The outgoing request carries a W3C traceparent for the client span, so
@@ -75,10 +75,10 @@ describe Appsignal::Integrations::NetHttpIntegration do
 
       expect(event_spans.size).to eq(1)
       span = event_spans.first
-      expect(span.name).to eq("GET https://www.google.com")
+      expect(span.name).to eq("request.net_http (GET https://www.google.com)")
       expect(span.kind).to eq(:client)
       expect(span.parent_span_id).to eq(root_span.span_id)
-      expect(span.attributes["appsignal.category"]).to eq("request.net_http")
+      expect(event_category(span)).to eq("request.net_http")
       expect(span.attributes).not_to have_key("appsignal.body")
 
       expect(injected_traceparent("https://www.google.com/"))

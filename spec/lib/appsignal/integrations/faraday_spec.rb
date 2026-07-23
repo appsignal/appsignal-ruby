@@ -84,9 +84,10 @@ if DependencyHelper.faraday_present?
         .to eq("00-#{faraday_span.hex_trace_id}-#{faraday_span.hex_span_id}-01")
     end
 
-    # Finds the recorded event span for an `appsignal.category` (AS::N name).
+    # Finds the recorded event span for a category (AS::N name), which now leads
+    # the event span's name.
     def event_span(category)
-      event_spans.find { |span| span.attributes["appsignal.category"] == category }
+      event_span_for(category)
     end
 
     # Reads the `traceparent` header off the recorded outgoing request to `url`.

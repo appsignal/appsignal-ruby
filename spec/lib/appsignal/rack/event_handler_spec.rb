@@ -191,12 +191,10 @@ describe Appsignal::Rack::EventHandler do
 
         queue_event = Array(root_span.events).find { |e| e.name == "appsignal.queue_start" }
         expect(queue_event.attributes["appsignal.queue_start"]).to eq(queue_start_time.to_i)
-        event = event_spans.find do |span|
-          span.attributes["appsignal.category"] == "process_request.rack"
-        end
+        event = event_span_for("process_request.rack")
         expect(event).not_to be_nil
         expect(event.parent_span_id).to eq(root_span.span_id)
-        expect(event.name).to eq("callback: after_reply")
+        expect(event.name).to eq("process_request.rack (callback: after_reply)")
       end
     end
 
@@ -928,12 +926,10 @@ describe Appsignal::Rack::EventHandler do
         use_test_logger
         perform
 
-        event = event_spans.find do |span|
-          span.attributes["appsignal.category"] == "process_request.rack"
-        end
+        event = event_span_for("process_request.rack")
         expect(event).not_to be_nil
         expect(event.parent_span_id).to eq(root_span.span_id)
-        expect(event.name).to eq("callback: on_finish")
+        expect(event.name).to eq("process_request.rack (callback: on_finish)")
       end
     end
 

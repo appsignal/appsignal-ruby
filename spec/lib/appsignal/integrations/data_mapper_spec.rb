@@ -55,13 +55,13 @@ describe Appsignal::Hooks::DataMapperLogListener do
 
         expect(event_spans.size).to eq(1)
         span = event_spans.first
-        expect(span.name).to eq("DataMapper Query")
+        expect(span.name).to eq("query.data_mapper (DataMapper Query)")
         expect(span.kind).to eq(:client)
         expect(span.parent_span_id).to eq(root_span.span_id)
         attrs = span.attributes
         expect(attrs["db.query.text"]).to eq("SELECT * from users")
         expect(attrs["db.system.name"]).to eq("other_sql")
-        expect(attrs["appsignal.category"]).to eq("query.data_mapper")
+        expect(event_category(span)).to eq("query.data_mapper")
         expect(attrs).not_to have_key("appsignal.body")
         observed = span.end_timestamp - span.start_timestamp
         expect(observed).to be_within(50_000_000).of(100_000_000)
@@ -103,11 +103,11 @@ describe Appsignal::Hooks::DataMapperLogListener do
 
         expect(event_spans.size).to eq(1)
         span = event_spans.first
-        expect(span.name).to eq("DataMapper Query")
+        expect(span.name).to eq("query.data_mapper (DataMapper Query)")
         expect(span.kind).to eq(:client)
         expect(span.parent_span_id).to eq(root_span.span_id)
         attrs = span.attributes
-        expect(attrs["appsignal.category"]).to eq("query.data_mapper")
+        expect(event_category(span)).to eq("query.data_mapper")
         expect(attrs).not_to have_key("appsignal.body")
         expect(attrs).not_to have_key("db.query.text")
         expect(attrs).not_to have_key("db.system.name")

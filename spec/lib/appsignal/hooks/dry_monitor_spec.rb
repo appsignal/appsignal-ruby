@@ -78,7 +78,7 @@ if DependencyHelper.dry_monitor_present?
         attrs = span.attributes
         expect(attrs["db.query.text"]).to eq("SELECT * FROM users")
         expect(attrs["db.system.name"]).to eq("other_sql")
-        expect(attrs["appsignal.category"]).to eq("query.postgres")
+        expect(event_category(span)).to eq("query.postgres")
         expect(attrs).not_to have_key("appsignal.body")
       end
     end
@@ -119,7 +119,7 @@ if DependencyHelper.dry_monitor_present?
         # A non-SQL dry event is not an outgoing call, so it keeps the default kind.
         expect(span.kind).to eq(:internal)
         attrs = span.attributes
-        expect(attrs["appsignal.category"]).to eq("foo")
+        expect(event_category(span)).to eq("foo")
         expect(attrs).not_to have_key("appsignal.body")
         expect(attrs).not_to have_key("db.query.text")
         expect(attrs).not_to have_key("db.system.name")

@@ -451,15 +451,15 @@ module Appsignal
       end
 
       # The OTel span name is what the collector surfaces as the event's
-      # label in the trace UI, so prefer the human-readable `title` (e.g.
-      # "User Load", "GET https://example.com") and fall back to the AS::N
-      # `name` (e.g. "sql.active_record") when no formatter supplied a title.
-      # The machine name still rides along in `appsignal.category` so it is
-      # not lost once the title wins the span name -- it keeps the event's
-      # grouping key available for later filtering.
+      # label in the trace UI. The AS::N `name` (e.g. "sql.active_record")
+      # always leads the span name so it stays visible. When a formatter
+      # supplied a human-readable `title` (e.g. "User Load", "GET
+      # https://example.com"), it follows in parentheses, giving
+      # "sql.active_record (User Load)". Some integrations pass the event
+      # name as the title as well; in that case the name is not repeated.
       def write_event_name_attributes(span, name, title)
-        span.name = title && !title.empty? ? title : name
-        span.set_attribute("appsignal.category", name)
+        has_title = title && !title.empty? && title != name
+        span.name = has_title ? "#{name} (#{title})" : name
       end
 
       def write_event_body_attributes(span, body, body_format)

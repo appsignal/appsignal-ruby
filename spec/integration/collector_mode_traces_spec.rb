@@ -24,14 +24,13 @@ if DependencyHelper.opentelemetry_present?
       # The "http_request" namespace is converted to "web" on the way out.
       expect(attribute_value(root, "appsignal.namespace")).to eq("web")
 
-      # Event spans for each instrumented block are present. The title-less
-      # events keep the event name as the span name; the SQL event has a
-      # human-readable title ("Find user"), which becomes the span name, with
-      # the event name carried in the `appsignal.category` attribute.
+      # Event spans for each instrumented block are present. Every event span
+      # name leads with the event name. The title-less events keep just that
+      # name. The SQL event has a human-readable title ("Find user"), so its
+      # name adds the title in parentheses after the event name.
       expect(by_name.keys).to include("template.render", "partial.render")
-      sql = spans.find { |s| attribute_value(s, "appsignal.category") == "active_record.sql" }
+      sql = by_name["active_record.sql (Find user)"]
       expect(sql).not_to be_nil
-      expect(sql.name).to eq("Find user")
 
       # Nested instrument calls produce a parent/child chain rooted at the monitor span.
       expect(by_name["partial.render"].parent_span_id).to eq(by_name["template.render"].span_id)
