@@ -86,7 +86,7 @@ module Appsignal
             :opentelemetry_context => QueTraceContext.extract(local_attrs.dig(:data, :tags)),
             :opentelemetry_scope => ["appsignal-ruby/que", Appsignal::VERSION],
             :opentelemetry_kind => :consumer,
-            :opentelemetry_relationship => :link
+            :opentelemetry_relationship => :both
           )
 
         begin
