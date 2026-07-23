@@ -60,7 +60,7 @@ module Appsignal
           Appsignal::Transaction.create(
             Appsignal::Transaction::BACKGROUND_JOB,
             :opentelemetry_kind => :consumer,
-            :opentelemetry_relationship => :link
+            :opentelemetry_relationship => :both
           )
 
         begin

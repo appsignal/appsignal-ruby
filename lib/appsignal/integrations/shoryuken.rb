@@ -81,7 +81,7 @@ module Appsignal
           Appsignal::Transaction::BACKGROUND_JOB,
           :opentelemetry_context => context,
           :opentelemetry_kind => :consumer,
-          :opentelemetry_relationship => :link
+          :opentelemetry_relationship => :both
         )
 
         Appsignal.instrument("perform_job.shoryuken", &block)

@@ -90,9 +90,10 @@ if DependencyHelper.resque_present?
         expect(Appsignal).to receive(:stop)
         perform
 
-        # The job runs as its own trace, linked back to the span that enqueued it.
+        # The job continues the enqueuer's trace as a child and links back to it.
         expect(root_span.kind).to eq(:consumer)
-        expect(root_span.hex_trace_id).to_not eq(trace_id_hex)
+        expect(root_span.hex_trace_id).to eq(trace_id_hex)
+        expect(root_span.parent_span_id.unpack1("H*")).to eq(span_id_hex)
         expect(root_span.links.size).to eq(1)
         link_context = root_span.links.first.span_context
         expect(link_context.hex_trace_id).to eq(trace_id_hex)
