@@ -11,7 +11,7 @@ module Appsignal
           Appsignal::Transaction::BACKGROUND_JOB,
           :opentelemetry_context => Appsignal::OpenTelemetry.extract_job_context(payload),
           :opentelemetry_kind => :consumer,
-          :opentelemetry_relationship => :link
+          :opentelemetry_relationship => :both
         )
 
         Appsignal.instrument "perform.resque" do

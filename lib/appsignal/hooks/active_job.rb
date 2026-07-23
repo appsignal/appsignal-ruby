@@ -79,7 +79,7 @@ module Appsignal
                 Appsignal::Transaction::BACKGROUND_JOB,
                 :opentelemetry_context => Appsignal::OpenTelemetry.extract_job_context(job),
                 :opentelemetry_kind => :consumer,
-                :opentelemetry_relationship => :link
+                :opentelemetry_relationship => :both
               )
             end
 

@@ -569,10 +569,12 @@ if DependencyHelper.sidekiq_present?
       let(:span_id_hex) { "b7ad6b7169203331" }
       let(:traceparent) { "00-#{trace_id_hex}-#{span_id_hex}-01" }
 
-      # A job runs as its own trace, linked back to the span that enqueued it.
-      def expect_linked_back_to_remote
+      # A job continues the enqueuer's trace as a child span and also links back
+      # to the enqueuing span.
+      def expect_parented_and_linked_to_remote
         expect(root_span.kind).to eq(:consumer)
-        expect(root_span.hex_trace_id).to_not eq(trace_id_hex)
+        expect(root_span.hex_trace_id).to eq(trace_id_hex)
+        expect(root_span.parent_span_id.unpack1("H*")).to eq(span_id_hex)
         expect(root_span.links.size).to eq(1)
         link_context = root_span.links.first.span_context
         expect(link_context.hex_trace_id).to eq(trace_id_hex)
@@ -594,7 +596,7 @@ if DependencyHelper.sidekiq_present?
           start_collector_agent
           perform_sidekiq_job
 
-          expect_linked_back_to_remote
+          expect_parented_and_linked_to_remote
         end
       end
 
@@ -615,7 +617,7 @@ if DependencyHelper.sidekiq_present?
           start_collector_agent
           perform_sidekiq_job
 
-          expect_linked_back_to_remote
+          expect_parented_and_linked_to_remote
         end
       end
     end
