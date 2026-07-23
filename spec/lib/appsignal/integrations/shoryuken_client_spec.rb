@@ -57,9 +57,9 @@ if DependencyHelper.shoryuken_present?
       sent = send_message
       Appsignal::Transaction.complete_current!
 
-      # A raw `send_message` has no worker class, so the event names the queue.
-      producer = event_spans.find { |s| s.name == "enqueue on test-queue" }
-      expect(producer.attributes["appsignal.category"]).to eq("enqueue.shoryuken")
+      # A raw `send_message` has no worker class, so the title names the queue.
+      producer = event_span_for("enqueue.shoryuken")
+      expect(producer.name).to eq("enqueue.shoryuken (enqueue on test-queue)")
       expect(producer.kind).to eq(:producer)
 
       # The middleware the hook registered injected the producer span's trace

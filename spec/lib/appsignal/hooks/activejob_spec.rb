@@ -596,9 +596,10 @@ if DependencyHelper.active_job_present?
           Appsignal::Transaction.complete_current!
 
           # The enqueue is a producer event span under the enqueuing
-          # transaction, named after the job being enqueued.
-          producer = event_spans.find { |s| s.name == "enqueue ActiveJobTestJob job" }
-          expect(producer.attributes["appsignal.category"]).to eq("enqueue.active_job")
+          # transaction. Its name leads with the category, followed by the
+          # title naming the job being enqueued.
+          producer = event_span_for("enqueue.active_job")
+          expect(producer.name).to eq("enqueue.active_job (enqueue ActiveJobTestJob job)")
           expect(producer.kind).to eq(:producer)
           expect(producer.parent_span_id).to eq(root_span.span_id)
 

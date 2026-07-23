@@ -112,10 +112,10 @@ describe Appsignal::Hooks::ExconHook do
 
           expect(event_spans.size).to eq(1)
           span = event_spans.first
-          expect(span.name).to eq("GET http://www.google.com")
+          expect(span.name).to eq("request.excon (GET http://www.google.com)")
           expect(span.kind).to eq(:client)
           expect(span.parent_span_id).to eq(root_span.span_id)
-          expect(span.attributes["appsignal.category"]).to eq("request.excon")
+          expect(event_category(span)).to eq("request.excon")
           expect(span.attributes).not_to have_key("appsignal.body")
 
           # The middleware wrote a W3C traceparent for the client span onto the
@@ -152,9 +152,9 @@ describe Appsignal::Hooks::ExconHook do
 
           expect(event_spans.size).to eq(1)
           span = event_spans.first
-          expect(span.name).to eq("www.google.com")
+          expect(span.name).to eq("response.excon (www.google.com)")
           expect(span.parent_span_id).to eq(root_span.span_id)
-          expect(span.attributes["appsignal.category"]).to eq("response.excon")
+          expect(event_category(span)).to eq("response.excon")
           expect(span.attributes).not_to have_key("appsignal.body")
         end
       end

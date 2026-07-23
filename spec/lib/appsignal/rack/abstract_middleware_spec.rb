@@ -625,7 +625,7 @@ describe Appsignal::Rack::AbstractMiddleware do
             body.to_ary
             response_events =
               event_spans.count do |span|
-                span.attributes["appsignal.category"] == "process_response_body.rack"
+                event_category(span) == "process_response_body.rack"
               end
             expect(response_events).to eq(1)
           end
@@ -661,7 +661,7 @@ describe Appsignal::Rack::AbstractMiddleware do
 
               response_events =
                 event_spans.count do |span|
-                  span.attributes["appsignal.category"] == "process_response_body.rack"
+                  event_category(span) == "process_response_body.rack"
                 end
               expect(response_events).to eq(1)
             end

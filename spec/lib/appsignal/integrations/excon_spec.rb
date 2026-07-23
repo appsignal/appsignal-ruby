@@ -35,7 +35,7 @@ if DependencyHelper.excon_present?
         perform
         Appsignal::Transaction.complete_current!
 
-        span = event_spans.find { |s| s.attributes["appsignal.category"] == "request.excon" }
+        span = event_span_for("request.excon")
         expect(span).not_to be_nil
         expect(span.kind).to eq(:client)
         expect(span.parent_span_id).to eq(root_span.span_id)

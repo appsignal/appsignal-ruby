@@ -88,7 +88,7 @@ if DependencyHelper.que_present?
             expect(span).not_to be_nil
             expect(span.parent_span_id).to eq(root_span.span_id)
             expect(span.attributes).not_to have_key("appsignal.body")
-            expect(span.attributes["appsignal.category"]).to eq("perform_job.que")
+            expect(event_category(span)).to eq("perform_job.que")
             expected_params = { "arguments" => %w[post_id_123 user_id_123] }
             expected_params["keyword_arguments"] = {} if DependencyHelper.que2_present?
             expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
@@ -406,8 +406,8 @@ if DependencyHelper.que_present?
 
         # The enqueue is a producer event span under the active transaction,
         # named after the job being enqueued.
-        producer = event_spans.find { |s| s.name == "enqueue MyQueJob job" }
-        expect(producer.attributes["appsignal.category"]).to eq("enqueue.que")
+        producer = event_span_for("enqueue.que")
+        expect(producer.name).to eq("enqueue.que (enqueue MyQueJob job)")
         expect(producer.kind).to eq(:producer)
         expect(producer.parent_span_id).to eq(root_span.span_id)
 
@@ -440,7 +440,7 @@ if DependencyHelper.que_present?
         enqueue
 
         # No transaction to attach to: nothing recorded, nothing injected.
-        expect(span_exporter.finished_spans.map(&:name)).to_not include("enqueue.que")
+        expect(event_spans_for("enqueue.que")).to be_empty
         expect(enqueued_tags).to eq(["user:42"])
       end
     end
@@ -472,7 +472,7 @@ if DependencyHelper.que_present?
         Appsignal::Transaction.complete_current!
 
         # No producer span for the suppressed enqueue...
-        expect(span_exporter.finished_spans.map(&:name)).to_not include("enqueue.que")
+        expect(event_spans_for("enqueue.que")).to be_empty
         # ...but the trace context is still injected so the job links back.
         expect(enqueued_tags).to include(a_string_starting_with("traceparent:"))
       end
@@ -526,10 +526,10 @@ if DependencyHelper.que_present?
           bulk_enqueue
           Appsignal::Transaction.complete_current!
 
-          producers = event_spans.select { |s| s.name == "bulk enqueue MyQueJob jobs" }
+          producers = event_spans_for("bulk_enqueue.que")
           expect(producers.size).to eq(1)
           producer = producers.first
-          expect(producer.attributes["appsignal.category"]).to eq("bulk_enqueue.que")
+          expect(producer.name).to eq("bulk_enqueue.que (bulk enqueue MyQueJob jobs)")
           expect(producer.kind).to eq(:producer)
           expect(producer.parent_span_id).to eq(root_span.span_id)
 
@@ -579,7 +579,7 @@ if DependencyHelper.que_present?
           Appsignal::Transaction.complete_current!
 
           # No producer span for the suppressed batch...
-          expect(span_exporter.finished_spans.map(&:name)).to_not include("bulk_enqueue.que")
+          expect(event_spans_for("bulk_enqueue.que")).to be_empty
           # ...but the trace context is still injected so the jobs link back.
           expect(enqueued_tags).to include(a_string_starting_with("traceparent:"))
         end
