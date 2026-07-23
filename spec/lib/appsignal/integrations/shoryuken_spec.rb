@@ -89,7 +89,7 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
           expect(span).not_to be_nil
           expect(span.parent_span_id).to eq(root_span.span_id)
           expect(span.attributes).not_to have_key("appsignal.body")
-          expect(span.attributes["appsignal.category"]).to eq("perform_job.shoryuken")
+          expect(event_category(span)).to eq("perform_job.shoryuken")
           expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
             .to eq("foo" => "Foo", "bar" => "Bar")
           expect(root_span.attributes["appsignal.tag.message_id"]).to eq("msg1")
@@ -338,7 +338,7 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
         expect(span).not_to be_nil
         expect(span.parent_span_id).to eq(root_span.span_id)
         expect(span.attributes).not_to have_key("appsignal.body")
-        expect(span.attributes["appsignal.category"]).to eq("perform_job.shoryuken")
+        expect(event_category(span)).to eq("perform_job.shoryuken")
         expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
           .to eq(
             "msg2" => "foo bar",
@@ -407,8 +407,8 @@ describe Appsignal::Integrations::ShoryukenClientMiddleware do
 
         # The enqueue is a producer event span under the active transaction,
         # named after the worker being enqueued.
-        producer = event_spans.find { |s| s.name == "enqueue MyShoryukenWorker job" }
-        expect(producer.attributes["appsignal.category"]).to eq("enqueue.shoryuken")
+        producer = event_span_for("enqueue.shoryuken")
+        expect(producer.name).to eq("enqueue.shoryuken (enqueue MyShoryukenWorker job)")
         expect(producer.kind).to eq(:producer)
         expect(producer.parent_span_id).to eq(root_span.span_id)
 
@@ -442,9 +442,9 @@ describe Appsignal::Integrations::ShoryukenClientMiddleware do
         perform
         Appsignal::Transaction.complete_current!
 
-        producer = event_spans.find { |s| s.name == "enqueue on my-queue" }
+        producer = event_span_for("enqueue.shoryuken")
         expect(producer).to_not be_nil
-        expect(producer.attributes["appsignal.category"]).to eq("enqueue.shoryuken")
+        expect(producer.name).to eq("enqueue.shoryuken (enqueue on my-queue)")
       end
     end
   end
@@ -464,7 +464,7 @@ describe Appsignal::Integrations::ShoryukenClientMiddleware do
         # No transaction to attach the event to, so nothing is emitted and the
         # outgoing options are untouched.
         enqueue
-        expect(span_exporter.finished_spans.map(&:name)).to_not include("enqueue.shoryuken")
+        expect(event_spans_for("enqueue.shoryuken")).to be_empty
         expect(options).to_not have_key(:message_attributes)
       end
     end
@@ -497,7 +497,7 @@ describe Appsignal::Integrations::ShoryukenClientMiddleware do
       Appsignal::Transaction.complete_current!
 
       # No producer span for the suppressed enqueue...
-      expect(span_exporter.finished_spans.map(&:name)).to_not include("enqueue.shoryuken")
+      expect(event_spans_for("enqueue.shoryuken")).to be_empty
       # ...but the trace context is still injected so the job links back.
       expect(options[:message_attributes]).to have_key("traceparent")
     end

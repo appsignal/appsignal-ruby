@@ -58,8 +58,8 @@ if DependencyHelper.delayed_job_present?
           # Delayed Job has no envelope to carry trace context, so -- like
           # OpenTelemetry's own instrumentation -- nothing is injected; the
           # producer span is not linked to the later perform.
-          producer = event_spans.find { |s| s.name == "enqueue DelayedTestJob job" }
-          expect(producer.attributes["appsignal.category"]).to eq("enqueue.delayed_job")
+          producer = event_span_for("enqueue.delayed_job")
+          expect(producer.name).to eq("enqueue.delayed_job (enqueue DelayedTestJob job)")
           expect(producer.kind).to eq(:producer)
           expect(producer.parent_span_id).to eq(root_span.span_id)
         end
@@ -78,9 +78,9 @@ if DependencyHelper.delayed_job_present?
 
           Delayed::Job.enqueue(DelayedTestJob.new)
 
-          # Event spans are named after the title; the event name lives in the
-          # `appsignal.category` attribute, so match on that.
-          categories = span_exporter.finished_spans.map { |s| s.attributes["appsignal.category"] }
+          # Event span names lead with the event category, so derive the
+          # categories from the event spans and check none is the enqueue event.
+          categories = event_spans.map { |s| event_category(s) }
           expect(categories).to_not include("enqueue.delayed_job")
         end
       end

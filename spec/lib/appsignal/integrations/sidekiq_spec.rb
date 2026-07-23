@@ -358,8 +358,8 @@ if DependencyHelper.sidekiq_present?
 
         # The enqueue is a producer event span under the active transaction,
         # named after the job being enqueued.
-        producer = event_spans.find { |s| s.name == "enqueue TestClass job" }
-        expect(producer.attributes["appsignal.category"]).to eq("enqueue.sidekiq")
+        producer = event_span_for("enqueue.sidekiq")
+        expect(producer.name).to eq("enqueue.sidekiq (enqueue TestClass job)")
         expect(producer.kind).to eq(:producer)
         expect(producer.parent_span_id).to eq(root_span.span_id)
 
@@ -447,7 +447,7 @@ if DependencyHelper.sidekiq_present?
         # No transaction to attach the event to, so nothing is emitted and the
         # job hash is untouched.
         expect(enqueue).to eq(:enqueued)
-        expect(span_exporter.finished_spans.map(&:name)).to_not include("enqueue.sidekiq")
+        expect(event_spans_for("enqueue.sidekiq")).to be_empty
         expect(job).to_not have_key("traceparent")
       end
     end
@@ -479,7 +479,7 @@ if DependencyHelper.sidekiq_present?
         Appsignal::Transaction.complete_current!
 
         # No producer span for the suppressed enqueue...
-        expect(span_exporter.finished_spans.map(&:name)).to_not include("enqueue.sidekiq")
+        expect(event_spans_for("enqueue.sidekiq")).to be_empty
         # ...but the trace context is still injected so the job links back.
         expect(job).to have_key("traceparent")
       end
@@ -900,7 +900,7 @@ if DependencyHelper.sidekiq_present?
           expect(span).not_to be_nil
           expect(span.parent_span_id).to eq(root_span.span_id)
           expect(span.attributes).not_to have_key("appsignal.body")
-          expect(span.attributes["appsignal.category"]).to eq("perform_job.sidekiq")
+          expect(event_category(span)).to eq("perform_job.sidekiq")
         end
       end
     end
@@ -1011,7 +1011,7 @@ if DependencyHelper.sidekiq_present?
           expect(span).not_to be_nil
           expect(span.parent_span_id).to eq(root_span.span_id)
           expect(span.attributes).not_to have_key("appsignal.body")
-          expect(span.attributes["appsignal.category"]).to eq("perform_job.sidekiq")
+          expect(event_category(span)).to eq("perform_job.sidekiq")
         end
       end
     end

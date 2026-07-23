@@ -262,8 +262,8 @@ if DependencyHelper.resque_present?
 
           # The enqueue is a producer event span under the active transaction,
           # named after the job being enqueued.
-          producer = event_spans.find { |s| s.name == "enqueue ResqueTestJob job" }
-          expect(producer.attributes["appsignal.category"]).to eq("enqueue.resque")
+          producer = event_span_for("enqueue.resque")
+          expect(producer.name).to eq("enqueue.resque (enqueue ResqueTestJob job)")
           expect(producer.kind).to eq(:producer)
           expect(producer.parent_span_id).to eq(root_span.span_id)
 
@@ -289,7 +289,7 @@ if DependencyHelper.resque_present?
           # No transaction to attach the event to, so nothing is emitted and the
           # job hash is untouched.
           expect(enqueue).to eq(:pushed)
-          expect(span_exporter.finished_spans.map(&:name)).to_not include("enqueue.resque")
+          expect(event_spans_for("enqueue.resque")).to be_empty
           expect(item).to_not have_key("traceparent")
         end
       end
@@ -321,7 +321,7 @@ if DependencyHelper.resque_present?
           Appsignal::Transaction.complete_current!
 
           # No producer span for the suppressed enqueue...
-          expect(span_exporter.finished_spans.map(&:name)).to_not include("enqueue.resque")
+          expect(event_spans_for("enqueue.resque")).to be_empty
           # ...but the trace context is still injected so the job links back.
           expect(item).to have_key("traceparent")
         end
