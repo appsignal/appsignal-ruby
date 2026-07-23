@@ -1188,6 +1188,36 @@ describe Appsignal do
         expect(Appsignal.monitor(:action => nil) { :return_value }).to eq(:return_value)
       end
 
+      describe "OpenTelemetry attributes" do
+        it "threads the OpenTelemetry attributes to the created transaction" do
+          start_agent
+
+          otel_context = "some-otel-context"
+          expect(Appsignal::Transaction).to receive(:create).with(
+            Appsignal::Transaction::BACKGROUND_JOB,
+            :opentelemetry_context => otel_context,
+            :opentelemetry_kind => :consumer,
+            :opentelemetry_relationship => :both
+          ).and_call_original
+
+          Appsignal.monitor(
+            :action => "MyAction",
+            :namespace => Appsignal::Transaction::BACKGROUND_JOB,
+            :opentelemetry_context => otel_context,
+            :opentelemetry_kind => :consumer,
+            :opentelemetry_relationship => :both
+          )
+        end
+
+        it "uses the given opentelemetry_kind for the span", :collector_mode do
+          start_collector_agent
+
+          Appsignal.monitor(:action => "MyAction", :opentelemetry_kind => :consumer)
+
+          expect(root_span.kind).to eq(:consumer)
+        end
+      end
+
       describe "setting a custom namespace via the namespace argument" do
         def perform
           Appsignal.monitor(:namespace => "custom", :action => nil)
@@ -1628,6 +1658,96 @@ describe Appsignal do
       end
     end
 
+    describe ".add_request_payload" do
+      before do |example|
+        start_agent unless example.metadata[:agent_mode] || example.metadata[:collector_mode]
+      end
+
+      it "has a .set_request_payload alias" do
+        expect(Appsignal.method(:add_request_payload))
+          .to eq(Appsignal.method(:set_request_payload))
+      end
+
+      describe "setting the request payload through the public API" do
+        let(:transaction) { http_request_transaction }
+
+        def perform
+          set_current_transaction(transaction)
+          Appsignal.add_request_payload("param1" => "value1")
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent
+          perform
+
+          transaction._sample
+          expect(transaction).to include_params("param1" => "value1")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(JSON.parse(root_span.attributes["appsignal.request.payload"]))
+            .to eq("param1" => "value1")
+        end
+      end
+
+      context "without transaction" do
+        it "does not set the request payload on any transaction" do
+          expect_any_instance_of(Appsignal::Transaction).to_not receive(:add_request_payload)
+
+          Appsignal.add_request_payload("a" => "b")
+        end
+      end
+    end
+
+    describe ".add_function_parameters" do
+      before do |example|
+        start_agent unless example.metadata[:agent_mode] || example.metadata[:collector_mode]
+      end
+
+      it "has a .set_function_parameters alias" do
+        expect(Appsignal.method(:add_function_parameters))
+          .to eq(Appsignal.method(:set_function_parameters))
+      end
+
+      describe "setting the function parameters through the public API" do
+        let(:transaction) { background_job_transaction }
+
+        def perform
+          set_current_transaction(transaction)
+          Appsignal.add_function_parameters("param1" => "value1")
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent
+          perform
+
+          transaction._sample
+          expect(transaction).to include_params("param1" => "value1")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+            .to eq("param1" => "value1")
+        end
+      end
+
+      context "without transaction" do
+        it "does not set the function parameters on any transaction" do
+          expect_any_instance_of(Appsignal::Transaction).to_not receive(:add_function_parameters)
+
+          Appsignal.add_function_parameters("a" => "b")
+        end
+      end
+    end
+
     describe ".set_empty_params!" do
       describe "marking parameters to be sent as an empty value" do
         let(:transaction) { http_request_transaction }
@@ -2044,6 +2164,36 @@ describe Appsignal do
         keep_transactions { example.run }
       end
 
+      describe "OpenTelemetry attributes" do
+        it "threads the OpenTelemetry attributes to the created transaction" do
+          start_agent
+          allow(Appsignal::Transaction).to receive(:new).and_call_original
+
+          otel_context = "some-otel-context"
+          Appsignal.send_error(
+            error,
+            :opentelemetry_context => otel_context,
+            :opentelemetry_kind => :consumer,
+            :opentelemetry_relationship => :both
+          )
+
+          expect(Appsignal::Transaction).to have_received(:new).with(
+            Appsignal::Transaction::HTTP_REQUEST,
+            :opentelemetry_context => otel_context,
+            :opentelemetry_kind => :consumer,
+            :opentelemetry_relationship => :both
+          )
+        end
+
+        it "uses the given opentelemetry_kind for the span", :collector_mode do
+          start_collector_agent
+
+          Appsignal.send_error(error, :opentelemetry_kind => :consumer)
+
+          expect(root_span.kind).to eq(:consumer)
+        end
+      end
+
       describe "sending the error" do
         def perform
           Appsignal.send_error(error)
@@ -2356,6 +2506,37 @@ describe Appsignal do
       let(:stderr) { err_stream.read }
       let(:error) { ExampleException.new("error message") }
       around { |example| keep_transactions { example.run } }
+
+      describe "OpenTelemetry attributes" do
+        it "threads the OpenTelemetry attributes to a newly created transaction" do
+          start_agent
+          allow(Appsignal::Transaction).to receive(:new).and_call_original
+
+          otel_context = "some-otel-context"
+          Appsignal.report_error(
+            error,
+            :opentelemetry_context => otel_context,
+            :opentelemetry_kind => :consumer,
+            :opentelemetry_relationship => :both
+          )
+
+          expect(Appsignal::Transaction).to have_received(:new).with(
+            Appsignal::Transaction::HTTP_REQUEST,
+            :opentelemetry_context => otel_context,
+            :opentelemetry_kind => :consumer,
+            :opentelemetry_relationship => :both
+          )
+        end
+
+        it "uses the given opentelemetry_kind for the span", :collector_mode do
+          start_collector_agent
+
+          Appsignal.report_error(error, :opentelemetry_kind => :consumer)
+          Appsignal::Transaction.complete_current!
+
+          expect(root_span.kind).to eq(:consumer)
+        end
+      end
 
       context "when the error is not an Exception" do
         let(:error) { Object.new }

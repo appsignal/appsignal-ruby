@@ -14,21 +14,60 @@ module Appsignal
     class OpenTelemetryBackend < BaseBackend
       TRACER_NAME = "appsignal-ruby"
 
-      # Keys correspond to `Appsignal::Transaction::HTTP_REQUEST`,
-      # `ACTION_CABLE` and `BACKGROUND_JOB` respectively. Spelled as strings
-      # because this file is required (via `Backends`) before
-      # `lib/appsignal/transaction.rb`, so the constants are not yet defined
-      # at class-body evaluation time.
-      SPAN_KIND_BY_NAMESPACE = {
-        "http_request" => :server,
-        "action_cable" => :server,
-        "background_job" => :consumer
-      }.freeze
+      # Guards the process-wide warn-once state, which transactions touch
+      # concurrently on threaded servers. A constant so it is created once at
+      # load time rather than lazily (which would race).
+      WARN_ONCE_LOCK = Mutex.new
 
-      # Collector treats SERVER/CONSUMER spans as subtrace roots; SERVER is
-      # the safe default for user-defined namespaces (almost always
-      # external-triggered units of work).
+      class << self
+        # Logs the block's message the first time it sees `key`, then stays
+        # quiet for that key for the rest of the process. Used for invalid
+        # option warnings, which would otherwise repeat on every transaction.
+        # The message is built lazily, so the caller can skip expensive work
+        # (like walking the stack for a caller location) on the repeat calls
+        # that are deduplicated away. The check-and-set is done under a lock so
+        # concurrent transactions don't race and warn more than once; the log
+        # write happens outside the lock.
+        def warn_once(key)
+          first_time = WARN_ONCE_LOCK.synchronize do
+            next false if warned_keys.key?(key)
+
+            warned_keys[key] = true
+          end
+          Appsignal.internal_logger.warn(yield) if first_time
+        end
+
+        # @!visibility private
+        # Resets the warn-once state. Only used to keep test runs isolated.
+        def clear_warned!
+          WARN_ONCE_LOCK.synchronize { warned_keys.clear }
+        end
+
+        private
+
+        def warned_keys
+          @warned_keys ||= {}
+        end
+      end
+
+      # Collector treats SERVER/CONSUMER spans as subtrace roots; SERVER is the
+      # safe default when no kind is given (a transaction is almost always an
+      # external-triggered unit of work).
       DEFAULT_SPAN_KIND = :server
+
+      # The span kinds a transaction may take. An unknown value would raise
+      # inside OpenTelemetry span creation, so it falls back to the default.
+      SPAN_KINDS = [:server, :consumer, :producer, :internal].freeze
+
+      # How the transaction's span relates to an incoming OpenTelemetry context
+      # when none is given. A web request continues the upstream trace, so
+      # parenting is the safe default.
+      DEFAULT_RELATIONSHIP = :parent
+
+      # How the transaction's span may relate to an incoming context. An unknown
+      # value would silently behave like `:none`, so it falls back to the
+      # default instead.
+      RELATIONSHIPS = [:parent, :link, :both, :none].freeze
 
       # The collector expects "web"/"background"; the agent's processor converts
       # these internal namespaces in agent mode, but nothing does in collector
@@ -54,7 +93,13 @@ module Appsignal
       # queue duration when `queue_start_ms > 946_681_200_000`.
       QUEUE_START_MIN = 946_681_200_000
 
-      def initialize(transaction_id, namespace, opentelemetry_context: nil, **)
+      def initialize(
+        transaction_id,
+        namespace,
+        opentelemetry_context: nil,
+        opentelemetry_kind: nil,
+        opentelemetry_relationship: nil
+      )
         super()
         @transaction_id = transaction_id
         @namespace = namespace
@@ -65,8 +110,14 @@ module Appsignal
         @start_time = Time.now
         @action_set = false
 
-        kind = SPAN_KIND_BY_NAMESPACE.fetch(namespace, DEFAULT_SPAN_KIND)
-        @span = start_transaction_span(namespace, kind, opentelemetry_context)
+        kind = validated_option(
+          opentelemetry_kind, SPAN_KINDS, DEFAULT_SPAN_KIND, "opentelemetry_kind"
+        )
+        relationship = validated_option(
+          opentelemetry_relationship, RELATIONSHIPS, DEFAULT_RELATIONSHIP,
+          "opentelemetry_relationship"
+        )
+        @span = start_transaction_span(namespace, kind, relationship, opentelemetry_context)
         @context_token = ::OpenTelemetry::Context.attach(
           ::OpenTelemetry::Trace.context_with_span(@span)
         )
@@ -152,16 +203,32 @@ module Appsignal
         @span.set_attribute("appsignal.tag.#{key}", value)
       end
 
+      # The collector keeps the request payload and the function parameters as
+      # separate attributes, so each gets its own bucket. Legacy `params` has no
+      # channel of its own, so it maps to the request payload (the web/server
+      # default), matching how the span kind defaults to `:server`.
+      def params_mapping
+        {
+          :params => :request_payload,
+          :request_payload => :request_payload,
+          :function_parameters => :function_parameters
+        }
+      end
+
       # Routes each sample-data category to the attribute the collector reads.
-      # The JSON-blob categories (params, session, custom data) are serialized as
-      # JSON; `environment` becomes request-header attributes; tags fan out to
-      # `appsignal.tag.*`. Unknown keys pass through as `appsignal.<key>` JSON so
-      # nothing is lost. Breadcrumbs never reach here (the backend emits them as
-      # span events); causes ride on the exception event (see #set_error).
+      # The params arrive on one of two channels: `request_payload` (web) and
+      # `function_parameters` (jobs), each its own attribute. The other JSON-blob
+      # categories (session, custom data) are serialized as JSON; `environment`
+      # becomes request-header attributes; tags fan out to `appsignal.tag.*`.
+      # Unknown keys pass through as `appsignal.<key>` JSON so nothing is lost.
+      # Breadcrumbs never reach here (the backend emits them as span events);
+      # causes ride on the exception event (see #set_error).
       def set_sample_data(key, data)
         case key
-        when "params"
-          @span.set_attribute(params_attribute, JSON.generate(data))
+        when "request_payload"
+          @span.set_attribute("appsignal.request.payload", JSON.generate(data))
+        when "function_parameters"
+          @span.set_attribute("appsignal.function.parameters", JSON.generate(data))
         when "session_data"
           @span.set_attribute("appsignal.request.session_data", JSON.generate(data))
         when "custom_data"
@@ -361,32 +428,68 @@ module Appsignal
         "appsignal.transaction #{namespace}"
       end
 
-      # Open the transaction's root span, relating it to any incoming trace
-      # context by the unit of work's kind:
+      # Open the transaction's span, relating it to any incoming trace context
+      # by the requested relationship:
       #
-      # - SERVER (web): parent under the remote span so the transaction
-      #   continues the upstream trace.
-      # - CONSUMER (jobs): start a fresh trace linked back to the remote span. A
-      #   job is its own unit of work decoupled from the enqueuer, so it gets its
-      #   own trace, with a link recording the causal relationship.
-      # - No context, an invalid remote span, or any other kind: a plain root
-      #   span that ignores any ambient OTel context, as a transaction is its
-      #   own unit of work.
-      def start_transaction_span(namespace, kind, opentelemetry_context)
+      # - `:parent`: parent under the remote span so the transaction continues
+      #   the upstream trace.
+      # - `:link`: start a fresh trace linked back to the remote span. The
+      #   transaction is its own unit of work decoupled from the caller, so it
+      #   gets its own trace, with a link recording the causal relationship.
+      # - `:both`: parent under the remote span and also link back to it, so the
+      #   transaction continues the trace and keeps the explicit link.
+      # - `:none`: a plain root span that ignores any incoming context.
+      #
+      # With no context or an invalid remote span, every relationship falls back
+      # to a plain root span, since there is nothing to parent or link to.
+      def start_transaction_span(namespace, kind, relationship, opentelemetry_context)
         name = placeholder_span_name(namespace)
         remote = remote_span_context(opentelemetry_context)
 
-        if remote && kind == :server
-          tracer.start_span(name, :with_parent => opentelemetry_context, :kind => kind)
-        elsif remote && kind == :consumer
-          tracer.start_root_span(
-            name,
-            :kind => kind,
-            :links => [::OpenTelemetry::Trace::Link.new(remote)]
-          )
+        # With no incoming context (or an invalid remote span) there is nothing
+        # to parent or link to, so any relationship is just a plain root span.
+        return tracer.start_root_span(name, :kind => kind) unless remote
+
+        # `:parent` and `:both` continue the trace under the remote span;
+        # `:link` and `:both` record a link back to it; `:none` does neither.
+        parent = opentelemetry_context if [:parent, :both].include?(relationship)
+        links = [::OpenTelemetry::Trace::Link.new(remote)] if [:link, :both].include?(relationship)
+
+        if parent
+          tracer.start_span(name, :with_parent => parent, :kind => kind, :links => links)
         else
-          tracer.start_root_span(name, :kind => kind)
+          tracer.start_root_span(name, :kind => kind, :links => links)
         end
+      end
+
+      # Returns the given option when it is one of the allowed values, the
+      # default when it is nil, or the default with a warning when it is an
+      # unknown value. Keeps an unexpected `opentelemetry_kind` from raising
+      # inside span creation, and an unexpected `opentelemetry_relationship`
+      # from silently dropping the incoming context.
+      def validated_option(value, allowed, default, name)
+        return default if value.nil?
+        return value if allowed.include?(value)
+
+        # A bad value is usually a static mistake passed on every transaction,
+        # so warn once per process to avoid flooding the log. Dedup on the
+        # option and value, and build the message -- including walking the
+        # stack for the caller location -- only when actually warning.
+        self.class.warn_once("#{name}: #{value.inspect}") do
+          "Unknown #{name} #{value.inspect} passed at #{option_caller_location}, " \
+            "falling back to #{default.inspect}. " \
+            "Expected one of: #{allowed.map(&:inspect).join(", ")}."
+        end
+        default
+      end
+
+      # The first caller frame outside the gem: where the invalid value was
+      # passed to `Transaction.create`, `Appsignal.monitor`, etc. Falls back to
+      # the immediate caller if every frame is inside the gem. Only walks the
+      # stack when a warning is actually emitted (see `validated_option`).
+      def option_caller_location
+        frames = caller
+        frames.find { |frame| !frame.include?("/lib/appsignal/") } || frames.first
       end
 
       # The remote parent's SpanContext from an incoming OTel context, or nil
@@ -401,20 +504,6 @@ module Appsignal
 
       def display_namespace(namespace)
         DISPLAY_NAMESPACE.fetch(namespace, namespace)
-      end
-
-      # The collector exposes three params channels (query parameters, request
-      # payload, function parameters), each separately filtered and labeled in
-      # the trace UI. The gem only has a single merged params blob, so route it
-      # by namespace: message/job (CONSUMER-kind) transactions use the
-      # function-parameters channel, everything else (web-style, SERVER-kind)
-      # uses the request-payload channel.
-      def params_attribute
-        if SPAN_KIND_BY_NAMESPACE.fetch(@namespace, DEFAULT_SPAN_KIND) == :consumer
-          "appsignal.function.parameters"
-        else
-          "appsignal.request.payload"
-        end
       end
 
       # The transaction's "environment" sample data is a Rack/CGI env allowlist

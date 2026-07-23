@@ -71,7 +71,9 @@ module Appsignal
         transaction =
           Appsignal::Transaction.create(
             Appsignal::Transaction::BACKGROUND_JOB,
-            :opentelemetry_context => QueTraceContext.extract(local_attrs.dig(:data, :tags))
+            :opentelemetry_context => QueTraceContext.extract(local_attrs.dig(:data, :tags)),
+            :opentelemetry_kind => :consumer,
+            :opentelemetry_relationship => :both
           )
 
         begin
@@ -81,7 +83,7 @@ module Appsignal
           raise error
         ensure
           transaction.set_action_if_nil("#{local_attrs[:job_class]}#run")
-          transaction.add_params_if_nil do
+          transaction.add_function_parameters_if_nil do
             {
               :arguments => local_attrs[:args]
             }.tap do |hash|

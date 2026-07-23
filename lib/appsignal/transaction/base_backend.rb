@@ -39,6 +39,16 @@ module Appsignal
         raise NotImplementedError
       end
 
+      # Maps each logical params channel (`:params`, `:request_payload`,
+      # `:function_parameters`) to the storage bucket it lands in. Channels that
+      # share a bucket merge into one `SampleData` object on the transaction;
+      # distinct buckets stay separate. The bucket name is also the sample-data
+      # key `set_sample_data` receives for that bucket, so it must be a key this
+      # backend's `set_sample_data` knows how to store.
+      def params_mapping
+        raise NotImplementedError
+      end
+
       # Sample data (params, session, tags, ...), breadcrumbs and errors.
       def set_sample_data(_key, _data)
         raise NotImplementedError

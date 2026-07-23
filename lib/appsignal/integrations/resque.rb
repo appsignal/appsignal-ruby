@@ -9,7 +9,9 @@ module Appsignal
         # enqueuer. No-op outside collector mode.
         transaction = Appsignal::Transaction.create(
           Appsignal::Transaction::BACKGROUND_JOB,
-          :opentelemetry_context => Appsignal::OpenTelemetry.extract_job_context(payload)
+          :opentelemetry_context => Appsignal::OpenTelemetry.extract_job_context(payload),
+          :opentelemetry_kind => :consumer,
+          :opentelemetry_relationship => :both
         )
 
         Appsignal.instrument "perform.resque" do
@@ -21,7 +23,7 @@ module Appsignal
       ensure
         if transaction
           transaction.set_action_if_nil("#{payload["class"]}#perform")
-          transaction.add_params_if_nil { ResqueHelpers.arguments(payload) }
+          transaction.add_function_parameters_if_nil { ResqueHelpers.arguments(payload) }
           transaction.add_tags("queue" => queue)
 
           Appsignal::Transaction.complete_current!

@@ -16,6 +16,8 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
   before do
     ::OpenTelemetry.tracer_provider = tracer_provider
     @backends_created = []
+    # Warn-once state is process-wide, so clear it between examples.
+    described_class.clear_warned!
 
     # OTel reports context-balance violations (e.g. DetachError) through its
     # error handler, which by default only logs. Capture them so the after hook
@@ -77,15 +79,42 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
       expect(span_exporter.finished_spans.first.name).to eq("appsignal.transaction http_request")
     end
 
-    {
-      "http_request" => :server,
-      "background_job" => :consumer,
-      "action_cable" => :server,
-      "some_custom_ns" => :server
-    }.each do |namespace, expected_kind|
-      it "maps namespace #{namespace.inspect} to SpanKind #{expected_kind.inspect}" do
-        create_backend(namespace).complete
-        expect(span_exporter.finished_spans.first.kind).to eq(expected_kind)
+    describe "span kind" do
+      def create_backend_with_kind(kind)
+        described_class.new("abc-123", "http_request", :opentelemetry_kind => kind)
+          .tap { |b| @backends_created << b }
+      end
+
+      [:server, :consumer, :producer, :internal].each do |kind|
+        it "uses the given opentelemetry_kind #{kind.inspect} as the SpanKind" do
+          create_backend_with_kind(kind).complete
+          expect(span_exporter.finished_spans.first.kind).to eq(kind)
+        end
+      end
+
+      it "defaults to a server span when no kind is given" do
+        create_backend.complete
+        expect(span_exporter.finished_spans.first.kind).to eq(:server)
+      end
+
+      it "does not derive the kind from the namespace" do
+        create_backend("background_job").complete
+        expect(span_exporter.finished_spans.first.kind).to eq(:server)
+      end
+
+      it "falls back to the default kind and warns on an unknown value" do
+        expect(Appsignal.internal_logger).to receive(:warn)
+          .with(a_string_including("opentelemetry_kind"))
+
+        create_backend_with_kind(:bogus).complete
+
+        expect(span_exporter.finished_spans.first.kind).to eq(:server)
+      end
+
+      it "warns only once for a repeated unknown value" do
+        expect(Appsignal.internal_logger).to receive(:warn).once
+
+        2.times { create_backend_with_kind(:bogus).complete }
       end
     end
 
@@ -111,54 +140,105 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
         )
       end
 
-      def create_backend_with_context(namespace, context)
-        described_class.new("abc-123", namespace, :opentelemetry_context => context)
-          .tap { |b| @backends_created << b }
+      def create_backend_with_context(context, relationship: nil)
+        described_class.new(
+          "abc-123",
+          "http_request",
+          :opentelemetry_context => context,
+          :opentelemetry_relationship => relationship
+        ).tap { |b| @backends_created << b }
       end
 
-      it "parents a server transaction under the remote span (continues the trace)" do
-        backend = create_backend_with_context("http_request", remote_context)
+      def link_span_context(root)
+        root.links.first.span_context
+      end
+
+      it "parents under the remote span by default (continues the trace)" do
+        backend = create_backend_with_context(remote_context)
         backend.complete
         root = finished_span(backend.instance_variable_get(:@span))
 
         expect(root.hex_trace_id).to eq(trace_id_hex)
         expect(root.parent_span_id.unpack1("H*")).to eq(span_id_hex)
-        expect(root.kind).to eq(:server)
+        expect(Array(root.links)).to be_empty
       end
 
-      it "starts a fresh root trace when no context is given" do
-        backend = create_backend("http_request")
+      it "parents under the remote span with :parent" do
+        backend = create_backend_with_context(remote_context, :relationship => :parent)
         backend.complete
         root = finished_span(backend.instance_variable_get(:@span))
 
-        expect(root.hex_trace_id).not_to eq(trace_id_hex)
-        expect(root.parent_span_id).to eq(::OpenTelemetry::Trace::INVALID_SPAN_ID)
+        expect(root.hex_trace_id).to eq(trace_id_hex)
+        expect(root.parent_span_id.unpack1("H*")).to eq(span_id_hex)
+        expect(Array(root.links)).to be_empty
       end
 
-      it "links a consumer transaction back to the remote span (starts a new trace)" do
-        backend = create_backend_with_context("background_job", remote_context)
+      it "starts a new trace linked back to the remote span with :link" do
+        backend = create_backend_with_context(remote_context, :relationship => :link)
         backend.complete
         root = finished_span(backend.instance_variable_get(:@span))
 
-        # A job is its own unit of work: new trace, no parent.
+        # A new unit of work: its own trace, no parent...
         expect(root.hex_trace_id).not_to eq(trace_id_hex)
         expect(root.parent_span_id).to eq(::OpenTelemetry::Trace::INVALID_SPAN_ID)
-        expect(root.kind).to eq(:consumer)
 
-        # ... but linked back to the enqueuing span.
+        # ... but linked back to the remote span.
         expect(root.links.size).to eq(1)
-        link_context = root.links.first.span_context
-        expect(link_context.hex_trace_id).to eq(trace_id_hex)
-        expect(link_context.hex_span_id).to eq(span_id_hex)
+        expect(link_span_context(root).hex_trace_id).to eq(trace_id_hex)
+        expect(link_span_context(root).hex_span_id).to eq(span_id_hex)
       end
 
-      it "does not link a consumer transaction when there is no context" do
-        backend = create_backend("background_job")
+      it "parents under the remote span and links back to it with :both" do
+        backend = create_backend_with_context(remote_context, :relationship => :both)
         backend.complete
         root = finished_span(backend.instance_variable_get(:@span))
 
-        expect(root.kind).to eq(:consumer)
-        expect(root.links).to be_nil
+        # Continues the trace as a child...
+        expect(root.hex_trace_id).to eq(trace_id_hex)
+        expect(root.parent_span_id.unpack1("H*")).to eq(span_id_hex)
+
+        # ... and keeps the explicit link back to the same span.
+        expect(root.links.size).to eq(1)
+        expect(link_span_context(root).hex_trace_id).to eq(trace_id_hex)
+        expect(link_span_context(root).hex_span_id).to eq(span_id_hex)
+      end
+
+      it "ignores the remote span with :none (plain root span)" do
+        backend = create_backend_with_context(remote_context, :relationship => :none)
+        backend.complete
+        root = finished_span(backend.instance_variable_get(:@span))
+
+        expect(root.hex_trace_id).not_to eq(trace_id_hex)
+        expect(root.parent_span_id).to eq(::OpenTelemetry::Trace::INVALID_SPAN_ID)
+        expect(Array(root.links)).to be_empty
+      end
+
+      it "falls back to the default relationship and warns on an unknown value" do
+        expect(Appsignal.internal_logger).to receive(:warn)
+          .with(a_string_including("opentelemetry_relationship"))
+
+        backend = create_backend_with_context(remote_context, :relationship => :bogus)
+        backend.complete
+        root = finished_span(backend.instance_variable_get(:@span))
+
+        # Falls back to :parent, so it continues the trace as a child rather
+        # than silently dropping the incoming context like :none.
+        expect(root.hex_trace_id).to eq(trace_id_hex)
+        expect(root.parent_span_id.unpack1("H*")).to eq(span_id_hex)
+      end
+
+      [:parent, :link, :both, :none].each do |relationship|
+        it "starts a plain root span with #{relationship.inspect} when no context is given" do
+          backend = described_class.new(
+            "abc-123", "http_request", :opentelemetry_relationship => relationship
+          ).tap { |b| @backends_created << b }
+          backend.complete
+          root = finished_span(backend.instance_variable_get(:@span))
+
+          expect(root.hex_trace_id).not_to eq(trace_id_hex)
+          expect(root.parent_span_id).to eq(::OpenTelemetry::Trace::INVALID_SPAN_ID)
+          expect(Array(root.links)).to be_empty
+        end
       end
     end
 
@@ -225,7 +305,39 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
     end
 
     it "accepts #set_sample_data without raising" do
-      expect { create_backend.set_sample_data("params", "anything") }.not_to raise_error
+      expect { create_backend.set_sample_data("request_payload", "anything") }.not_to raise_error
+    end
+  end
+
+  describe "#params_mapping" do
+    it "keeps the request payload and function parameters in separate buckets" do
+      expect(create_backend.params_mapping).to eq(
+        :params => :request_payload,
+        :request_payload => :request_payload,
+        :function_parameters => :function_parameters
+      )
+    end
+  end
+
+  describe "#set_sample_data params channels" do
+    def attribute_for(backend, key, data)
+      backend.set_sample_data(key, data)
+      backend.complete
+      span_exporter.finished_spans.first.attributes
+    end
+
+    it "routes the request_payload channel to appsignal.request.payload" do
+      attributes = attribute_for(create_backend, "request_payload", "id" => 1)
+
+      expect(attributes["appsignal.request.payload"]).to eq(JSON.generate("id" => 1))
+      expect(attributes).to_not have_key("appsignal.function.parameters")
+    end
+
+    it "routes the function_parameters channel to appsignal.function.parameters" do
+      attributes = attribute_for(create_backend, "function_parameters", "id" => 1)
+
+      expect(attributes["appsignal.function.parameters"]).to eq(JSON.generate("id" => 1))
+      expect(attributes).to_not have_key("appsignal.request.payload")
     end
   end
 

@@ -102,6 +102,14 @@ module Appsignal
       #   within the block with {#set_action}.
       #   This will not update the active transaction's action if
       #   {.monitor} is called when another transaction is already active.
+      # @param opentelemetry_kind [Symbol] In collector mode, the OpenTelemetry
+      #   span kind: one of `:server`, `:consumer`, `:producer` or `:internal`.
+      #   Defaults to `:server`.
+      # @param opentelemetry_relationship [Symbol] In collector mode, how an
+      #   incoming `opentelemetry_context` relates to this transaction's span:
+      #   one of `:parent`, `:link`, `:both` or `:none`. Defaults to `:parent`.
+      # @param opentelemetry_context In collector mode, an incoming OpenTelemetry
+      #   trace context to relate this transaction's span to.
       # @yield [] The block to monitor.
       # @yieldreturn [Object] The return value of the block
       # @raise [Exception] Any exception that occurs within the given block is
@@ -112,7 +120,13 @@ module Appsignal
       #
       # @see https://docs.appsignal.com/ruby/instrumentation/background-jobs.html
       #   Monitor guide
-      def monitor(action:, namespace: nil)
+      def monitor(
+        action:,
+        namespace: nil,
+        opentelemetry_context: nil,
+        opentelemetry_kind: nil,
+        opentelemetry_relationship: nil
+      )
         return yield unless Appsignal.active?
 
         has_parent_transaction = Appsignal::Transaction.current?
@@ -133,7 +147,12 @@ module Appsignal
           if has_parent_transaction
             Appsignal::Transaction.current
           else
-            Appsignal::Transaction.create(namespace || Appsignal::Transaction::HTTP_REQUEST)
+            Appsignal::Transaction.create(
+              namespace || Appsignal::Transaction::HTTP_REQUEST,
+              :opentelemetry_context => opentelemetry_context,
+              :opentelemetry_kind => opentelemetry_kind,
+              :opentelemetry_relationship => opentelemetry_relationship
+            )
           end
 
         begin
@@ -218,6 +237,14 @@ module Appsignal
       #
       # @since 0.6.0
       # @param error [Exception] The error to send to AppSignal.
+      # @param opentelemetry_kind [Symbol] In collector mode, the OpenTelemetry
+      #   span kind: one of `:server`, `:consumer`, `:producer` or `:internal`.
+      #   Defaults to `:server`.
+      # @param opentelemetry_relationship [Symbol] In collector mode, how an
+      #   incoming `opentelemetry_context` relates to this transaction's span:
+      #   one of `:parent`, `:link`, `:both` or `:none`. Defaults to `:parent`.
+      # @param opentelemetry_context In collector mode, an incoming OpenTelemetry
+      #   trace context to relate this transaction's span to.
       # @yield [transaction] yields block to allow modification of the
       #   transaction before it's send.
       # @yieldparam transaction [Transaction] yields the AppSignal transaction
@@ -226,7 +253,13 @@ module Appsignal
       #
       # @see https://docs.appsignal.com/ruby/instrumentation/exception-handling.html
       #   Exception handling guide
-      def send_error(error, &block)
+      def send_error(
+        error,
+        opentelemetry_context: nil,
+        opentelemetry_kind: nil,
+        opentelemetry_relationship: nil,
+        &block
+      )
         return unless Appsignal.active?
 
         unless error.is_a?(Exception)
@@ -237,7 +270,12 @@ module Appsignal
         end
 
         transaction =
-          Appsignal::Transaction.new(Appsignal::Transaction::HTTP_REQUEST)
+          Appsignal::Transaction.new(
+            Appsignal::Transaction::HTTP_REQUEST,
+            :opentelemetry_context => opentelemetry_context,
+            :opentelemetry_kind => opentelemetry_kind,
+            :opentelemetry_relationship => opentelemetry_relationship
+          )
         transaction.set_error(error, :source => "Appsignal.send_error", &block)
 
         transaction.complete
@@ -348,6 +386,16 @@ module Appsignal
       # @since 4.0.0
       # @param exception [Exception] The error to add to the current
       #   transaction.
+      # @param opentelemetry_kind [Symbol] In collector mode, the OpenTelemetry
+      #   span kind: one of `:server`, `:consumer`, `:producer` or `:internal`.
+      #   Defaults to `:server`. Only used when a new transaction is created.
+      # @param opentelemetry_relationship [Symbol] In collector mode, how an
+      #   incoming `opentelemetry_context` relates to this transaction's span:
+      #   one of `:parent`, `:link`, `:both` or `:none`. Defaults to `:parent`.
+      #   Only used when a new transaction is created.
+      # @param opentelemetry_context In collector mode, an incoming OpenTelemetry
+      #   trace context to relate this transaction's span to. Only used when a
+      #   new transaction is created.
       # @yield [transaction] yields block to allow modification of the
       #   transaction.
       # @yieldparam transaction [Transaction] yields the AppSignal transaction
@@ -356,7 +404,13 @@ module Appsignal
       #
       # @see https://docs.appsignal.com/ruby/instrumentation/exception-handling.html
       #   Exception handling guide
-      def report_error(exception, &block)
+      def report_error(
+        exception,
+        opentelemetry_context: nil,
+        opentelemetry_kind: nil,
+        opentelemetry_relationship: nil,
+        &block
+      )
         unless exception.is_a?(Exception)
           Appsignal.internal_logger.error "Appsignal.report_error: " \
             "Cannot add error. " \
@@ -370,7 +424,12 @@ module Appsignal
           if has_parent_transaction
             Appsignal::Transaction.current
           else
-            Appsignal::Transaction.new(Appsignal::Transaction::HTTP_REQUEST)
+            Appsignal::Transaction.new(
+              Appsignal::Transaction::HTTP_REQUEST,
+              :opentelemetry_context => opentelemetry_context,
+              :opentelemetry_kind => opentelemetry_kind,
+              :opentelemetry_relationship => opentelemetry_relationship
+            )
           end
 
         transaction.add_error(exception, :source => "Appsignal.report_error", &block)
@@ -602,16 +661,71 @@ module Appsignal
       end
       alias set_params add_params
 
+      # Add the request payload to the current transaction.
+      #
+      # The request payload is the parameters of an incoming request, such as
+      # the query string and the request body. In collector mode it maps to its
+      # own attribute, separate from the function parameters.
+      #
+      # Behaves like {#add_params}: merges when called multiple times, and a
+      # block takes precedence over the argument.
+      #
+      # @param params [Hash<String, Object>, Array<Object>] The request payload to add to the
+      #   transaction.
+      # @yield This block is called when the transaction is sampled. The block's
+      #   return value will become the new request payload.
+      # @yieldreturn [Hash<String, Object>, Array<Object>]
+      # @return [void]
+      #
+      # @see #add_function_parameters
+      def add_request_payload(params = nil, &block)
+        return unless Appsignal.active?
+        return unless Appsignal::Transaction.current?
+
+        transaction = Appsignal::Transaction.current
+        transaction.add_request_payload(params, &block)
+      end
+      alias set_request_payload add_request_payload
+
+      # Add the function parameters to the current transaction.
+      #
+      # The function parameters are the arguments a background job or function
+      # was called with. In collector mode they map to their own attribute,
+      # separate from the request payload.
+      #
+      # Behaves like {#add_params}: merges when called multiple times, and a
+      # block takes precedence over the argument.
+      #
+      # @param params [Hash<String, Object>, Array<Object>] The function parameters to add to
+      #   the transaction.
+      # @yield This block is called when the transaction is sampled. The block's
+      #   return value will become the new function parameters.
+      # @yieldreturn [Hash<String, Object>, Array<Object>]
+      # @return [void]
+      #
+      # @see #add_request_payload
+      def add_function_parameters(params = nil, &block)
+        return unless Appsignal.active?
+        return unless Appsignal::Transaction.current?
+
+        transaction = Appsignal::Transaction.current
+        transaction.add_function_parameters(params, &block)
+      end
+      alias set_function_parameters add_function_parameters
+
       # Mark the parameters sample data to be set as an empty value.
       #
-      # Use this helper to unset request parameters / background job arguments
-      # and not report any for this transaction.
+      # Use this helper to report no parameters for this transaction, whatever
+      # their source.
       #
-      # If parameters would normally be added by AppSignal instrumentations of
-      # libraries, these parameters will not be added to the Transaction.
+      # This suppresses every params channel. In collector mode, where the
+      # request payload and the function parameters (a background job's
+      # arguments) are tracked as separate attributes, it suppresses both, not
+      # only the request payload. Parameters that an AppSignal integration would
+      # otherwise add are not added.
       #
-      # Calling {#add_params} after this helper will add new parameters to the
-      # transaction.
+      # Calling {#add_params}, {#add_request_payload} or
+      # {#add_function_parameters} after this helper adds parameters again.
       #
       # @since 4.2.0
       # @return [void]

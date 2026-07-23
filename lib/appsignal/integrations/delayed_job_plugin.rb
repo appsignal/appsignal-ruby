@@ -57,7 +57,11 @@ module Appsignal
 
       def self.invoke_with_instrumentation(job, block)
         transaction =
-          Appsignal::Transaction.create(Appsignal::Transaction::BACKGROUND_JOB)
+          Appsignal::Transaction.create(
+            Appsignal::Transaction::BACKGROUND_JOB,
+            :opentelemetry_kind => :consumer,
+            :opentelemetry_relationship => :both
+          )
 
         begin
           Appsignal.instrument("perform_job.delayed_job") do
@@ -72,11 +76,11 @@ module Appsignal
             # ActiveJob
             job_data = payload.job_data
             transaction.set_action_if_nil("#{job_data["job_class"]}#perform")
-            transaction.add_params_if_nil(job_data.fetch("arguments", {}))
+            transaction.add_function_parameters_if_nil(job_data.fetch("arguments", {}))
           else
             # Delayed Job
             transaction.set_action_if_nil(action_name_from_payload(payload, job.name))
-            transaction.add_params_if_nil(extract_value(payload, :args, {}))
+            transaction.add_function_parameters_if_nil(extract_value(payload, :args, {}))
           end
 
           transaction.add_tags(

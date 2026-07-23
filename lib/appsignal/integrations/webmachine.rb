@@ -23,7 +23,7 @@ module Appsignal
           end
 
         begin
-          transaction.add_params_if_nil { request.query }
+          transaction.add_request_payload_if_nil { request.query }
           transaction.add_headers_if_nil { request.headers if request.respond_to?(:headers) }
 
           Appsignal.instrument("process_action.webmachine") do
