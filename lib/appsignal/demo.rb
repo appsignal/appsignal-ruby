@@ -70,7 +70,7 @@ module Appsignal
       end
 
       def add_params_to(transaction)
-        transaction.add_params(
+        transaction.add_request_payload(
           "controller" => "demo",
           "action" => "hello"
         )

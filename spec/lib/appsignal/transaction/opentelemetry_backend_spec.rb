@@ -305,7 +305,39 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
     end
 
     it "accepts #set_sample_data without raising" do
-      expect { create_backend.set_sample_data("params", "anything") }.not_to raise_error
+      expect { create_backend.set_sample_data("request_payload", "anything") }.not_to raise_error
+    end
+  end
+
+  describe "#params_mapping" do
+    it "keeps the request payload and function parameters in separate buckets" do
+      expect(create_backend.params_mapping).to eq(
+        :params => :request_payload,
+        :request_payload => :request_payload,
+        :function_parameters => :function_parameters
+      )
+    end
+  end
+
+  describe "#set_sample_data params channels" do
+    def attribute_for(backend, key, data)
+      backend.set_sample_data(key, data)
+      backend.complete
+      span_exporter.finished_spans.first.attributes
+    end
+
+    it "routes the request_payload channel to appsignal.request.payload" do
+      attributes = attribute_for(create_backend, "request_payload", "id" => 1)
+
+      expect(attributes["appsignal.request.payload"]).to eq(JSON.generate("id" => 1))
+      expect(attributes).to_not have_key("appsignal.function.parameters")
+    end
+
+    it "routes the function_parameters channel to appsignal.function.parameters" do
+      attributes = attribute_for(create_backend, "function_parameters", "id" => 1)
+
+      expect(attributes["appsignal.function.parameters"]).to eq(JSON.generate("id" => 1))
+      expect(attributes).to_not have_key("appsignal.request.payload")
     end
   end
 

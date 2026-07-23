@@ -76,11 +76,11 @@ module Appsignal
             # ActiveJob
             job_data = payload.job_data
             transaction.set_action_if_nil("#{job_data["job_class"]}#perform")
-            transaction.add_params_if_nil(job_data.fetch("arguments", {}))
+            transaction.add_function_parameters_if_nil(job_data.fetch("arguments", {}))
           else
             # Delayed Job
             transaction.set_action_if_nil(action_name_from_payload(payload, job.name))
-            transaction.add_params_if_nil(extract_value(payload, :args, {}))
+            transaction.add_function_parameters_if_nil(extract_value(payload, :args, {}))
           end
 
           transaction.add_tags(

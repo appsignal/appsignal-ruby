@@ -22,6 +22,11 @@ module Appsignal
     ERROR_CAUSES_LIMIT = 10
     # @!visibility private
     ERRORS_LIMIT = 10
+    # Guards the process-wide `add_params`/`set_params` deprecation warn-once
+    # flag, which transactions touch concurrently on threaded servers. A
+    # constant so it is created once at load time rather than lazily.
+    # @!visibility private
+    PARAMS_DEPRECATION_LOCK = Mutex.new
 
     class << self
       # Create a new transaction and set it as the currently active
@@ -170,6 +175,26 @@ module Appsignal
 
       # @!visibility private
       attr_writer :last_errors
+
+      # Runs the block to emit the collector-mode `add_params`/`set_params`
+      # deprecation warning the first time it is called in the process, then
+      # stays quiet. The check-and-set is done under a lock so concurrent
+      # transactions on threaded runtimes don't race and warn more than once.
+      # @!visibility private
+      def warn_params_deprecation_once
+        should_warn = PARAMS_DEPRECATION_LOCK.synchronize do
+          next false if @params_deprecation_warned
+
+          @params_deprecation_warned = true
+        end
+        yield if should_warn
+      end
+
+      # @!visibility private
+      # Resets the warn-once state. Only used to keep test runs isolated.
+      def reset_params_deprecation_warning!
+        PARAMS_DEPRECATION_LOCK.synchronize { @params_deprecation_warned = false }
+      end
     end
 
     # @!visibility private
@@ -210,7 +235,6 @@ module Appsignal
       @is_duplicate = false
       @error_set = nil
 
-      @params = Appsignal::SampleData.new(:params)
       @session_data = Appsignal::SampleData.new(:session_data, Hash)
       @headers = Appsignal::SampleData.new(:headers, Hash)
       @custom_data = Appsignal::SampleData.new(:custom_data)
@@ -222,6 +246,22 @@ module Appsignal
         :opentelemetry_kind => opentelemetry_kind,
         :opentelemetry_relationship => opentelemetry_relationship
       )
+
+      # The backend decides how the params channels are stored. Its
+      # `params_mapping` maps each logical channel (`:params`,
+      # `:request_payload`, `:function_parameters`) to a storage bucket. The
+      # extension backend maps all three to a single `:params` bucket, so agent
+      # mode keeps one merged params blob. The OpenTelemetry backend maps the
+      # request payload and function parameters to separate buckets, so
+      # collector mode keeps them apart as two attributes. One `SampleData`
+      # object is allocated per distinct bucket.
+      # Each distinct bucket gets its own `SampleData`, named after the bucket.
+      # The bucket symbol is also the sample-data key the backend receives, so
+      # it can route the bucket to the right storage.
+      @params_mapping = @backend.params_mapping
+      @params_buckets = @params_mapping.values.uniq.to_h do |bucket|
+        [bucket, Appsignal::SampleData.new(bucket)]
+      end
 
       run_after_create_hooks
     end
@@ -385,17 +425,28 @@ module Appsignal
     # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
     #   Sample data guide
     def add_params(given_params = nil, &block)
-      @params.add(given_params, &block)
+      warn_params_deprecation
+      params_data(:params).add(given_params, &block)
     end
     alias set_params add_params
 
+    # Marks every params channel as explicitly empty, so no parameters are
+    # reported for this transaction whatever their source.
+    #
+    # This is a deliberate choice for collector mode, where the request payload
+    # and the function parameters live in separate buckets: it empties both, not
+    # only the request payload the legacy `:params` channel maps to. Otherwise
+    # an integration's `_if_nil` setter could still add function parameters (a
+    # background job's arguments) after params were emptied, and the behavior
+    # would differ from agent mode, where all channels share one bucket.
+    #
     # @since 4.0.0
     # @return [void]
     # @!visibility private
     #
     # @see Helpers::Instrumentation#set_empty_params!
     def set_empty_params!
-      @params.set_empty_value!
+      @params_buckets.each_value(&:set_empty_value!)
     end
 
     # Add parameters to the transaction if not already set.
@@ -411,9 +462,85 @@ module Appsignal
     #
     # @see #add_params
     def add_params_if_nil(given_params = nil, &block)
-      add_params(given_params, &block) if !@params.value? && !@params.empty?
+      add_params(given_params, &block) if params_unset?(:params)
     end
     alias set_params_if_nil add_params_if_nil
+
+    # Add the request payload to the transaction.
+    #
+    # These are the parameters of an incoming request, such as the query string
+    # and the request body. In collector mode they map to the request payload
+    # attribute. In agent mode they are the transaction's params.
+    #
+    # Behaves like {#add_params}: merges when called multiple times, and a
+    # block takes precedence over the argument.
+    #
+    # @param given_params [Hash<String, Object>, Array<Object>] The parameters to add to the
+    #   transaction.
+    # @yield This block is called when the transaction is sampled. The block's
+    #   return value will become the new parameters.
+    # @yieldreturn [Hash<String, Object>, Array<Object>]
+    # @return [void]
+    #
+    # @see #add_function_parameters
+    def add_request_payload(given_params = nil, &block)
+      params_data(:request_payload).add(given_params, &block)
+    end
+    alias set_request_payload add_request_payload
+
+    # Add the request payload to the transaction if not already set.
+    #
+    # @param given_params [Hash<String, Object>, Array<Object>] The parameters to add to the
+    #   transaction if none are already set.
+    # @yield This block is called when the transaction is sampled. The block's
+    #   return value will become the new parameters.
+    # @yieldreturn [Hash<String, Object>, Array<Object>]
+    # @return [void]
+    # @!visibility private
+    #
+    # @see #add_request_payload
+    def add_request_payload_if_nil(given_params = nil, &block)
+      add_request_payload(given_params, &block) if params_unset?(:request_payload)
+    end
+    alias set_request_payload_if_nil add_request_payload_if_nil
+
+    # Add the function parameters to the transaction.
+    #
+    # These are the arguments a background job or function was called with. In
+    # collector mode they map to the function parameters attribute. In agent
+    # mode they are the transaction's params.
+    #
+    # Behaves like {#add_params}: merges when called multiple times, and a
+    # block takes precedence over the argument.
+    #
+    # @param given_params [Hash<String, Object>, Array<Object>] The parameters to add to the
+    #   transaction.
+    # @yield This block is called when the transaction is sampled. The block's
+    #   return value will become the new parameters.
+    # @yieldreturn [Hash<String, Object>, Array<Object>]
+    # @return [void]
+    #
+    # @see #add_request_payload
+    def add_function_parameters(given_params = nil, &block)
+      params_data(:function_parameters).add(given_params, &block)
+    end
+    alias set_function_parameters add_function_parameters
+
+    # Add the function parameters to the transaction if not already set.
+    #
+    # @param given_params [Hash<String, Object>, Array<Object>] The parameters to add to the
+    #   transaction if none are already set.
+    # @yield This block is called when the transaction is sampled. The block's
+    #   return value will become the new parameters.
+    # @yieldreturn [Hash<String, Object>, Array<Object>]
+    # @return [void]
+    # @!visibility private
+    #
+    # @see #add_function_parameters
+    def add_function_parameters_if_nil(given_params = nil, &block)
+      add_function_parameters(given_params, &block) if params_unset?(:function_parameters)
+    end
+    alias set_function_parameters_if_nil add_function_parameters_if_nil
 
     # Add tags to the transaction.
     #
@@ -754,7 +881,7 @@ module Appsignal
     protected
 
     # @!visibility private
-    attr_writer :is_duplicate, :tags, :custom_data, :params,
+    attr_writer :is_duplicate, :tags, :custom_data, :params_buckets,
       :session_data, :headers
 
     # @!visibility private
@@ -797,6 +924,38 @@ module Appsignal
     end
 
     private
+
+    # The `SampleData` bucket a logical params channel is stored in, per the
+    # backend's `params_mapping`. In agent mode all three channels resolve to
+    # the same `:params` bucket (so they merge and share an `_if_nil` guard); in
+    # collector mode the request payload and function parameters resolve to
+    # separate buckets. `fetch` raises if a backend's mapping omits a channel.
+    def params_data(channel)
+      @params_buckets.fetch(@params_mapping.fetch(channel))
+    end
+
+    # Whether a params channel's bucket has had nothing set yet, so the
+    # `_if_nil` setters do not overwrite params the caller already provided.
+    def params_unset?(channel)
+      bucket = params_data(channel)
+      !bucket.value? && !bucket.empty?
+    end
+
+    # `add_params`/`set_params` don't say whether the params are a request
+    # payload or function parameters, so in collector mode they always map to
+    # the request payload. Warn once per process to nudge callers toward the
+    # explicit methods.
+    def warn_params_deprecation
+      return unless Appsignal.config&.collector_mode?
+
+      Appsignal::Transaction.warn_params_deprecation_once do
+        Appsignal::Utils::StdoutAndLoggerMessage.warning(
+          "`add_params`/`set_params` is deprecated in collector mode. Use " \
+            "`add_request_payload` or `add_function_parameters` instead, or " \
+            "`add_custom_data` for data that is neither."
+        )
+      end
+    end
 
     # Wrap a block handed to the transaction by user code so that, wherever it
     # later runs, a failure is logged and swallowed instead of breaking the
@@ -963,14 +1122,21 @@ module Appsignal
     end
 
     def sample_data
-      {
-        :params => sanitized_params,
+      data = {
         :environment => sanitized_request_headers,
         :session_data => sanitized_session_data,
         :tags => sanitized_tags,
         :custom_data => custom_data
-      }.each do |key, data|
-        set_sample_data(key, data)
+      }
+      # Each params bucket is emitted under its own key. The extension backend
+      # has a single `:params` bucket; the OpenTelemetry backend has separate
+      # `:request_payload` and `:function_parameters` buckets. The backend maps
+      # each key to its storage (C-extension slot or OpenTelemetry attribute).
+      @params_buckets.each do |bucket, sample|
+        data[bucket] = sanitized_params(sample)
+      end
+      data.each do |key, value|
+        set_sample_data(key, value)
       end
     end
 
@@ -984,24 +1150,33 @@ module Appsignal
         transaction.is_duplicate = true
         transaction.tags = @tags.dup
         transaction.custom_data = @custom_data.dup
-        transaction.params = @params.dup
+        transaction.params_buckets = @params_buckets.transform_values(&:dup)
         transaction.session_data = @session_data.dup
         transaction.headers = @headers.dup
       end
     end
 
     def params
-      @params.value
-    rescue => e
-      Appsignal.internal_logger.error("Exception while fetching params: #{e.class}: #{e}")
-      nil
+      params_value(params_data(:params))
     end
 
-    def sanitized_params
+    def sanitized_params(sample = params_data(:params))
       return unless Appsignal.config[:send_params]
 
       filter_keys = Appsignal.config[:filter_parameters] || []
-      Appsignal::Utils::SampleDataSanitizer.sanitize(params, filter_keys)
+      Appsignal::Utils::SampleDataSanitizer.sanitize(params_value(sample), filter_keys)
+    end
+
+    # Reads a params bucket's value. Evaluating it runs any block the caller
+    # passed to `add_params`/`add_request_payload`/`add_function_parameters`,
+    # which is user code that can raise, so a failure is logged and swallowed.
+    def params_value(sample)
+      sample.value
+    rescue => e
+      Appsignal.internal_logger.error(
+        "Exception while fetching params (#{sample.key}): #{e.class}: #{e}"
+      )
+      nil
     end
 
     def session_data

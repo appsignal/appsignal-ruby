@@ -1658,6 +1658,96 @@ describe Appsignal do
       end
     end
 
+    describe ".add_request_payload" do
+      before do |example|
+        start_agent unless example.metadata[:agent_mode] || example.metadata[:collector_mode]
+      end
+
+      it "has a .set_request_payload alias" do
+        expect(Appsignal.method(:add_request_payload))
+          .to eq(Appsignal.method(:set_request_payload))
+      end
+
+      describe "setting the request payload through the public API" do
+        let(:transaction) { http_request_transaction }
+
+        def perform
+          set_current_transaction(transaction)
+          Appsignal.add_request_payload("param1" => "value1")
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent
+          perform
+
+          transaction._sample
+          expect(transaction).to include_params("param1" => "value1")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(JSON.parse(root_span.attributes["appsignal.request.payload"]))
+            .to eq("param1" => "value1")
+        end
+      end
+
+      context "without transaction" do
+        it "does not set the request payload on any transaction" do
+          expect_any_instance_of(Appsignal::Transaction).to_not receive(:add_request_payload)
+
+          Appsignal.add_request_payload("a" => "b")
+        end
+      end
+    end
+
+    describe ".add_function_parameters" do
+      before do |example|
+        start_agent unless example.metadata[:agent_mode] || example.metadata[:collector_mode]
+      end
+
+      it "has a .set_function_parameters alias" do
+        expect(Appsignal.method(:add_function_parameters))
+          .to eq(Appsignal.method(:set_function_parameters))
+      end
+
+      describe "setting the function parameters through the public API" do
+        let(:transaction) { background_job_transaction }
+
+        def perform
+          set_current_transaction(transaction)
+          Appsignal.add_function_parameters("param1" => "value1")
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent
+          perform
+
+          transaction._sample
+          expect(transaction).to include_params("param1" => "value1")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+            .to eq("param1" => "value1")
+        end
+      end
+
+      context "without transaction" do
+        it "does not set the function parameters on any transaction" do
+          expect_any_instance_of(Appsignal::Transaction).to_not receive(:add_function_parameters)
+
+          Appsignal.add_function_parameters("a" => "b")
+        end
+      end
+    end
+
     describe ".set_empty_params!" do
       describe "marking parameters to be sent as an empty value" do
         let(:transaction) { http_request_transaction }

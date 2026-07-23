@@ -661,16 +661,71 @@ module Appsignal
       end
       alias set_params add_params
 
+      # Add the request payload to the current transaction.
+      #
+      # The request payload is the parameters of an incoming request, such as
+      # the query string and the request body. In collector mode it maps to its
+      # own attribute, separate from the function parameters.
+      #
+      # Behaves like {#add_params}: merges when called multiple times, and a
+      # block takes precedence over the argument.
+      #
+      # @param params [Hash<String, Object>, Array<Object>] The request payload to add to the
+      #   transaction.
+      # @yield This block is called when the transaction is sampled. The block's
+      #   return value will become the new request payload.
+      # @yieldreturn [Hash<String, Object>, Array<Object>]
+      # @return [void]
+      #
+      # @see #add_function_parameters
+      def add_request_payload(params = nil, &block)
+        return unless Appsignal.active?
+        return unless Appsignal::Transaction.current?
+
+        transaction = Appsignal::Transaction.current
+        transaction.add_request_payload(params, &block)
+      end
+      alias set_request_payload add_request_payload
+
+      # Add the function parameters to the current transaction.
+      #
+      # The function parameters are the arguments a background job or function
+      # was called with. In collector mode they map to their own attribute,
+      # separate from the request payload.
+      #
+      # Behaves like {#add_params}: merges when called multiple times, and a
+      # block takes precedence over the argument.
+      #
+      # @param params [Hash<String, Object>, Array<Object>] The function parameters to add to
+      #   the transaction.
+      # @yield This block is called when the transaction is sampled. The block's
+      #   return value will become the new function parameters.
+      # @yieldreturn [Hash<String, Object>, Array<Object>]
+      # @return [void]
+      #
+      # @see #add_request_payload
+      def add_function_parameters(params = nil, &block)
+        return unless Appsignal.active?
+        return unless Appsignal::Transaction.current?
+
+        transaction = Appsignal::Transaction.current
+        transaction.add_function_parameters(params, &block)
+      end
+      alias set_function_parameters add_function_parameters
+
       # Mark the parameters sample data to be set as an empty value.
       #
-      # Use this helper to unset request parameters / background job arguments
-      # and not report any for this transaction.
+      # Use this helper to report no parameters for this transaction, whatever
+      # their source.
       #
-      # If parameters would normally be added by AppSignal instrumentations of
-      # libraries, these parameters will not be added to the Transaction.
+      # This suppresses every params channel. In collector mode, where the
+      # request payload and the function parameters (a background job's
+      # arguments) are tracked as separate attributes, it suppresses both, not
+      # only the request payload. Parameters that an AppSignal integration would
+      # otherwise add are not added.
       #
-      # Calling {#add_params} after this helper will add new parameters to the
-      # transaction.
+      # Calling {#add_params}, {#add_request_payload} or
+      # {#add_function_parameters} after this helper adds parameters again.
       #
       # @since 4.2.0
       # @return [void]

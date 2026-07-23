@@ -50,18 +50,6 @@ module Appsignal
         end
       end
 
-      # Maps an internal namespace to the params attribute it uses. Message/job
-      # (CONSUMER-kind) namespaces use the function-parameters channel;
-      # everything else uses the request-payload channel. Spelled as strings
-      # because this file is required (via `Backends`) before
-      # `lib/appsignal/transaction.rb`, so the constants are not yet defined
-      # at class-body evaluation time.
-      SPAN_KIND_BY_NAMESPACE = {
-        "http_request" => :server,
-        "action_cable" => :server,
-        "background_job" => :consumer
-      }.freeze
-
       # Collector treats SERVER/CONSUMER spans as subtrace roots; SERVER is the
       # safe default when no kind is given (a transaction is almost always an
       # external-triggered unit of work).
@@ -215,16 +203,32 @@ module Appsignal
         @span.set_attribute("appsignal.tag.#{key}", value)
       end
 
+      # The collector keeps the request payload and the function parameters as
+      # separate attributes, so each gets its own bucket. Legacy `params` has no
+      # channel of its own, so it maps to the request payload (the web/server
+      # default), matching how the span kind defaults to `:server`.
+      def params_mapping
+        {
+          :params => :request_payload,
+          :request_payload => :request_payload,
+          :function_parameters => :function_parameters
+        }
+      end
+
       # Routes each sample-data category to the attribute the collector reads.
-      # The JSON-blob categories (params, session, custom data) are serialized as
-      # JSON; `environment` becomes request-header attributes; tags fan out to
-      # `appsignal.tag.*`. Unknown keys pass through as `appsignal.<key>` JSON so
-      # nothing is lost. Breadcrumbs never reach here (the backend emits them as
-      # span events); causes ride on the exception event (see #set_error).
+      # The params arrive on one of two channels: `request_payload` (web) and
+      # `function_parameters` (jobs), each its own attribute. The other JSON-blob
+      # categories (session, custom data) are serialized as JSON; `environment`
+      # becomes request-header attributes; tags fan out to `appsignal.tag.*`.
+      # Unknown keys pass through as `appsignal.<key>` JSON so nothing is lost.
+      # Breadcrumbs never reach here (the backend emits them as span events);
+      # causes ride on the exception event (see #set_error).
       def set_sample_data(key, data)
         case key
-        when "params"
-          @span.set_attribute(params_attribute, JSON.generate(data))
+        when "request_payload"
+          @span.set_attribute("appsignal.request.payload", JSON.generate(data))
+        when "function_parameters"
+          @span.set_attribute("appsignal.function.parameters", JSON.generate(data))
         when "session_data"
           @span.set_attribute("appsignal.request.session_data", JSON.generate(data))
         when "custom_data"
@@ -500,20 +504,6 @@ module Appsignal
 
       def display_namespace(namespace)
         DISPLAY_NAMESPACE.fetch(namespace, namespace)
-      end
-
-      # The collector exposes three params channels (query parameters, request
-      # payload, function parameters), each separately filtered and labeled in
-      # the trace UI. The gem only has a single merged params blob, so route it
-      # by namespace: message/job (CONSUMER-kind) transactions use the
-      # function-parameters channel, everything else (web-style, SERVER-kind)
-      # uses the request-payload channel.
-      def params_attribute
-        if SPAN_KIND_BY_NAMESPACE.fetch(@namespace, DEFAULT_SPAN_KIND) == :consumer
-          "appsignal.function.parameters"
-        else
-          "appsignal.request.payload"
-        end
       end
 
       # The transaction's "environment" sample data is a Rack/CGI env allowlist

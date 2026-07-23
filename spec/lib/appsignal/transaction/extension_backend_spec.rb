@@ -47,6 +47,16 @@ describe Appsignal::Transaction::ExtensionBackend do
     end
   end
 
+  describe "#params_mapping" do
+    it "maps every params channel to the single agent params bucket" do
+      expect(backend.params_mapping).to eq(
+        :params => :params,
+        :request_payload => :params,
+        :function_parameters => :params
+      )
+    end
+  end
+
   describe "method delegation" do
     let(:handle) { backend.instance_variable_get(:@handle) }
 

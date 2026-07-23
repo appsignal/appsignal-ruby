@@ -48,7 +48,18 @@ describe Appsignal::Transaction do
     end
 
     context "when an explicit backend is passed in the initialiser" do
-      let(:backend) { "some_backend" }
+      let(:backend) do
+        # The transaction reads `params_mapping` from its backend on creation,
+        # so the stand-in has to answer it.
+        double(
+          "backend",
+          :params_mapping => {
+            :params => :params,
+            :request_payload => :params,
+            :function_parameters => :params
+          }
+        )
+      end
 
       it "assigns the backend to the transaction" do
         expect(described_class.new("web", :backend => backend).backend).to be(backend)
@@ -1195,7 +1206,7 @@ describe Appsignal::Transaction do
         logs = capture_logs { transaction._sample }
         expect(logs).to contains_log(
           :error,
-          "Exception while fetching params: RuntimeError: uh oh"
+          "Exception while fetching params (params): RuntimeError: uh oh"
         )
       end
 
@@ -1206,7 +1217,7 @@ describe Appsignal::Transaction do
         logs = capture_logs { transaction.complete }
         expect(logs).to contains_log(
           :error,
-          "Exception while fetching params: RuntimeError: uh oh"
+          "Exception while fetching params (request_payload): RuntimeError: uh oh"
         )
         expect(root_span.attributes).to_not have_key("appsignal.request.payload")
       end
@@ -1440,6 +1451,206 @@ describe Appsignal::Transaction do
           expect(root_span.attributes).to_not have_key("appsignal.request.payload")
         end
       end
+    end
+  end
+
+  describe "#add_request_payload" do
+    let(:transaction) { new_transaction }
+
+    it "has a #set_request_payload alias" do
+      expect(transaction.method(:add_request_payload))
+        .to eq(transaction.method(:set_request_payload))
+    end
+
+    it "has a #set_request_payload_if_nil alias" do
+      expect(transaction.method(:add_request_payload_if_nil))
+        .to eq(transaction.method(:set_request_payload_if_nil))
+    end
+
+    describe "setting the request payload on the transaction" do
+      def perform
+        transaction.add_request_payload("key" => "value")
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_params("key" => "value")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(JSON.parse(root_span.attributes["appsignal.request.payload"]))
+          .to eq("key" => "value")
+        expect(root_span.attributes).to_not have_key("appsignal.function.parameters")
+      end
+    end
+
+    describe "merging and giving the block precedence" do
+      def perform
+        transaction.add_request_payload("abc" => "value")
+        transaction.add_request_payload("def" => "value")
+        transaction.add_request_payload { { "xyz" => "value" } }
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_params(
+          "abc" => "value", "def" => "value", "xyz" => "value"
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(JSON.parse(root_span.attributes["appsignal.request.payload"])).to eq(
+          "abc" => "value", "def" => "value", "xyz" => "value"
+        )
+      end
+    end
+
+    describe "#add_request_payload_if_nil does not override existing params" do
+      def perform
+        transaction.add_request_payload("original" => "value")
+        transaction.add_request_payload_if_nil("other" => "value")
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_params("original" => "value")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(JSON.parse(root_span.attributes["appsignal.request.payload"]))
+          .to eq("original" => "value")
+      end
+    end
+  end
+
+  describe "#add_function_parameters" do
+    let(:transaction) { new_transaction }
+
+    it "has a #set_function_parameters alias" do
+      expect(transaction.method(:add_function_parameters))
+        .to eq(transaction.method(:set_function_parameters))
+    end
+
+    it "has a #set_function_parameters_if_nil alias" do
+      expect(transaction.method(:add_function_parameters_if_nil))
+        .to eq(transaction.method(:set_function_parameters_if_nil))
+    end
+
+    describe "setting the function parameters on the transaction" do
+      def perform
+        transaction.add_function_parameters("key" => "value")
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_params("key" => "value")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+          .to eq("key" => "value")
+        expect(root_span.attributes).to_not have_key("appsignal.request.payload")
+      end
+    end
+
+    describe "#add_function_parameters_if_nil does not override existing params" do
+      def perform
+        transaction.add_function_parameters("original" => "value")
+        transaction.add_function_parameters_if_nil("other" => "value")
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_params("original" => "value")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+          .to eq("original" => "value")
+      end
+    end
+
+    describe "#set_empty_params! also suppresses function parameters set later" do
+      def perform
+        transaction.set_empty_params!
+        transaction.add_function_parameters_if_nil("key" => "value")
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to_not include_params
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(root_span.attributes).to_not have_key("appsignal.function.parameters")
+      end
+    end
+  end
+
+  describe "#add_params deprecation" do
+    let(:transaction) { new_transaction }
+
+    before { Appsignal::Transaction.reset_params_deprecation_warning! }
+
+    it "does not warn in agent mode", :agent_mode do
+      start_agent(**start_agent_args)
+
+      expect(Appsignal::Utils::StdoutAndLoggerMessage).to_not receive(:warning)
+
+      transaction.add_params("key" => "value")
+    end
+
+    it "warns once in collector mode", :collector_mode do
+      start_collector_agent
+
+      expect(Appsignal::Utils::StdoutAndLoggerMessage).to receive(:warning)
+        .with(a_string_including("add_request_payload", "add_function_parameters"))
+        .once
+
+      transaction.add_params("key" => "value")
+      transaction.add_params("key2" => "value")
     end
   end
 
@@ -3086,22 +3297,25 @@ describe Appsignal::Transaction do
         transaction.set_params(set)
       end
 
-      def expect_unsupported_type_logs(logs)
+      # The log names the bucket the params were stored in. Legacy `set_params`
+      # goes to the single `params` bucket in agent mode and to the
+      # `request_payload` bucket in collector mode, so the key differs per mode.
+      def expect_unsupported_type_logs(logs, key)
         expect(logs).to contains_log(
           :error,
-          %(Sample data 'params': Unsupported data type 'String' received: "some string")
+          %(Sample data '#{key}': Unsupported data type 'String' received: "some string")
         )
         expect(logs).to contains_log(
           :error,
-          %(Sample data 'params': Unsupported data type 'Integer' received: 123)
+          %(Sample data '#{key}': Unsupported data type 'Integer' received: 123)
         )
         expect(logs).to contains_log(
           :error,
-          %(Sample data 'params': Unsupported data type 'Class' received: #<Class)
+          %(Sample data '#{key}': Unsupported data type 'Class' received: #<Class)
         )
         expect(logs).to contains_log(
           :error,
-          /Sample data 'params': Unsupported data type 'Set' received: (#<Set: {|Set\[)"abc"(}>|\])/
+          /Sample data '#{key}': Unsupported data type 'Set' received: (#<Set: {|Set\[)"abc"(}>|\])/
         )
       end
 
@@ -3113,7 +3327,7 @@ describe Appsignal::Transaction do
         end
 
         expect(transaction).to_not include_params
-        expect_unsupported_type_logs(logs)
+        expect_unsupported_type_logs(logs, "params")
       end
 
       it "in collector mode", :collector_mode do
@@ -3124,7 +3338,7 @@ describe Appsignal::Transaction do
         end
 
         expect(root_span.attributes).to_not have_key("appsignal.request.payload")
-        expect_unsupported_type_logs(logs)
+        expect_unsupported_type_logs(logs, "request_payload")
       end
     end
 
@@ -3201,7 +3415,10 @@ describe Appsignal::Transaction do
         perform
         transaction.complete
 
-        expect(JSON.parse(root_span.attributes["appsignal.request.payload"])).to eq(expected)
+        # A raw `params` key is not one of the collector's known channels, so it
+        # passes through as `appsignal.params`. The request payload and function
+        # parameters channels are covered by their own specs above.
+        expect(JSON.parse(root_span.attributes["appsignal.params"])).to eq(expected)
       end
     end
 

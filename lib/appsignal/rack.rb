@@ -60,7 +60,7 @@ module Appsignal
           transaction.set_metadata("method", request_method)
         end
 
-        transaction.add_params { params_for(request) }
+        transaction.add_request_payload { params_for(request) }
         transaction.add_session_data { session_data_for(request) }
         transaction.add_headers do
           request.env if request.respond_to?(:env)

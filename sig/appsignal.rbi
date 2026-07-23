@@ -786,16 +786,49 @@ module Appsignal
   sig { params(params: T.nilable(T.any(T::Hash[String, Object], T::Array[Object])), block: T.proc.returns(T.any(T::Hash[String, Object], T::Array[Object]))).void }
   def self.add_params(params = nil, &block); end
 
+  # Add the request payload to the current transaction.
+  # 
+  # The request payload is the parameters of an incoming request, such as
+  # the query string and the request body. In collector mode it maps to its
+  # own attribute, separate from the function parameters.
+  # 
+  # Behaves like {#add_params}: merges when called multiple times, and a
+  # block takes precedence over the argument.
+  # 
+  # _@param_ `params` — The request payload to add to the transaction.
+  # 
+  # _@see_ `#add_function_parameters`
+  sig { params(params: T.nilable(T.any(T::Hash[String, Object], T::Array[Object])), block: T.proc.returns(T.any(T::Hash[String, Object], T::Array[Object]))).void }
+  def self.add_request_payload(params = nil, &block); end
+
+  # Add the function parameters to the current transaction.
+  # 
+  # The function parameters are the arguments a background job or function
+  # was called with. In collector mode they map to their own attribute,
+  # separate from the request payload.
+  # 
+  # Behaves like {#add_params}: merges when called multiple times, and a
+  # block takes precedence over the argument.
+  # 
+  # _@param_ `params` — The function parameters to add to the transaction.
+  # 
+  # _@see_ `#add_request_payload`
+  sig { params(params: T.nilable(T.any(T::Hash[String, Object], T::Array[Object])), block: T.proc.returns(T.any(T::Hash[String, Object], T::Array[Object]))).void }
+  def self.add_function_parameters(params = nil, &block); end
+
   # Mark the parameters sample data to be set as an empty value.
   # 
-  # Use this helper to unset request parameters / background job arguments
-  # and not report any for this transaction.
+  # Use this helper to report no parameters for this transaction, whatever
+  # their source.
   # 
-  # If parameters would normally be added by AppSignal instrumentations of
-  # libraries, these parameters will not be added to the Transaction.
+  # This suppresses every params channel. In collector mode, where the
+  # request payload and the function parameters (a background job's
+  # arguments) are tracked as separate attributes, it suppresses both, not
+  # only the request payload. Parameters that an AppSignal integration would
+  # otherwise add are not added.
   # 
-  # Calling {#add_params} after this helper will add new parameters to the
-  # transaction.
+  # Calling {#add_params}, {#add_request_payload} or
+  # {#add_function_parameters} after this helper adds parameters again.
   # 
   # _@see_ `Transaction#set_empty_params!`
   # 
@@ -1788,6 +1821,36 @@ module Appsignal
     sig { params(given_params: T.nilable(T.any(T::Hash[String, Object], T::Array[Object])), block: T.proc.returns(T.any(T::Hash[String, Object], T::Array[Object]))).void }
     def add_params(given_params = nil, &block); end
 
+    # Add the request payload to the transaction.
+    # 
+    # These are the parameters of an incoming request, such as the query string
+    # and the request body. In collector mode they map to the request payload
+    # attribute. In agent mode they are the transaction's params.
+    # 
+    # Behaves like {#add_params}: merges when called multiple times, and a
+    # block takes precedence over the argument.
+    # 
+    # _@param_ `given_params` — The parameters to add to the transaction.
+    # 
+    # _@see_ `#add_function_parameters`
+    sig { params(given_params: T.nilable(T.any(T::Hash[String, Object], T::Array[Object])), block: T.proc.returns(T.any(T::Hash[String, Object], T::Array[Object]))).void }
+    def add_request_payload(given_params = nil, &block); end
+
+    # Add the function parameters to the transaction.
+    # 
+    # These are the arguments a background job or function was called with. In
+    # collector mode they map to the function parameters attribute. In agent
+    # mode they are the transaction's params.
+    # 
+    # Behaves like {#add_params}: merges when called multiple times, and a
+    # block takes precedence over the argument.
+    # 
+    # _@param_ `given_params` — The parameters to add to the transaction.
+    # 
+    # _@see_ `#add_request_payload`
+    sig { params(given_params: T.nilable(T.any(T::Hash[String, Object], T::Array[Object])), block: T.proc.returns(T.any(T::Hash[String, Object], T::Array[Object]))).void }
+    def add_function_parameters(given_params = nil, &block); end
+
     # Add tags to the transaction.
     # 
     # When this method is called multiple times, it will merge the tags.
@@ -2531,16 +2594,49 @@ module Appsignal
       sig { params(params: T.nilable(T.any(T::Hash[String, Object], T::Array[Object])), block: T.proc.returns(T.any(T::Hash[String, Object], T::Array[Object]))).void }
       def add_params(params = nil, &block); end
 
+      # Add the request payload to the current transaction.
+      # 
+      # The request payload is the parameters of an incoming request, such as
+      # the query string and the request body. In collector mode it maps to its
+      # own attribute, separate from the function parameters.
+      # 
+      # Behaves like {#add_params}: merges when called multiple times, and a
+      # block takes precedence over the argument.
+      # 
+      # _@param_ `params` — The request payload to add to the transaction.
+      # 
+      # _@see_ `#add_function_parameters`
+      sig { params(params: T.nilable(T.any(T::Hash[String, Object], T::Array[Object])), block: T.proc.returns(T.any(T::Hash[String, Object], T::Array[Object]))).void }
+      def add_request_payload(params = nil, &block); end
+
+      # Add the function parameters to the current transaction.
+      # 
+      # The function parameters are the arguments a background job or function
+      # was called with. In collector mode they map to their own attribute,
+      # separate from the request payload.
+      # 
+      # Behaves like {#add_params}: merges when called multiple times, and a
+      # block takes precedence over the argument.
+      # 
+      # _@param_ `params` — The function parameters to add to the transaction.
+      # 
+      # _@see_ `#add_request_payload`
+      sig { params(params: T.nilable(T.any(T::Hash[String, Object], T::Array[Object])), block: T.proc.returns(T.any(T::Hash[String, Object], T::Array[Object]))).void }
+      def add_function_parameters(params = nil, &block); end
+
       # Mark the parameters sample data to be set as an empty value.
       # 
-      # Use this helper to unset request parameters / background job arguments
-      # and not report any for this transaction.
+      # Use this helper to report no parameters for this transaction, whatever
+      # their source.
       # 
-      # If parameters would normally be added by AppSignal instrumentations of
-      # libraries, these parameters will not be added to the Transaction.
+      # This suppresses every params channel. In collector mode, where the
+      # request payload and the function parameters (a background job's
+      # arguments) are tracked as separate attributes, it suppresses both, not
+      # only the request payload. Parameters that an AppSignal integration would
+      # otherwise add are not added.
       # 
-      # Calling {#add_params} after this helper will add new parameters to the
-      # transaction.
+      # Calling {#add_params}, {#add_request_payload} or
+      # {#add_function_parameters} after this helper adds parameters again.
       # 
       # _@see_ `Transaction#set_empty_params!`
       # 
