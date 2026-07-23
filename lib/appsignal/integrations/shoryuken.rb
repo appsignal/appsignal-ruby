@@ -82,7 +82,7 @@ module Appsignal
           :opentelemetry_context => context,
           :opentelemetry_scope => ["appsignal-ruby/shoryuken", Appsignal::VERSION],
           :opentelemetry_kind => :consumer,
-          :opentelemetry_relationship => :link
+          :opentelemetry_relationship => :both
         )
 
         Appsignal.instrument(

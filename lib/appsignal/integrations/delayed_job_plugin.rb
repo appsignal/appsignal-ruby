@@ -62,7 +62,7 @@ module Appsignal
             Appsignal::Transaction::BACKGROUND_JOB,
             :opentelemetry_scope => ["appsignal-ruby/delayed_job", Appsignal::VERSION],
             :opentelemetry_kind => :consumer,
-            :opentelemetry_relationship => :link
+            :opentelemetry_relationship => :both
           )
 
         begin
