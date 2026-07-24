@@ -358,6 +358,22 @@ namespace :build do
   desc "Build all gem versions"
   task :all => ["ruby:gem", "jruby:gem"]
 
+  desc "Build every package in this repository"
+  task :packages => :all do
+    # Build the companion gem by delegating to its own Rakefile rather than
+    # duplicating its build logic here. mono builds each package directly, so
+    # this task is only a convenience for developers building from the root.
+    #
+    # Clear the Bundler environment first so the sub-build resolves against the
+    # package's own Gemfile instead of inheriting this repository's
+    # BUNDLE_GEMFILE.
+    Bundler.with_unbundled_env do
+      Dir.chdir("packages/opentelemetry") do
+        sh "bundle exec rake build:all"
+      end
+    end
+  end
+
   desc "Clean up all gem build artifacts"
   task :clean do
     FileUtils.rm_rf File.expand_path("pkg", __dir__)
