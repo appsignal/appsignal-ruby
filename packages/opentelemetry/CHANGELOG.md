@@ -1,0 +1,1 @@
+# AppSignal OpenTelemetry gem Changelog

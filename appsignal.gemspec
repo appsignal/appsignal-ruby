@@ -7,6 +7,7 @@ IGNORED_PATHS = [
   ".changesets/",
   ".github/",
   "gemfiles/",
+  "packages/",
   "script/",
   "spec/",
 

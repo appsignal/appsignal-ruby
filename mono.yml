@@ -1,6 +1,10 @@
 ---
 language: ruby
 repo: "https://github.com/appsignal/appsignal-ruby"
+packages:
+  appsignal: "."
+  appsignal-opentelemetry: "packages/opentelemetry"
+version_lock: true
 bootstrap:
   post:
     - "rake extension:install"

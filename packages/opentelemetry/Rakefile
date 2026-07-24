@@ -1,0 +1,22 @@
+# frozen_string_literal: true
+
+require "fileutils"
+require_relative "lib/appsignal_opentelemetry/version"
+
+namespace :build do
+  desc "Build the gem into pkg/"
+  task :all do
+    FileUtils.mkdir_p("pkg")
+    output = "pkg/appsignal-opentelemetry-#{AppsignalOpentelemetry::VERSION}.gem"
+    sh "gem build appsignal-opentelemetry.gemspec --output #{output}"
+  end
+end
+
+begin
+  require "rspec/core/rake_task"
+
+  desc "Run the gem test suite."
+  RSpec::Core::RakeTask.new(:test)
+rescue LoadError
+  # RSpec is not available in every environment, such as during a bare install.
+end
