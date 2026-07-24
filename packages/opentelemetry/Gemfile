@@ -1,0 +1,13 @@
+# frozen_string_literal: true
+
+source "https://rubygems.org"
+
+# Build against the appsignal gem in this repository, not a released version,
+# so the two are always tested together.
+gem "appsignal", :path => "../.."
+
+gemspec
+
+gem "rake", ">= 12"
+gem "rspec", "~> 3.8"
+gem "rubocop", "~> 1.87.0"
