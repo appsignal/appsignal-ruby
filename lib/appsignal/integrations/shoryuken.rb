@@ -91,7 +91,7 @@ module Appsignal
       ensure
         attributes = fetch_attributes(batch, sqs_msg)
         transaction.set_action_if_nil("#{worker_instance.class.name}#perform")
-        transaction.add_params_if_nil { fetch_args(batch, sqs_msg, body) }
+        transaction.add_function_parameters_if_nil { fetch_args(batch, sqs_msg, body) }
         transaction.add_tags(attributes)
         transaction.add_tags("queue" => queue)
         transaction.add_tags("batch" => true) if batch

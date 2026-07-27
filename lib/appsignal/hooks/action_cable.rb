@@ -50,7 +50,7 @@ module Appsignal
             transaction.set_action_if_nil("#{channel.class}#subscribed")
             transaction.set_metadata("path", request.path)
             transaction.set_metadata("method", "websocket")
-            transaction.add_params_if_nil { request.params }
+            transaction.add_request_payload_if_nil { request.params }
             transaction.add_headers_if_nil { request.env }
             transaction.add_session_data { request.session.to_h if request.respond_to? :session }
             transaction.add_tags(:request_id => request_id) if request_id
@@ -86,7 +86,7 @@ module Appsignal
             transaction.set_action_if_nil("#{channel.class}#unsubscribed")
             transaction.set_metadata("path", request.path)
             transaction.set_metadata("method", "websocket")
-            transaction.add_params_if_nil { request.params }
+            transaction.add_request_payload_if_nil { request.params }
             transaction.add_headers_if_nil { request.env }
             transaction.add_session_data { request.session.to_h if request.respond_to? :session }
             transaction.add_tags(:request_id => request_id) if request_id

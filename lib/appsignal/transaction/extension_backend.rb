@@ -72,6 +72,20 @@ module Appsignal
         @handle.set_metadata(key, value)
       end
 
+      # The agent has a single params slot, so every params channel maps to one
+      # `:params` bucket. The transaction merges the channels into it, and only
+      # the `:params` key ever reaches `set_sample_data`.
+      PARAMS_MAPPING = {
+        :params => :params,
+        :request_payload => :params,
+        :function_parameters => :params,
+        :query_parameters => :params
+      }.freeze
+
+      def params_mapping
+        PARAMS_MAPPING
+      end
+
       # `data` is a raw Ruby Hash/Array; the C extension wants a `Data` object,
       # so serialize it here (mirrors how `set_error` serializes its backtrace).
       def set_sample_data(key, data)

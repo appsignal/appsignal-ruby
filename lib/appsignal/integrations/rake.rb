@@ -38,7 +38,7 @@ module Appsignal
             params, _ = args
             params = params.to_hash if params.respond_to?(:to_hash)
             transaction.set_action(name)
-            transaction.add_params_if_nil(params)
+            transaction.add_request_payload_if_nil(params)
             transaction.complete
           end
         end

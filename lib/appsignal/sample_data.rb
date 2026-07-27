@@ -61,6 +61,10 @@ module Appsignal
       @empty
     end
 
+    # The sample-data category this holds (e.g. `:params`, `:request_payload`).
+    # Used to name the data in log messages.
+    attr_reader :key
+
     protected
 
     attr_reader :blocks
