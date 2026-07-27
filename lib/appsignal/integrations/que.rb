@@ -43,7 +43,16 @@ module Appsignal
     # from within a web request or another job); otherwise it's a transparent
     # pass-through.
     module QueClientPlugin
-      def enqueue(*_args, job_options: {}, **_rest)
+      # The keyword arguments are captured into a single `**kwargs` hash, rather
+      # than declaring a `job_options:` keyword with a default, so that an
+      # implicit `super` forwards the original call unchanged. Declaring
+      # `job_options: {}` would bind that default even when the caller did not
+      # pass it, and `super` would then forward it to Que. On Que 0.14, whose
+      # `enqueue` takes only positional arguments, that extra keyword ends up
+      # persisted as an additional job argument.
+      def enqueue(*_args, **kwargs)
+        job_options = kwargs[:job_options] || {}
+
         # Inside a `bulk_enqueue` block the batch is recorded once by the
         # `bulk_enqueue` wrapper, so each inner enqueue is a pass-through to
         # avoid recording an event per job.

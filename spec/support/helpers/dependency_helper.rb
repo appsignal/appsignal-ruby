@@ -164,6 +164,11 @@ module DependencyHelper
     dependency_present? "code_ownership"
   end
 
+  def que1_present?
+    que_present? &&
+      Gem.loaded_specs["que"].version >= Gem::Version.new("1.0.0")
+  end
+
   def que2_present?
     que_present? &&
       Gem.loaded_specs["que"].version >= Gem::Version.new("2.0.0")

@@ -219,6 +219,7 @@ matrix:
           - "3.1.6"
           - "3.0.7"
           - "2.7.8"
+    - gem: "que-0.14"
     - gem: "que-1"
     - gem: "que-2"
     - gem: "rails-6.0"
