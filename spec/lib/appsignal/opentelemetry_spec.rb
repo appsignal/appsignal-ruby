@@ -423,3 +423,63 @@ if DependencyHelper.opentelemetry_present?
     end
   end
 end
+
+# The version gate compares installed gem versions against `REQUIRED_GEMS`.
+# These specs stub `Gem.loaded_specs`, so they need no OpenTelemetry gems
+# installed and run outside the `opentelemetry_present?` guard above.
+describe Appsignal::OpenTelemetry, "collector-mode gem version gate" do
+  before { described_class.reset! }
+  after { described_class.reset! }
+
+  # Stand in for the installed gems using a `{ name => version }` map. Any gem
+  # not in the map is treated as not installed.
+  def stub_loaded_specs(versions)
+    specs = versions.transform_values do |version|
+      instance_double(Gem::Specification, :version => Gem::Version.new(version))
+    end
+    allow(Gem).to receive(:loaded_specs).and_return(specs)
+  end
+
+  # Capture the message passed to the warning logger by the gate.
+  def captured_warning
+    message = nil
+    allow(Appsignal::Utils::StdoutAndLoggerMessage)
+      .to receive(:warning) { |msg| message = msg }
+    expect(described_class.send(:required_gem_versions_met?)).to be(false)
+    message
+  end
+
+  context "when every required gem is missing" do
+    before { stub_loaded_specs({}) }
+
+    it "warns with only the appsignal-opentelemetry recommendation" do
+      message = captured_warning
+
+      expect(message).to include("Add the `appsignal-opentelemetry` gem")
+      expect(message).to_not include("not compatible")
+      expect(message).to_not include("- opentelemetry")
+    end
+  end
+
+  context "when an installed gem is older than the supported version" do
+    before { stub_loaded_specs("opentelemetry-common" => "0.19.0") }
+
+    it "warns with the recommendation and a line for that gem" do
+      message = captured_warning
+
+      expect(message).to include("Add the `appsignal-opentelemetry` gem")
+      expect(message).to include("not compatible")
+      expect(message).to include("- opentelemetry-common 0.19.0 (requires ~> 0.23)")
+    end
+  end
+
+  context "when an installed gem is newer than the supported version" do
+    before { stub_loaded_specs("opentelemetry-common" => "1.0.0") }
+
+    it "flags the too-new gem as incompatible" do
+      message = captured_warning
+
+      expect(message).to include("- opentelemetry-common 1.0.0 (requires ~> 0.23)")
+    end
+  end
+end
