@@ -6,6 +6,6 @@
 # the runtime version gate.
 require_relative "../lib/appsignal/opentelemetry/dependencies"
 
-Appsignal::OpenTelemetry::REQUIRED_GEMS.each do |name, minimum_version|
-  gem name, ">= #{minimum_version}"
+Appsignal::OpenTelemetry::REQUIRED_GEMS.each do |name, constraints|
+  gem name, *constraints
 end
