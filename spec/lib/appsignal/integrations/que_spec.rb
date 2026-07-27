@@ -217,6 +217,14 @@ if DependencyHelper.que_present?
     end
     around { |example| keep_transactions { example.run } }
 
+    # The arguments are the fifth value Que passes to its `:insert_job` query on
+    # every version. Que 1 and up serialise them to JSON first; Que 0.x hands
+    # over the array itself.
+    def enqueued_args
+      args = captured[:values] && captured[:values][4]
+      args.is_a?(String) ? JSON.parse(args) : args
+    end
+
     # `data` is the last value Que passes to its `:insert_job` query on both Que
     # 1 and Que 2 (Que 2 inserts `kwargs` before it, shifting its index); the
     # tags live under it as a JSON string.
@@ -236,8 +244,18 @@ if DependencyHelper.que_present?
       end
     end
 
+    # Whatever the plugin does, it must forward the enqueue call to Que
+    # unchanged. This matters most on Que 0.x, which turns any keyword argument
+    # it does not recognise into an extra job argument. That means a keyword the
+    # plugin adds to the call itself, such as an empty `job_options` default,
+    # would be persisted as a job argument and break the job when it runs.
+    def expect_job_to_be_enqueued_unchanged
+      expect(enqueued_args).to eq(["post_id_123"])
+      expect(enqueued_tags).to eq(["user:42"]) if DependencyHelper.que1_present?
+    end
+
     context "with an active transaction" do
-      it "records an enqueue event and leaves the job's tags untouched" do
+      it "records an enqueue event and leaves the job's arguments untouched" do
         transaction = http_request_transaction
         set_current_transaction(transaction)
 
@@ -247,7 +265,7 @@ if DependencyHelper.que_present?
         event = transaction.to_h["events"].find { |e| e["name"] == "enqueue.que" }
         expect(event).to_not be_nil
         expect(event["title"]).to eq("enqueue MyQueJob job")
-        expect(enqueued_tags).to eq(["user:42"]) if DependencyHelper.que1_present?
+        expect_job_to_be_enqueued_unchanged
       end
     end
 
@@ -255,7 +273,7 @@ if DependencyHelper.que_present?
       it "is a transparent pass-through" do
         expect { enqueue }.to_not raise_error
 
-        expect(enqueued_tags).to eq(["user:42"]) if DependencyHelper.que1_present?
+        expect_job_to_be_enqueued_unchanged
       end
     end
 
@@ -270,6 +288,7 @@ if DependencyHelper.que_present?
         # The outer integration records the enqueue, so this one doesn't.
         event_names = transaction.to_h["events"].map { |event| event["name"] }
         expect(event_names).to_not include("enqueue.que")
+        expect_job_to_be_enqueued_unchanged
       end
     end
 
