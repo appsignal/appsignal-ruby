@@ -366,9 +366,10 @@ namespace :build do
     #
     # Clear the Bundler environment first so the sub-build resolves against the
     # package's own Gemfile instead of inheriting this repository's
-    # BUNDLE_GEMFILE.
+    # BUNDLE_GEMFILE. Install its dependencies first, then build it.
     Bundler.with_unbundled_env do
       Dir.chdir("packages/opentelemetry") do
+        sh "bundle install"
         sh "bundle exec rake build:all"
       end
     end
