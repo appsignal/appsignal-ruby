@@ -1,5 +1,16 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.9.1
+
+_Published on 2026-07-27._
+
+### Fixed
+
+- Fix Que jobs being corrupted on enqueue when using Que 0.x. This was introduced
+  in version 4.9.0. Que 1 and Que 2 were not affected.
+
+  (patch [947d06b2](https://github.com/appsignal/appsignal-ruby/commit/947d06b2793ede14f9c0350f0b4a338cce7d1452), [1cc52bf3](https://github.com/appsignal/appsignal-ruby/commit/1cc52bf320571989c28af148d1086bdb872eab36))
+
 ## 4.9.0
 
 _Published on 2026-07-16._
