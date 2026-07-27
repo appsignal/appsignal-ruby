@@ -123,7 +123,11 @@ if DependencyHelper.que_present?
             "arguments" => %w[post_id_123 user_id_123]
           )
           expect(transaction).to include_tags(
-            "attempts" => 0,
+            # Que 0.x handles the error inside its own `_run` and counts the
+            # failed attempt there. That happens before the plugin reads the job
+            # attributes, so it reports one attempt. Que 1 and up leave the
+            # count to the worker, so they still report none here.
+            "attempts" => DependencyHelper.que1_present? ? 0 : 1,
             "id" => 123,
             "priority" => 100,
             "queue" => "dfl",
@@ -202,6 +206,13 @@ if DependencyHelper.que_present?
         [{}]
       end
 
+      # After enqueueing, Que 0.x wakes a worker through its adapter, which
+      # needs a database connection.
+      unless DependencyHelper.que1_present?
+        allow(Que).to receive(:adapter)
+          .and_return(double(:wake_worker_after_commit => nil))
+      end
+
       start_agent
     end
     around { |example| keep_transactions { example.run } }
@@ -214,8 +225,15 @@ if DependencyHelper.que_present?
       data ? JSON.parse(data)["tags"] : nil
     end
 
-    def enqueue(tags: ["user:42"])
-      job.enqueue("post_id_123", :job_options => { :tags => tags })
+    # Que 0.x has no `job_options` keyword and no tags at all. It reads its
+    # scheduling options from top-level keys in a trailing hash instead. So the
+    # tags are only passed, and only asserted, on Que 1 and up.
+    def enqueue
+      if DependencyHelper.que1_present?
+        job.enqueue("post_id_123", :job_options => { :tags => ["user:42"] })
+      else
+        job.enqueue("post_id_123")
+      end
     end
 
     context "with an active transaction" do
@@ -229,7 +247,7 @@ if DependencyHelper.que_present?
         event = transaction.to_h["events"].find { |e| e["name"] == "enqueue.que" }
         expect(event).to_not be_nil
         expect(event["title"]).to eq("enqueue MyQueJob job")
-        expect(enqueued_tags).to eq(["user:42"])
+        expect(enqueued_tags).to eq(["user:42"]) if DependencyHelper.que1_present?
       end
     end
 
@@ -237,7 +255,7 @@ if DependencyHelper.que_present?
       it "is a transparent pass-through" do
         expect { enqueue }.to_not raise_error
 
-        expect(enqueued_tags).to eq(["user:42"])
+        expect(enqueued_tags).to eq(["user:42"]) if DependencyHelper.que1_present?
       end
     end
 
