@@ -18,10 +18,10 @@ RSpec.describe "appsignal-opentelemetry.gemspec" do
     expect(gemspec.required_ruby_version.to_s).to eq(">= 3.1")
   end
 
-  it "depends on appsignal plus every required OpenTelemetry gem at its floor" do
+  it "depends on appsignal plus every required OpenTelemetry gem at its constraints" do
     expected = { "appsignal" => "= #{gemspec.version}" }
-    Appsignal::OpenTelemetry::REQUIRED_GEMS.each do |name, minimum_version|
-      expected[name] = ">= #{minimum_version}"
+    Appsignal::OpenTelemetry::REQUIRED_GEMS.each do |name, constraints|
+      expected[name] = Gem::Requirement.new(*constraints).to_s
     end
 
     actual = gemspec.dependencies.to_h do |dependency|

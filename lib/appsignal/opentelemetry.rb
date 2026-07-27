@@ -279,29 +279,67 @@ module Appsignal
       # On a shortfall, warns and flags the SDK as not started so the caller
       # falls back to the agent; returns whether all requirements are met.
       def required_gem_versions_met?
-        unmet = unmet_gem_requirements
-        return true if unmet.empty?
+        incompatible = incompatible_gems
+        return true if incompatible.nil?
 
         @started = false
         Appsignal::Utils::StdoutAndLoggerMessage.warning(
-          "Cannot enable collector mode: the installed OpenTelemetry gems are " \
-            "older than the minimum supported versions (#{unmet.join(", ")}). " \
-            "Update them in your Gemfile; the AppSignal agent will be used instead."
+          collector_gems_warning(incompatible)
         )
         false
       end
 
-      # Descriptions of the OpenTelemetry gems that are missing or older than
-      # the minimum version in {REQUIRED_GEMS}. Empty when all are satisfied.
-      def unmet_gem_requirements
-        REQUIRED_GEMS.filter_map do |name, minimum|
+      # Builds the warning shown when the OpenTelemetry gems collector mode
+      # needs are not all installed at a supported version. `incompatible` is
+      # the list of descriptions for gems that are installed but at a version
+      # we do not support.
+      #
+      # The message always recommends the `appsignal-opentelemetry` gem, which
+      # installs the whole set at supported versions. It does not list gems
+      # that are simply missing, because that is the common "not set up yet"
+      # case that the recommendation already covers. It only appends a list
+      # when some gems are installed at an incompatible version, because that
+      # usually means a version constraint in the bundle that the
+      # `appsignal-opentelemetry` gem cannot override on its own.
+      def collector_gems_warning(incompatible)
+        message =
+          "AppSignal collector mode requires a set of OpenTelemetry gems. " \
+            "Add the `appsignal-opentelemetry` gem to your bundle to install " \
+            "them. The AppSignal agent will be used instead."
+
+        unless incompatible.empty?
+          message += "\n\nThese installed OpenTelemetry gems are not compatible " \
+            "with this AppSignal version. Update them or remove a version " \
+            "constraint:\n"
+          message += incompatible.map { |line| "- #{line}" }.join("\n")
+        end
+
+        message
+      end
+
+      # Checks the installed OpenTelemetry gems against {REQUIRED_GEMS}. Returns
+      # `nil` when every required gem is installed at a supported version.
+      # Otherwise returns the descriptions of gems that are installed but at a
+      # version we do not support. That list is empty when the only problem is
+      # that some required gems are not installed at all.
+      def incompatible_gems
+        missing = false
+        incompatible = []
+
+        REQUIRED_GEMS.each do |name, constraints|
           spec = Gem.loaded_specs[name]
+          requirement = Gem::Requirement.new(*constraints)
+
           if spec.nil?
-            "#{name} (not installed)"
-          elsif spec.version < Gem::Version.new(minimum)
-            "#{name} #{spec.version} (requires >= #{minimum})"
+            missing = true
+          elsif !requirement.satisfied_by?(spec.version)
+            incompatible << "#{name} #{spec.version} (requires #{requirement})"
           end
         end
+
+        return nil if !missing && incompatible.empty?
+
+        incompatible
       end
     end
   end
