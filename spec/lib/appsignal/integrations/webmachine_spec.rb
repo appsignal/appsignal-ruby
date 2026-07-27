@@ -116,7 +116,7 @@ if DependencyHelper.webmachine_present?
         end
       end
 
-      describe "sets the params" do
+      describe "sets the query parameters" do
         it "in agent mode", :agent_mode do
           start_agent
           perform
@@ -126,7 +126,7 @@ if DependencyHelper.webmachine_present?
         it "in collector mode", :collector_mode do
           start_collector_agent
           perform
-          params = JSON.parse(root_span.attributes["appsignal.request.payload"])
+          params = JSON.parse(root_span.attributes["appsignal.request.query_parameters"])
           expect(params).to include("param1" => "value1", "param2" => "value2")
         end
       end
@@ -210,7 +210,7 @@ if DependencyHelper.webmachine_present?
           end
         end
 
-        describe "sets the params" do
+        describe "sets the query parameters" do
           it "in agent mode", :agent_mode do
             start_agent
             set_current_transaction(transaction)
@@ -226,7 +226,7 @@ if DependencyHelper.webmachine_present?
             # The parent transaction is not closed by `fsm.run`; finish it so
             # its span is exported.
             transaction.complete
-            params = JSON.parse(root_span.attributes["appsignal.request.payload"])
+            params = JSON.parse(root_span.attributes["appsignal.request.query_parameters"])
             expect(params).to include("param1" => "value1", "param2" => "value2")
           end
         end
