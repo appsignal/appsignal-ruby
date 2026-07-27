@@ -46,7 +46,7 @@ Gem::Specification.new do |gem|
   # Add the OpenTelemetry gems by looping over the shared list instead of
   # listing them here. This keeps `REQUIRED_GEMS` the single source of truth,
   # so this gem's dependencies can never drift from what the runtime requires.
-  Appsignal::OpenTelemetry::REQUIRED_GEMS.each do |name, minimum_version|
-    gem.add_dependency name, ">= #{minimum_version}"
+  Appsignal::OpenTelemetry::REQUIRED_GEMS.each do |name, constraints|
+    gem.add_dependency name, *constraints
   end
 end
