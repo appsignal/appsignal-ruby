@@ -273,14 +273,13 @@ module Appsignal
 
       # Records the error as an `exception` event on AppSignal's current span --
       # the open event span, or the root -- so it attaches to the operation that
-      # raised it. Uses AppSignal's own span, not the OTel current span, which
-      # may belong to another instrumentation. `appsignal.alert_this_error` tells
-      # the collector to report it even on a child span; the collector computes
-      # the digest. Causes ride on one `appsignal.error_causes` JSON attribute
-      # (keys match the processor's `ErrorSubCause`); separate cause events would
-      # each become their own incident. Each cause only carries the part of its
-      # backtrace that the reported error's backtrace does not already end with
-      # (see `lines_without_shared_tail`).
+      # raised it. `appsignal.alert_this_error` tells the collector to report it
+      # even on a child span.
+      #
+      # Causes ride on one `appsignal.error_causes` JSON attribute, whose keys
+      # match the processor's `ErrorSubCause`. Separate cause events would each
+      # become their own incident. Each cause carries only the part of its
+      # backtrace that is not shared (see `trim_shared_tail`).
       def set_error(class_name, message, backtrace, causes, _root_cause_missing)
         span = current_span
         error_lines = Array(backtrace)
@@ -295,11 +294,15 @@ module Appsignal
         unless causes.empty?
           attributes["appsignal.error_causes"] = JSON.generate(
             causes.map do |cause|
-              {
+              lines, lines_omitted = trim_shared_tail(Array(cause[:backtrace]), error_lines)
+
+              cause_attributes = {
                 "name" => cause[:name],
                 "message" => cause[:message],
-                "lines" => lines_without_shared_tail(Array(cause[:backtrace]), error_lines)
+                "lines" => lines
               }
+              cause_attributes["lines_omitted"] = lines_omitted if lines_omitted.positive?
+              cause_attributes
             end
           )
         end
@@ -685,30 +688,26 @@ module Appsignal
       end
 
       # Returns the leading lines of a cause's backtrace that the reported
-      # error's own backtrace does not already end with.
-      #
-      # A cause is raised somewhere inside the frames that led to the reported
-      # error, so both backtraces share the same trailing frames -- everything
-      # from the raise point outwards, which for a web request is the whole
-      # framework and web server stack. Those lines are already sent once, in
-      # `exception.stacktrace`. Repeating them for every cause pushed the
-      # `appsignal.error_causes` attribute past the length the collector
-      # accepts, and the collector truncates an over-long attribute into
-      # invalid JSON, so it could not read the causes at all and dropped them.
+      # error's backtrace does not already end with, and how many trailing lines
+      # were dropped to get there.
       #
       # A cause shares its trailing frames with the error it led to, and those
       # are already sent in `exception.stacktrace`. Repeating them for every
       # cause makes `appsignal.error_causes` too long for the collector to read.
-      def lines_without_shared_tail(cause_lines, error_lines)
+      #
+      # If every line is shared, one is kept, because a cause with no lines
+      # leaves the UI nothing to show. That kept line does not count as dropped.
+      def trim_shared_tail(cause_lines, error_lines)
         shared = 0
         while shared < cause_lines.length && shared < error_lines.length &&
             cause_lines[-1 - shared] == error_lines[-1 - shared]
           shared += 1
         end
 
-        return cause_lines if shared.zero?
+        return [cause_lines, 0] if shared.zero?
 
-        cause_lines.first([cause_lines.length - shared, 1].max)
+        kept = [cause_lines.length - shared, 1].max
+        [cause_lines.first(kept), cause_lines.length - kept]
       end
 
       # The OTel span name is what the collector surfaces as the event's
