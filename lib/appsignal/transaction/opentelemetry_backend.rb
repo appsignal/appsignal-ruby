@@ -283,7 +283,7 @@ module Appsignal
       # (keys match the processor's `ErrorSubCause`); separate cause events would
       # each become their own incident. Each cause only carries the part of its
       # backtrace that the reported error's backtrace does not already end with
-      # (see `lines_without_shared_tail`).
+      # (see `trim_shared_tail`).
       def set_error(class_name, message, backtrace, causes, _root_cause_missing)
         span = current_span
         error_lines = Array(backtrace)
@@ -298,11 +298,15 @@ module Appsignal
         unless causes.empty?
           attributes["appsignal.error_causes"] = JSON.generate(
             causes.map do |cause|
-              {
+              lines, lines_omitted = trim_shared_tail(Array(cause[:backtrace]), error_lines)
+
+              cause_attributes = {
                 "name" => cause[:name],
                 "message" => cause[:message],
-                "lines" => lines_without_shared_tail(Array(cause[:backtrace]), error_lines)
+                "lines" => lines
               }
+              cause_attributes["lines_omitted"] = lines_omitted if lines_omitted.positive?
+              cause_attributes
             end
           )
         end
@@ -708,8 +712,9 @@ module Appsignal
         end
       end
 
-      # Returns the leading lines of a cause's backtrace that the reported
-      # error's own backtrace does not already end with.
+      # Returns two values: the leading lines of a cause's backtrace that the
+      # reported error's own backtrace does not already end with, and how many
+      # trailing lines were dropped to get there.
       #
       # A cause is raised somewhere inside the frames that led to the reported
       # error, so both backtraces share the same trailing frames -- everything
@@ -724,16 +729,22 @@ module Appsignal
       # backtrace unique to the cause: where it was raised. Lines are compared
       # from the end as plain strings. If every line is shared, keep the first
       # one, because a cause with no lines leaves the UI nothing to show.
-      def lines_without_shared_tail(cause_lines, error_lines)
+      #
+      # The dropped count is returned so that the cause can report it, which
+      # lets the UI say how much of the backtrace is not being shown. It counts
+      # the lines actually removed, so when a shared line is kept it is not
+      # counted as dropped.
+      def trim_shared_tail(cause_lines, error_lines)
         shared = 0
         while shared < cause_lines.length && shared < error_lines.length &&
             cause_lines[-1 - shared] == error_lines[-1 - shared]
           shared += 1
         end
 
-        return cause_lines if shared.zero?
+        return [cause_lines, 0] if shared.zero?
 
-        cause_lines.first([cause_lines.length - shared, 1].max)
+        kept = [cause_lines.length - shared, 1].max
+        [cause_lines.first(kept), cause_lines.length - kept]
       end
 
       # The OTel span name is what the collector surfaces as the event's
