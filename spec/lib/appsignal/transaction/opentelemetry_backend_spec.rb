@@ -881,9 +881,12 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
     end
 
     describe "a cause backtrace that shares its last lines with the error's" do
-      def cause_lines(backend)
+      def parsed_causes(backend)
         JSON.parse(exception_event(backend).attributes["appsignal.error_causes"])
-          .map { |cause| cause["lines"] }
+      end
+
+      def cause_lines(backend)
+        parsed_causes(backend).map { |cause| cause["lines"] }
       end
 
       it "drops the trailing lines the cause shares with the error" do
@@ -965,6 +968,80 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
         backend.set_error("RuntimeError", "boom", ["shared 1"], causes, false)
 
         expect(cause_lines(backend)).to eq([[], []])
+      end
+
+      it "reports how many lines were dropped from each cause" do
+        backend = create_backend
+        causes = [
+          {
+            :name => "ArgumentError", :message => "bad arg",
+            :backtrace => ["cause 1", "cause 2", "shared 1", "shared 2"]
+          },
+          {
+            :name => "KeyError", :message => "missing",
+            :backtrace => ["cause 3", "shared 2"]
+          }
+        ]
+        backend.set_error(
+          "RuntimeError", "boom", ["line 1", "shared 1", "shared 2"], causes, false
+        )
+
+        expect(parsed_causes(backend)).to eq(
+          [
+            {
+              "name" => "ArgumentError", "message" => "bad arg",
+              "lines" => ["cause 1", "cause 2"], "lines_omitted" => 2
+            },
+            {
+              "name" => "KeyError", "message" => "missing",
+              "lines" => ["cause 3"], "lines_omitted" => 1
+            }
+          ]
+        )
+      end
+
+      it "reports no dropped lines for a cause that shares no lines" do
+        backend = create_backend
+        causes = [
+          {
+            :name => "ArgumentError", :message => "bad arg",
+            :backtrace => ["shared 1", "shared 2", "cause 1"]
+          }
+        ]
+        backend.set_error(
+          "RuntimeError", "boom", ["shared 1", "shared 2", "line 1"], causes, false
+        )
+
+        expect(parsed_causes(backend).first).not_to have_key("lines_omitted")
+      end
+
+      # Every line is shared, but the first one is kept, so it was not dropped
+      # and is not counted.
+      it "does not count the shared line it keeps when every line is shared" do
+        backend = create_backend
+        causes = [
+          {
+            :name => "ArgumentError", :message => "bad arg",
+            :backtrace => ["shared 1", "shared 2", "shared 3"]
+          }
+        ]
+        backend.set_error(
+          "RuntimeError", "boom", ["line 1", "shared 1", "shared 2", "shared 3"], causes, false
+        )
+
+        cause = parsed_causes(backend).first
+        expect(cause["lines"]).to eq(["shared 1"])
+        expect(cause["lines_omitted"]).to eq(2)
+      end
+
+      it "reports no dropped lines when the only line a cause has is shared" do
+        backend = create_backend
+        causes = [{ :name => "ArgumentError", :message => "bad arg", :backtrace => ["shared 1"] }]
+        backend.set_error("RuntimeError", "boom", ["line 1", "shared 1"], causes, false)
+
+        cause = parsed_causes(backend).first
+        expect(cause["lines"]).to eq(["shared 1"])
+        expect(cause).not_to have_key("lines_omitted")
       end
     end
 
