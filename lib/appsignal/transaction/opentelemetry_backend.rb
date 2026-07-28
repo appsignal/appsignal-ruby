@@ -278,14 +278,17 @@ module Appsignal
       # the collector to report it even on a child span; the collector computes
       # the digest. Causes ride on one `appsignal.error_causes` JSON attribute
       # (keys match the processor's `ErrorSubCause`); separate cause events would
-      # each become their own incident.
+      # each become their own incident. Each cause only carries the part of its
+      # backtrace that the reported error's backtrace does not already end with
+      # (see `lines_without_shared_tail`).
       def set_error(class_name, message, backtrace, causes, _root_cause_missing)
         span = current_span
+        error_lines = Array(backtrace)
 
         attributes = {
           "exception.type" => class_name,
           "exception.message" => message.to_s,
-          "exception.stacktrace" => Array(backtrace).join("\n"),
+          "exception.stacktrace" => error_lines.join("\n"),
           "appsignal.alert_this_error" => true
         }
 
@@ -295,7 +298,7 @@ module Appsignal
               {
                 "name" => cause[:name],
                 "message" => cause[:message],
-                "lines" => cause[:backtrace] || []
+                "lines" => lines_without_shared_tail(Array(cause[:backtrace]), error_lines)
               }
             end
           )
@@ -679,6 +682,33 @@ module Appsignal
           value = value.to_s if value.is_a?(Symbol)
           @span.set_attribute("appsignal.tag.#{key}", value)
         end
+      end
+
+      # Returns the leading lines of a cause's backtrace that the reported
+      # error's own backtrace does not already end with.
+      #
+      # A cause is raised somewhere inside the frames that led to the reported
+      # error, so both backtraces share the same trailing frames -- everything
+      # from the raise point outwards, which for a web request is the whole
+      # framework and web server stack. Those lines are already sent once, in
+      # `exception.stacktrace`. Repeating them for every cause pushed the
+      # `appsignal.error_causes` attribute past the length the collector
+      # accepts, and the collector truncates an over-long attribute into
+      # invalid JSON, so it could not read the causes at all and dropped them.
+      #
+      # A cause shares its trailing frames with the error it led to, and those
+      # are already sent in `exception.stacktrace`. Repeating them for every
+      # cause makes `appsignal.error_causes` too long for the collector to read.
+      def lines_without_shared_tail(cause_lines, error_lines)
+        shared = 0
+        while shared < cause_lines.length && shared < error_lines.length &&
+            cause_lines[-1 - shared] == error_lines[-1 - shared]
+          shared += 1
+        end
+
+        return cause_lines if shared.zero?
+
+        cause_lines.first([cause_lines.length - shared, 1].max)
       end
 
       # The OTel span name is what the collector surfaces as the event's

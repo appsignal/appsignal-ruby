@@ -880,6 +880,94 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
       expect(parsed).to eq([{ "name" => "ArgumentError", "message" => "bad arg", "lines" => [] }])
     end
 
+    describe "a cause backtrace that shares its last lines with the error's" do
+      def cause_lines(backend)
+        JSON.parse(exception_event(backend).attributes["appsignal.error_causes"])
+          .map { |cause| cause["lines"] }
+      end
+
+      it "drops the trailing lines the cause shares with the error" do
+        backend = create_backend
+        causes = [
+          {
+            :name => "ArgumentError", :message => "bad arg",
+            :backtrace => ["cause 1", "cause 2", "shared 1", "shared 2"]
+          },
+          {
+            :name => "KeyError", :message => "missing",
+            :backtrace => ["cause 3", "shared 1", "shared 2"]
+          }
+        ]
+        backend.set_error(
+          "RuntimeError", "boom", ["line 1", "shared 1", "shared 2"], causes, false
+        )
+
+        expect(cause_lines(backend)).to eq([["cause 1", "cause 2"], ["cause 3"]])
+      end
+
+      it "keeps every line when the last lines differ" do
+        backend = create_backend
+        causes = [
+          {
+            :name => "ArgumentError", :message => "bad arg",
+            :backtrace => ["shared 1", "shared 2", "cause 1"]
+          }
+        ]
+        backend.set_error(
+          "RuntimeError", "boom", ["shared 1", "shared 2", "line 1"], causes, false
+        )
+
+        expect(cause_lines(backend)).to eq([["shared 1", "shared 2", "cause 1"]])
+      end
+
+      it "keeps the first line when every line is shared" do
+        backend = create_backend
+        causes = [
+          {
+            :name => "ArgumentError", :message => "bad arg",
+            :backtrace => ["shared 1", "shared 2"]
+          }
+        ]
+        backend.set_error(
+          "RuntimeError", "boom", ["line 1", "shared 1", "shared 2"], causes, false
+        )
+
+        expect(cause_lines(backend)).to eq([["shared 1"]])
+      end
+
+      it "keeps the first line when the cause's backtrace is the error's backtrace" do
+        backend = create_backend
+        lines = ["shared 1", "shared 2"]
+        causes = [{ :name => "ArgumentError", :message => "bad arg", :backtrace => lines }]
+        backend.set_error("RuntimeError", "boom", lines, causes, false)
+
+        expect(cause_lines(backend)).to eq([["shared 1"]])
+      end
+
+      it "keeps every line when the error has no backtrace" do
+        causes = [{ :name => "ArgumentError", :message => "bad arg", :backtrace => ["cause 1"] }]
+
+        nil_backtrace = create_backend
+        nil_backtrace.set_error("RuntimeError", "boom", nil, causes, false)
+        expect(cause_lines(nil_backtrace)).to eq([["cause 1"]])
+
+        empty_backtrace = create_backend
+        empty_backtrace.set_error("RuntimeError", "boom", [], causes, false)
+        expect(cause_lines(empty_backtrace)).to eq([["cause 1"]])
+      end
+
+      it "sends no lines for a cause without a backtrace" do
+        backend = create_backend
+        causes = [
+          { :name => "ArgumentError", :message => "bad arg", :backtrace => nil },
+          { :name => "KeyError", :message => "missing", :backtrace => [] }
+        ]
+        backend.set_error("RuntimeError", "boom", ["shared 1"], causes, false)
+
+        expect(cause_lines(backend)).to eq([[], []])
+      end
+    end
+
     it "does not set appsignal.error_causes when there are no causes" do
       backend = create_backend
       backend.set_error("RuntimeError", "boom", ["line 1"], [], false)
