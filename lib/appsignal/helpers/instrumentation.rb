@@ -110,6 +110,10 @@ module Appsignal
       #   one of `:parent`, `:link`, `:both` or `:none`. Defaults to `:parent`.
       # @param opentelemetry_context In collector mode, an incoming OpenTelemetry
       #   trace context to relate this transaction's span to.
+      # @param opentelemetry_scope [Array(String, String)] In collector mode, the
+      #   OpenTelemetry instrumentation scope to record this transaction's spans
+      #   under, given as a `[name, version]` pair. Defaults to the AppSignal
+      #   scope.
       # @yield [] The block to monitor.
       # @yieldreturn [Object] The return value of the block
       # @raise [Exception] Any exception that occurs within the given block is
@@ -189,6 +193,10 @@ module Appsignal
       #   within the block with {#set_action}.
       #   This will not update the active transaction's action if
       #   {.monitor} is called when another transaction is already active.
+      # @param opentelemetry_scope [Array(String, String)] In collector mode, the
+      #   OpenTelemetry instrumentation scope to record this transaction's spans
+      #   under, given as a `[name, version]` pair. Defaults to the AppSignal
+      #   scope.
       # @yield [] The block to monitor.
       # @yieldreturn [Object] The return value of the block
       # @raise [Exception] Any exception that occurs within the given block is
@@ -252,6 +260,10 @@ module Appsignal
       #   one of `:parent`, `:link`, `:both` or `:none`. Defaults to `:parent`.
       # @param opentelemetry_context In collector mode, an incoming OpenTelemetry
       #   trace context to relate this transaction's span to.
+      # @param opentelemetry_scope [Array(String, String)] In collector mode, the
+      #   OpenTelemetry instrumentation scope to record this transaction's spans
+      #   under, given as a `[name, version]` pair. Defaults to the AppSignal
+      #   scope.
       # @yield [transaction] yields block to allow modification of the
       #   transaction before it's send.
       # @yieldparam transaction [Transaction] yields the AppSignal transaction
@@ -405,6 +417,10 @@ module Appsignal
       # @param opentelemetry_context In collector mode, an incoming OpenTelemetry
       #   trace context to relate this transaction's span to. Only used when a
       #   new transaction is created.
+      # @param opentelemetry_scope [Array(String, String)] In collector mode, the
+      #   OpenTelemetry instrumentation scope to record this transaction's spans
+      #   under, given as a `[name, version]` pair. Defaults to the AppSignal
+      #   scope.
       # @yield [transaction] yields block to allow modification of the
       #   transaction.
       # @yieldparam transaction [Transaction] yields the AppSignal transaction
@@ -935,6 +951,12 @@ module Appsignal
       #   instrumented. Accepted values are {EventFormatter::DEFAULT} and
       #   {EventFormatter::SQL_BODY_FORMAT}, but we recommend you use
       #   {.instrument_sql} instead of {EventFormatter::SQL_BODY_FORMAT}.
+      # @param opentelemetry_kind [Symbol] In collector mode, the OpenTelemetry
+      #   span kind for the event's span, such as `:client` for an outgoing HTTP
+      #   request. Defaults to the OpenTelemetry default of `:internal`.
+      # @param opentelemetry_scope [Array(String, String)] In collector mode, the
+      #   OpenTelemetry instrumentation scope to record the event's span under,
+      #   given as a `[name, version]` pair. Defaults to the AppSignal scope.
       # @yield [] yields the given block of code instrumented in an AppSignal
       #   event.
       # @return [Object] Returns the block's return value.
@@ -986,6 +1008,9 @@ module Appsignal
       #   naming guide listed under "See also".
       # @param title [String, nil] Human readable name of the event.
       # @param body [String, nil] SQL query that's being executed.
+      # @param opentelemetry_scope [Array(String, String)] In collector mode, the
+      #   OpenTelemetry instrumentation scope to record the event's span under,
+      #   given as a `[name, version]` pair. Defaults to the AppSignal scope.
       # @yield [] yields the given block of code instrumented in an AppSignal
       #   event.
       # @return [Object] Returns the block's return value.
