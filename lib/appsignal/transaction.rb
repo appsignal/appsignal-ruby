@@ -41,6 +41,10 @@ module Appsignal
       #   one of `:parent`, `:link`, `:both` or `:none`. Defaults to `:parent`.
       # @param opentelemetry_context In collector mode, an incoming OpenTelemetry
       #   trace context to relate this transaction's span to.
+      # @param opentelemetry_scope [Array(String, String)] In collector mode, the
+      #   OpenTelemetry instrumentation scope to record this transaction's spans
+      #   under, given as a `[name, version]` pair. Defaults to the AppSignal
+      #   scope.
       # @return [Transaction]
       def create(
         namespace,
