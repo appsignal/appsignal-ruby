@@ -155,7 +155,7 @@ module Appsignal
         return if @event_stack.empty?
 
         frame = @event_stack.pop
-        write_event_name_attributes(frame.span, name, title)
+        write_event_span_name(frame.span, name, title)
         write_event_body_attributes(frame.span, body, body_format)
         write_event_allocation_count(frame)
         ::OpenTelemetry::Context.detach(frame.token)
@@ -174,7 +174,7 @@ module Appsignal
           :start_timestamp => start_time,
           :kind => opentelemetry_kind
         )
-        write_event_name_attributes(span, name, title)
+        write_event_span_name(span, name, title)
         write_event_body_attributes(span, body, body_format)
         # A recorded event has no start hook, so we never measured its
         # allocations. We deliberately set no allocation attribute rather than a
@@ -688,7 +688,7 @@ module Appsignal
       # https://example.com"), it follows in parentheses, giving
       # "sql.active_record (User Load)". Some integrations pass the event
       # name as the title as well; in that case the name is not repeated.
-      def write_event_name_attributes(span, name, title)
+      def write_event_span_name(span, name, title)
         has_title = title && !title.empty? && title != name
         span.name = has_title ? "#{name} (#{title})" : name
       end
