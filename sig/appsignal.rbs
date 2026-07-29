@@ -265,6 +265,8 @@ module Appsignal
   # 
   # _@param_ `opentelemetry_context` — In collector mode, an incoming OpenTelemetry trace context to relate this transaction's span to.
   # 
+  # _@param_ `opentelemetry_scope` — In collector mode, the OpenTelemetry instrumentation scope to record this transaction's spans under, given as a `[name, version]` pair. Defaults to the AppSignal scope.
+  # 
   # _@return_ — The value of the given block is returned.
   # Returns `nil` if there already is a transaction active and no block
   # was given.
@@ -359,7 +361,7 @@ module Appsignal
                       action: (String | Symbol | NilClass),
                       ?namespace: (String | Symbol)?,
                       ?opentelemetry_context: untyped,
-                      ?opentelemetry_scope: untyped,
+                      ?opentelemetry_scope: [String, String]?,
                       ?opentelemetry_kind: Symbol?,
                       ?opentelemetry_relationship: Symbol?
                     ) ?{ () -> Object } -> Object?
@@ -376,10 +378,12 @@ module Appsignal
   # 
   # _@param_ `action` — The action name for the transaction. The action name is required to be set for the transaction to be reported. The argument can be set to `nil` or `:set_later` if the action is set within the block with {#set_action}. This will not update the active transaction's action if {.monitor} is called when another transaction is already active.
   # 
+  # _@param_ `opentelemetry_scope` — In collector mode, the OpenTelemetry instrumentation scope to record this transaction's spans under, given as a `[name, version]` pair. Defaults to the AppSignal scope.
+  # 
   # _@return_ — The value of the given block is returned.
   # 
   # _@see_ `monitor`
-  def self.monitor_and_stop: (action: (String | Symbol | NilClass), ?namespace: (String | Symbol)?, ?opentelemetry_scope: untyped) ?{ () -> Object } -> Object?
+  def self.monitor_and_stop: (action: (String | Symbol | NilClass), ?namespace: (String | Symbol)?, ?opentelemetry_scope: [String, String]?) ?{ () -> Object } -> Object?
 
   # Send an error to AppSignal regardless of the context.
   # 
@@ -404,6 +408,8 @@ module Appsignal
   # 
   # _@param_ `opentelemetry_context` — In collector mode, an incoming OpenTelemetry trace context to relate this transaction's span to.
   # 
+  # _@param_ `opentelemetry_scope` — In collector mode, the OpenTelemetry instrumentation scope to record this transaction's spans under, given as a `[name, version]` pair. Defaults to the AppSignal scope.
+  # 
   # Send an exception
   # ```ruby
   # begin
@@ -427,7 +433,7 @@ module Appsignal
   def self.send_error: (
                          Exception error,
                          ?opentelemetry_context: untyped,
-                         ?opentelemetry_scope: untyped,
+                         ?opentelemetry_scope: [String, String]?,
                          ?opentelemetry_kind: Symbol?,
                          ?opentelemetry_relationship: Symbol?
                        ) ?{ (Transaction transaction) -> void } -> void
@@ -508,6 +514,8 @@ module Appsignal
   # 
   # _@param_ `opentelemetry_context` — In collector mode, an incoming OpenTelemetry trace context to relate this transaction's span to. Only used when a new transaction is created.
   # 
+  # _@param_ `opentelemetry_scope` — In collector mode, the OpenTelemetry instrumentation scope to record this transaction's spans under, given as a `[name, version]` pair. Defaults to the AppSignal scope.
+  # 
   # ```ruby
   # class SomeController < ApplicationController
   #   def create
@@ -532,7 +540,7 @@ module Appsignal
   def self.report_error: (
                            Exception exception,
                            ?opentelemetry_context: untyped,
-                           ?opentelemetry_scope: untyped,
+                           ?opentelemetry_scope: [String, String]?,
                            ?opentelemetry_kind: Symbol?,
                            ?opentelemetry_relationship: Symbol?
                          ) ?{ (Transaction transaction) -> void } -> void
@@ -916,6 +924,10 @@ module Appsignal
   # 
   # _@param_ `body_format` — Enum for the type of event that is instrumented. Accepted values are {EventFormatter::DEFAULT} and {EventFormatter::SQL_BODY_FORMAT}, but we recommend you use {.instrument_sql} instead of {EventFormatter::SQL_BODY_FORMAT}.
   # 
+  # _@param_ `opentelemetry_kind` — In collector mode, the OpenTelemetry span kind for the event's span, such as `:client` for an outgoing HTTP request. Defaults to the OpenTelemetry default of `:internal`.
+  # 
+  # _@param_ `opentelemetry_scope` — In collector mode, the OpenTelemetry instrumentation scope to record the event's span under, given as a `[name, version]` pair. Defaults to the AppSignal scope.
+  # 
   # _@return_ — Returns the block's return value.
   # 
   # Simple instrumentation
@@ -946,8 +958,8 @@ module Appsignal
                          ?String? title,
                          ?String? body,
                          ?Integer body_format,
-                         ?opentelemetry_kind: untyped,
-                         ?opentelemetry_scope: untyped
+                         ?opentelemetry_kind: Symbol?,
+                         ?opentelemetry_scope: [String, String]?
                        ) -> Object
 
   # Instrumentation helper for SQL queries.
@@ -959,6 +971,8 @@ module Appsignal
   # _@param_ `title` — Human readable name of the event.
   # 
   # _@param_ `body` — SQL query that's being executed.
+  # 
+  # _@param_ `opentelemetry_scope` — In collector mode, the OpenTelemetry instrumentation scope to record the event's span under, given as a `[name, version]` pair. Defaults to the AppSignal scope.
   # 
   # _@return_ — Returns the block's return value.
   # 
@@ -987,7 +1001,7 @@ module Appsignal
                              String name,
                              ?String? title,
                              ?String? body,
-                             ?opentelemetry_scope: untyped
+                             ?opentelemetry_scope: [String, String]?
                            ) -> Object
 
   # Convenience method for ignoring instrumentation events in a block of
@@ -1652,10 +1666,12 @@ module Appsignal
     # _@param_ `opentelemetry_relationship` — In collector mode, how an incoming `opentelemetry_context` relates to this transaction's span: one of `:parent`, `:link`, `:both` or `:none`. Defaults to `:parent`.
     # 
     # _@param_ `opentelemetry_context` — In collector mode, an incoming OpenTelemetry trace context to relate this transaction's span to.
+    # 
+    # _@param_ `opentelemetry_scope` — In collector mode, the OpenTelemetry instrumentation scope to record this transaction's spans under, given as a `[name, version]` pair. Defaults to the AppSignal scope.
     def self.create: (
                        String namespace,
                        ?opentelemetry_context: untyped,
-                       ?opentelemetry_scope: untyped,
+                       ?opentelemetry_scope: [String, String]?,
                        ?opentelemetry_kind: Symbol?,
                        ?opentelemetry_relationship: Symbol?
                      ) -> Transaction
@@ -1980,6 +1996,8 @@ module Appsignal
       # 
       # _@param_ `opentelemetry_context` — In collector mode, an incoming OpenTelemetry trace context to relate this transaction's span to.
       # 
+      # _@param_ `opentelemetry_scope` — In collector mode, the OpenTelemetry instrumentation scope to record this transaction's spans under, given as a `[name, version]` pair. Defaults to the AppSignal scope.
+      # 
       # _@return_ — The value of the given block is returned.
       # Returns `nil` if there already is a transaction active and no block
       # was given.
@@ -2074,7 +2092,7 @@ module Appsignal
                      action: (String | Symbol | NilClass),
                      ?namespace: (String | Symbol)?,
                      ?opentelemetry_context: untyped,
-                     ?opentelemetry_scope: untyped,
+                     ?opentelemetry_scope: [String, String]?,
                      ?opentelemetry_kind: Symbol?,
                      ?opentelemetry_relationship: Symbol?
                    ) ?{ () -> Object } -> Object?
@@ -2091,10 +2109,12 @@ module Appsignal
       # 
       # _@param_ `action` — The action name for the transaction. The action name is required to be set for the transaction to be reported. The argument can be set to `nil` or `:set_later` if the action is set within the block with {#set_action}. This will not update the active transaction's action if {.monitor} is called when another transaction is already active.
       # 
+      # _@param_ `opentelemetry_scope` — In collector mode, the OpenTelemetry instrumentation scope to record this transaction's spans under, given as a `[name, version]` pair. Defaults to the AppSignal scope.
+      # 
       # _@return_ — The value of the given block is returned.
       # 
       # _@see_ `monitor`
-      def monitor_and_stop: (action: (String | Symbol | NilClass), ?namespace: (String | Symbol)?, ?opentelemetry_scope: untyped) ?{ () -> Object } -> Object?
+      def monitor_and_stop: (action: (String | Symbol | NilClass), ?namespace: (String | Symbol)?, ?opentelemetry_scope: [String, String]?) ?{ () -> Object } -> Object?
 
       # Send an error to AppSignal regardless of the context.
       # 
@@ -2119,6 +2139,8 @@ module Appsignal
       # 
       # _@param_ `opentelemetry_context` — In collector mode, an incoming OpenTelemetry trace context to relate this transaction's span to.
       # 
+      # _@param_ `opentelemetry_scope` — In collector mode, the OpenTelemetry instrumentation scope to record this transaction's spans under, given as a `[name, version]` pair. Defaults to the AppSignal scope.
+      # 
       # Send an exception
       # ```ruby
       # begin
@@ -2142,7 +2164,7 @@ module Appsignal
       def send_error: (
                         Exception error,
                         ?opentelemetry_context: untyped,
-                        ?opentelemetry_scope: untyped,
+                        ?opentelemetry_scope: [String, String]?,
                         ?opentelemetry_kind: Symbol?,
                         ?opentelemetry_relationship: Symbol?
                       ) ?{ (Transaction transaction) -> void } -> void
@@ -2223,6 +2245,8 @@ module Appsignal
       # 
       # _@param_ `opentelemetry_context` — In collector mode, an incoming OpenTelemetry trace context to relate this transaction's span to. Only used when a new transaction is created.
       # 
+      # _@param_ `opentelemetry_scope` — In collector mode, the OpenTelemetry instrumentation scope to record this transaction's spans under, given as a `[name, version]` pair. Defaults to the AppSignal scope.
+      # 
       # ```ruby
       # class SomeController < ApplicationController
       #   def create
@@ -2247,7 +2271,7 @@ module Appsignal
       def report_error: (
                           Exception exception,
                           ?opentelemetry_context: untyped,
-                          ?opentelemetry_scope: untyped,
+                          ?opentelemetry_scope: [String, String]?,
                           ?opentelemetry_kind: Symbol?,
                           ?opentelemetry_relationship: Symbol?
                         ) ?{ (Transaction transaction) -> void } -> void
@@ -2631,6 +2655,10 @@ module Appsignal
       # 
       # _@param_ `body_format` — Enum for the type of event that is instrumented. Accepted values are {EventFormatter::DEFAULT} and {EventFormatter::SQL_BODY_FORMAT}, but we recommend you use {.instrument_sql} instead of {EventFormatter::SQL_BODY_FORMAT}.
       # 
+      # _@param_ `opentelemetry_kind` — In collector mode, the OpenTelemetry span kind for the event's span, such as `:client` for an outgoing HTTP request. Defaults to the OpenTelemetry default of `:internal`.
+      # 
+      # _@param_ `opentelemetry_scope` — In collector mode, the OpenTelemetry instrumentation scope to record the event's span under, given as a `[name, version]` pair. Defaults to the AppSignal scope.
+      # 
       # _@return_ — Returns the block's return value.
       # 
       # Simple instrumentation
@@ -2661,8 +2689,8 @@ module Appsignal
                         ?String? title,
                         ?String? body,
                         ?Integer body_format,
-                        ?opentelemetry_kind: untyped,
-                        ?opentelemetry_scope: untyped
+                        ?opentelemetry_kind: Symbol?,
+                        ?opentelemetry_scope: [String, String]?
                       ) -> Object
 
       # Instrumentation helper for SQL queries.
@@ -2674,6 +2702,8 @@ module Appsignal
       # _@param_ `title` — Human readable name of the event.
       # 
       # _@param_ `body` — SQL query that's being executed.
+      # 
+      # _@param_ `opentelemetry_scope` — In collector mode, the OpenTelemetry instrumentation scope to record the event's span under, given as a `[name, version]` pair. Defaults to the AppSignal scope.
       # 
       # _@return_ — Returns the block's return value.
       # 
@@ -2702,7 +2732,7 @@ module Appsignal
                             String name,
                             ?String? title,
                             ?String? body,
-                            ?opentelemetry_scope: untyped
+                            ?opentelemetry_scope: [String, String]?
                           ) -> Object
 
       # Convenience method for ignoring instrumentation events in a block of
