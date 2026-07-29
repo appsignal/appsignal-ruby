@@ -60,21 +60,35 @@ module Appsignal
       end
 
       def stop
-        @mutex.synchronize do
-          # Flush all events before closing the queue.
-          push_events
-        rescue ClosedQueueError
-          # The queue is already closed (by a previous call to `#stop`)
-          # so it is not possible to push events to it anymore.
-        ensure
-          # Ensure calling `#stop` closes the queue and kills
-          # the waker thread, disallowing any further events from being
-          # scheduled with `#schedule`.
-          stop_waker
-          @queue.close
+        waker = nil
+        thread = nil
 
-          # Block until the thread has finished.
-          @thread&.join
+        begin
+          @mutex.synchronize do
+            # Flush all events before closing the queue. Do not schedule another
+            # debounce, since no more events will be transmitted after this one.
+            push_events(:reschedule => false)
+          rescue ClosedQueueError
+            # The queue is already closed (by a previous call to `#stop`)
+            # so it is not possible to push events to it anymore.
+          ensure
+            # Ensure calling `#stop` closes the queue and kills
+            # the waker thread, disallowing any further events from being
+            # scheduled with `#schedule`.
+            waker = kill_waker
+            @queue.close
+            thread = @thread
+          end
+        ensure
+          # Block until both threads have finished, even when stopping raised,
+          # so that events that were already pushed are still transmitted.
+          #
+          # Wait for them after the mutex has been released, because the waker
+          # thread must acquire the mutex in order to finish. Waiting for it
+          # while holding the mutex would deadlock if killing it did not take
+          # effect before it awoke from its debounce.
+          waker&.join
+          thread&.join
         end
       end
 
@@ -135,12 +149,16 @@ module Appsignal
 
       # Must be called from within a `@mutex.synchronize` block.
       def start_waker(debounce)
-        stop_waker
+        kill_waker
 
         @waker = Thread.new do
           sleep(debounce)
 
           @mutex.synchronize do
+            # Do nothing if this waker was replaced while it slept, which can
+            # happen when killing it did not take effect.
+            next unless @waker == Thread.current
+
             # Make sure this waker doesn't get killed, so it can push
             # events and schedule a new waker.
             @waker = nil
@@ -150,14 +168,22 @@ module Appsignal
       end
 
       # Must be called from within a `@mutex.synchronize` block.
-      def stop_waker
-        @waker&.kill
-        @waker&.join
+      #
+      # Returns the waker thread that was killed, if there was one, so that the
+      # caller can wait for it to finish after releasing the mutex.
+      def kill_waker
+        waker = @waker
         @waker = nil
+        waker&.kill
+        waker
       end
 
       # Must be called from within a `@mutex.synchronize` block.
-      def push_events
+      def push_events(reschedule: true)
+        # Do nothing when the queue is closed. This can happen when killing a
+        # waker thread did not take effect, and it awoke after the scheduler
+        # had been stopped.
+        return if @queue.closed?
         return if @events.empty?
 
         # Push a copy of the events to the queue, and clear the events array.
@@ -168,7 +194,7 @@ module Appsignal
         @queue.push(events)
         @events.clear
 
-        start_waker(BETWEEN_TRANSMISSIONS_DEBOUNCE_SECONDS)
+        start_waker(BETWEEN_TRANSMISSIONS_DEBOUNCE_SECONDS) if reschedule
       end
     end
   end

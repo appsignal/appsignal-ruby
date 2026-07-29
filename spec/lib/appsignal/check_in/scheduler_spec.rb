@@ -236,6 +236,50 @@ describe Appsignal::CheckIn::Scheduler do
       expect(waker.alive?).to be(false)
       expect(scheduler.waker).to be_nil
     end
+
+    it "can be stopped when killing the debounce does not take effect" do
+      # Use a longer debounce interval than the other examples, so that the
+      # debounce thread is certain to still be sleeping when its kill is stubbed
+      # and when the scheduler is stopped. Stopping waits out the rest of the
+      # interval, so it has to stay below the timeout used below.
+      stub_const("Appsignal::CheckIn::Scheduler::INITIAL_DEBOUNCE_SECONDS", 1)
+
+      stubs << stub_cron_check_in_request(
+        :events => [
+          {
+            "identifier" => "test",
+            "kind" => "finish",
+            "check_in_type" => "cron"
+          }
+        ]
+      )
+
+      Appsignal::CheckIn.cron("test")
+
+      # Killing a thread is not guaranteed to take effect before it runs again.
+      # Simulate the debounce thread surviving the first time it is killed, so
+      # that it awakes and waits for the scheduler's mutex. Later kills are
+      # performed, so that the scheduler can be stopped in the `after` hook.
+      waker = scheduler.waker
+      first_kill = true
+      allow(waker).to receive(:kill).and_wrap_original do |original|
+        if first_kill
+          first_kill = false
+          waker
+        else
+          original.call
+        end
+      end
+
+      # Use a timeout, so that a scheduler that waits for the debounce thread
+      # while holding the mutex that it needs fails this test instead of
+      # hanging.
+      Timeout.timeout(5) do
+        expect { scheduler.stop }.not_to raise_error
+      end
+
+      expect(scheduler.transmitted).to eq(1)
+    end
   end
 
   describe "when many events are sent" do
