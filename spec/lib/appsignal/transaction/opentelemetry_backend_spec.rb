@@ -769,6 +769,91 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
     end
   end
 
+  describe "#set_attributes" do
+    def root_span_of(backend)
+      finished_span(backend.instance_variable_get(:@span))
+    end
+
+    it "sets the attributes on the root span when no event is open" do
+      backend = create_backend
+      backend.set_attributes("http.request.method" => "GET")
+      backend.complete
+
+      expect(root_span_of(backend).attributes["http.request.method"]).to eq("GET")
+    end
+
+    it "sets the attributes on the open event span" do
+      backend = create_backend
+      backend.start_event
+      event_span = backend.instance_variable_get(:@event_stack).last.first
+      backend.set_attributes("db.system.name" => "redis")
+      backend.finish_event("query.redis", "GET foo", nil, Appsignal::EventFormatter::DEFAULT)
+      backend.complete
+
+      expect(finished_span(event_span).attributes["db.system.name"]).to eq("redis")
+    end
+
+    # The span an attribute lands on decides how the trace timeline reads it, so
+    # an attribute meant for the transaction must not leak onto an event.
+    it "leaves the root span untouched when an event is open" do
+      backend = create_backend
+      backend.start_event
+      backend.set_attributes("db.system.name" => "redis")
+      backend.finish_event("query.redis", "GET foo", nil, Appsignal::EventFormatter::DEFAULT)
+      backend.complete
+
+      expect(root_span_of(backend).attributes).to_not have_key("db.system.name")
+    end
+
+    it "sets the attributes on the innermost open event span" do
+      backend = create_backend
+      backend.start_event
+      outer_span = backend.instance_variable_get(:@event_stack).last.first
+      backend.start_event
+      inner_span = backend.instance_variable_get(:@event_stack).last.first
+      backend.set_attributes("db.system.name" => "redis")
+      backend.finish_event("query.redis", "GET foo", nil, Appsignal::EventFormatter::DEFAULT)
+      backend.finish_event("perform.job", "MyJob", nil, Appsignal::EventFormatter::DEFAULT)
+      backend.complete
+
+      expect(finished_span(inner_span).attributes["db.system.name"]).to eq("redis")
+      expect(finished_span(outer_span).attributes).to_not have_key("db.system.name")
+    end
+
+    it "converts values OTLP does not accept to strings" do
+      backend = create_backend
+      backend.set_attributes("appsignal.group" => :render)
+      backend.complete
+
+      expect(root_span_of(backend).attributes["appsignal.group"]).to eq("render")
+    end
+
+    it "keeps the values OTLP accepts as they are" do
+      backend = create_backend
+      backend.set_attributes(
+        "string" => "value",
+        "integer" => 1,
+        "float" => 1.5,
+        "boolean" => true
+      )
+      backend.complete
+
+      attributes = root_span_of(backend).attributes
+      expect(attributes["string"]).to eq("value")
+      expect(attributes["integer"]).to eq(1)
+      expect(attributes["float"]).to eq(1.5)
+      expect(attributes["boolean"]).to be(true)
+    end
+
+    it "converts symbol keys to strings" do
+      backend = create_backend
+      backend.set_attributes(:"db.system.name" => "redis")
+      backend.complete
+
+      expect(root_span_of(backend).attributes["db.system.name"]).to eq("redis")
+    end
+  end
+
   describe "appsignal.namespace attribute" do
     # The backend converts the internal namespaces to the values the collector
     # expects; everything else passes through.
@@ -1401,6 +1486,36 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
         expect(event_names(finished_span(foreign))).not_to include("exception")
         expect(event_names(finished_span(backend.instance_variable_get(:@span))))
           .not_to include("exception")
+      end
+
+      it "sets attributes on the root span, not a foreign current span" do
+        backend = create_backend
+        foreign = nil
+        with_foreign_current_span do |f|
+          foreign = f
+          backend.set_attributes("http.request.method" => "GET")
+        end
+        backend.complete
+
+        expect(finished_span(backend.instance_variable_get(:@span))
+          .attributes["http.request.method"]).to eq("GET")
+        expect(finished_span(foreign).attributes).to_not have_key("http.request.method")
+      end
+
+      it "sets attributes on the open event span, not a foreign current span" do
+        backend = create_backend
+        backend.start_event
+        event_span = backend.instance_variable_get(:@event_stack).last.first
+        foreign = nil
+        with_foreign_current_span do |f|
+          foreign = f
+          backend.set_attributes("db.system.name" => "redis")
+        end
+        backend.finish_event("query.redis", "GET foo", nil, Appsignal::EventFormatter::DEFAULT)
+        backend.complete
+
+        expect(finished_span(event_span).attributes["db.system.name"]).to eq("redis")
+        expect(finished_span(foreign).attributes).to_not have_key("db.system.name")
       end
 
       it "records a breadcrumb on the root span, not a foreign current span" do

@@ -1692,6 +1692,97 @@ describe Appsignal::Transaction do
     end
   end
 
+  describe "#add_opentelemetry_attributes" do
+    let(:transaction) { new_transaction }
+
+    describe "adding attributes when no event is open" do
+      def perform
+        transaction.add_opentelemetry_attributes("http.request.method" => "GET")
+      end
+
+      # Attributes describe an OpenTelemetry span, and agent mode has none, so
+      # they are dropped rather than stored as some other kind of data.
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to_not include_tags("http.request.method" => "GET")
+        expect(transaction).to_not include_metadata("http.request.method" => "GET")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(root_span.attributes["http.request.method"]).to eq("GET")
+      end
+    end
+
+    describe "adding attributes while an event is open" do
+      def perform
+        set_current_transaction(transaction)
+        Appsignal.instrument("query.redis") do
+          transaction.add_opentelemetry_attributes("db.system.name" => "redis")
+        end
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to_not include_tags("db.system.name" => "redis")
+        expect(transaction).to_not include_metadata("db.system.name" => "redis")
+      end
+
+      # Which span an attribute lands on decides how the trace timeline reads
+      # it, so an event's attributes must not spill onto the transaction.
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(event_span_for("query.redis").attributes["db.system.name"]).to eq("redis")
+        expect(root_span.attributes).to_not have_key("db.system.name")
+      end
+    end
+
+    describe "adding attributes after an event has finished" do
+      def perform
+        set_current_transaction(transaction)
+        Appsignal.instrument("query.redis") { nil }
+        transaction.add_opentelemetry_attributes("http.request.method" => "GET")
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to_not include_tags("http.request.method" => "GET")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(root_span.attributes["http.request.method"]).to eq("GET")
+        expect(event_span_for("query.redis").attributes)
+          .to_not have_key("http.request.method")
+      end
+    end
+
+    describe "when no attributes are given" do
+      it_in_both_modes "does nothing" do
+        expect { transaction.add_opentelemetry_attributes }.to_not raise_error
+        expect { transaction.add_opentelemetry_attributes(nil) }.to_not raise_error
+      end
+    end
+  end
+
   describe "#add_params deprecation" do
     let(:transaction) { new_transaction }
 
