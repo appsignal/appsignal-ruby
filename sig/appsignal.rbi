@@ -2022,6 +2022,36 @@ module Appsignal
     # _@param_ `start` — Queue start time in milliseconds.
     sig { params(start: Integer).void }
     def set_queue_start(start); end
+
+    # Add OpenTelemetry attributes to the span AppSignal is currently
+    # recording.
+    # 
+    # In collector mode, AppSignal records a transaction as an OpenTelemetry
+    # span, and every instrumented event as a child span. This adds attributes
+    # to whichever of those spans is open right now: the innermost event
+    # started by {Appsignal::Helpers::Instrumentation#instrument}, or the
+    # transaction's own span when no event is open.
+    # 
+    # Use this to describe what is being instrumented in OpenTelemetry's own
+    # terms, following the OpenTelemetry semantic conventions where they apply.
+    # Attributes have no equivalent outside collector mode, so this does
+    # nothing when collector mode is not active.
+    # 
+    # _@param_ `attributes` — Attributes to add to the current span. Values that are not a String, Integer, Float or boolean are converted to a String. Nothing is added when this is nil or empty.
+    # 
+    # Describing a database query
+    # ```ruby
+    # Appsignal.instrument("query.my_database") do
+    #   Appsignal::Transaction.current.add_opentelemetry_attributes(
+    #     "db.system.name" => "mysql"
+    #   )
+    #   run_the_query
+    # end
+    # ```
+    # 
+    # _@see_ `https://opentelemetry.io/docs/specs/semconv/` — OpenTelemetry semantic conventions
+    sig { params(attributes: T.nilable(T::Hash[String, Object])).void }
+    def add_opentelemetry_attributes(attributes = {}); end
   end
 
   # Custom markers are used on AppSignal.com to indicate events in an
