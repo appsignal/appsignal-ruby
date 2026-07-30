@@ -225,6 +225,19 @@ module Appsignal
         @span.set_attribute("appsignal.tag.#{key}", value)
       end
 
+      # Sets OpenTelemetry attributes on AppSignal's current span -- the open
+      # event span, or the root span when no event is open. This is how an
+      # integration describes what it instrumented in OpenTelemetry's own terms,
+      # such as `db.system.name` on a database query.
+      #
+      # Never the OTel current span, which may belong to another
+      # instrumentation. Values are coerced to the primitives OTLP accepts.
+      def set_attributes(attributes)
+        current_span.add_attributes(
+          Appsignal::OpenTelemetry::Attributes.format(attributes)
+        )
+      end
+
       # The collector keeps the request payload, the function parameters and the
       # query parameters as separate attributes, so each gets its own bucket.
       # Legacy `params` has no channel of its own, so it maps to the request

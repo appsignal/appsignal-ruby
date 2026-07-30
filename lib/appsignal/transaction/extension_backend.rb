@@ -75,6 +75,13 @@ module Appsignal
         @handle.set_metadata(key, value)
       end
 
+      # Agent mode has no OpenTelemetry spans, so there is nothing to set the
+      # attributes on. A transaction event has no attribute equivalent in the
+      # agent protocol either, so they are dropped rather than stored somewhere
+      # else.
+      def set_attributes(_attributes)
+      end
+
       # The agent has a single params slot, so every params channel maps to one
       # `:params` bucket. The transaction merges the channels into it, and only
       # the `:params` key ever reaches `set_sample_data`.
