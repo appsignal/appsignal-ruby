@@ -159,10 +159,15 @@ module Appsignal
         # transparent pass-through when there's no active transaction, and
         # `inject_context` no-ops outside collector mode.
         def enqueue(*, **)
-          # Skip recording the event when enqueue events are suppressed. That is
-          # the case when enqueue instrumentation is disabled, and it keeps this
-          # integration consistent with the standalone adapters (Sidekiq, ...),
-          # which already gate their own enqueue event on this check.
+          # When enqueue instrumentation is disabled, drop the trace context
+          # along with the event. Without an enqueue event there is no producer
+          # span, so the context we would write is that of whatever span is
+          # current, such as the surrounding web request. The job that performs
+          # later would then link back to a span that is not a producer.
+          return super if Appsignal.config && !Appsignal.config[:enable_job_enqueue_instrumentation]
+
+          # Another enqueue integration is already recording this enqueue, so
+          # don't record it a second time.
           if Appsignal::Transaction.current? &&
               Appsignal::Transaction.current.job_enqueue_events_suppressed?
             return super
