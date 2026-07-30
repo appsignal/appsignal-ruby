@@ -506,4 +506,36 @@ describe Appsignal::Integrations::ShoryukenClientMiddleware do
       expect(options[:message_attributes]).to have_key("traceparent")
     end
   end
+
+  context "when enqueue instrumentation is disabled" do
+    let(:start_agent_args) do
+      { :options => { :enable_job_enqueue_instrumentation => false } }
+    end
+
+    it "in agent mode", :agent_mode do
+      start_agent(**start_agent_args)
+      transaction = http_request_transaction
+      set_current_transaction(transaction)
+
+      enqueue
+
+      event_names = transaction.to_h["events"].map { |event| event["name"] }
+      expect(event_names).to_not include("enqueue.shoryuken")
+    end
+
+    it "in collector mode", :collector_mode do
+      start_collector_agent
+      transaction = http_request_transaction
+      set_current_transaction(transaction)
+
+      enqueue
+      Appsignal::Transaction.complete_current!
+
+      # No enqueue event means no producer span, so there is nothing for the
+      # performing job to link back to and no trace context is written. The job
+      # starts its own trace instead of linking to the web request.
+      expect(event_spans_for("enqueue.shoryuken")).to be_empty
+      expect(options).to_not have_key(:message_attributes)
+    end
+  end
 end

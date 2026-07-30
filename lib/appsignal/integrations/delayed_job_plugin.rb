@@ -25,6 +25,11 @@ module Appsignal
       # another job). An enqueue with no active transaction is a transparent
       # pass-through.
       def self.enqueue_with_instrumentation(job, block)
+        # Skip the enqueue event when enqueue instrumentation is disabled.
+        if Appsignal.config && !Appsignal.config[:enable_job_enqueue_instrumentation]
+          return block.call(job)
+        end
+
         # Under Active Job the enqueue is already recorded as an
         # `enqueue.active_job` event, so skip recording it again here.
         if Appsignal::Transaction.current? &&

@@ -206,6 +206,16 @@ module Appsignal
       # performs links back. Yields the (possibly tag-augmented) `job_options` to
       # do the actual enqueue.
       def record_enqueue(job_options, event_name, title, bulk: false)
+        # When enqueue instrumentation is disabled, drop the trace context along
+        # with the event, so yield the job options untouched. Without an enqueue
+        # event there is no producer span, so the context we would write is that
+        # of whatever span is current, such as the surrounding web request. The
+        # job that performs later would then link back to a span that is not a
+        # producer.
+        if Appsignal.config && !Appsignal.config[:enable_job_enqueue_instrumentation]
+          return yield job_options
+        end
+
         # Under Active Job the enqueue is already recorded as an
         # `enqueue.active_job` event, so skip recording it again here. The trace
         # context is still injected so the performed job links back.
