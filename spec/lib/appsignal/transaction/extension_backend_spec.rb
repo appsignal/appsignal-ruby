@@ -96,6 +96,15 @@ describe Appsignal::Transaction::ExtensionBackend do
       backend.set_metadata("key", "value")
     end
 
+    # OpenTelemetry attributes have nowhere to go in the agent protocol, so the
+    # backend drops them rather than storing them somewhere else.
+    it "drops #set_attributes without touching the handle" do
+      expect(handle).to_not receive(:set_metadata)
+      expect(handle).to_not receive(:set_sample_data)
+
+      expect { backend.set_attributes("db.system.name" => "redis") }.to_not raise_error
+    end
+
     it "serializes the sample data to Data and forwards #set_sample_data to the handle" do
       raw = { "a" => 1 }
       data = Appsignal::Utils::Data.generate(raw)
