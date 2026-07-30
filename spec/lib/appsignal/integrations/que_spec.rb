@@ -355,6 +355,51 @@ if DependencyHelper.que_present?
           expect(link_context.hex_span_id).to eq(span_id_hex)
         end
       end
+
+      # Only Que 2's `bulk_enqueue` writes the bulk tag, but reading it back is
+      # the same on every version that has tags, so this runs on Que 1 too.
+      context "with incoming trace context from a bulk enqueue",
+        :if => DependencyHelper.que1_present? do
+        let(:trace_id_hex) { "0af7651916cd43dd8448eb211c80319c" }
+        let(:span_id_hex) { "b7ad6b7169203331" }
+        let(:job_attrs) do
+          super().merge(
+            :data => {
+              :tags => [
+                "traceparent:00-#{trace_id_hex}-#{span_id_hex}-01",
+                Appsignal::Integrations::QueTraceContext::BULK_TAG
+              ]
+            }
+          )
+        end
+
+        def perform
+          perform_que_job(instance)
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent
+          expect { perform }.to change { created_transactions.length }.by(1)
+          expect(last_transaction).to be_completed
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+
+          # Every job in the batch shares the one producer span, so the job only
+          # links back to it. It gets its own trace instead of hanging the whole
+          # batch off that span.
+          expect(root_span.kind).to eq(:consumer)
+          expect(root_span.parent_span_id).to eq(::OpenTelemetry::Trace::INVALID_SPAN_ID)
+          expect(root_span.hex_trace_id).to_not eq(trace_id_hex)
+
+          expect(root_span.links.size).to eq(1)
+          link_context = root_span.links.first.span_context
+          expect(link_context.hex_trace_id).to eq(trace_id_hex)
+          expect(link_context.hex_span_id).to eq(span_id_hex)
+        end
+      end
     end
   end
 
@@ -480,6 +525,21 @@ if DependencyHelper.que_present?
 
         expect(enqueued_tags).to eq(full)
       end
+
+      it "propagates on the last free tag and adds no bulk tag",
+        :collector_mode, :if => DependencyHelper.que1_present? do
+        start_collector_agent
+        set_current_transaction(http_request_transaction)
+
+        # A job enqueued on its own needs no bulk tag, so one free tag is enough
+        # to propagate. The batch path needs two and would skip propagation here.
+        enqueue(:tags => %w[t1 t2 t3 t4])
+        Appsignal::Transaction.complete_current!
+
+        expect(enqueued_tags).to include(a_string_starting_with("traceparent:"))
+        expect(enqueued_tags)
+          .to_not include(Appsignal::Integrations::QueTraceContext::BULK_TAG)
+      end
     end
 
     context "without an active transaction" do
@@ -596,10 +656,13 @@ if DependencyHelper.que_present?
           expect(producer.kind).to eq(:producer)
           expect(producer.parent_span_id).to eq(root_span.span_id)
 
-          # Every job in the batch carries the one producer span's context.
+          # Every job in the batch carries the one producer span's context, plus
+          # the tag marking it as one of a batch so the worker only links back.
           expect(enqueued_tags).to include("user:42")
           expect(enqueued_tags)
             .to include("traceparent:00-#{producer.hex_trace_id}-#{producer.hex_span_id}-01")
+          expect(enqueued_tags)
+            .to include(Appsignal::Integrations::QueTraceContext::BULK_TAG)
         end
 
         it "skips propagation rather than break the enqueue when tags are full",
@@ -612,6 +675,21 @@ if DependencyHelper.que_present?
           Appsignal::Transaction.complete_current!
 
           expect(enqueued_tags).to eq(full)
+        end
+
+        it "skips propagation when only the trace context would fit",
+          :collector_mode do
+          start_collector_agent
+          set_current_transaction(http_request_transaction)
+
+          # There is room for the trace context but not for the bulk tag as well.
+          # Propagating without that tag would make the worker parent every job in
+          # the batch to the one producer span, so nothing is propagated at all.
+          tags = %w[t1 t2 t3 t4]
+          bulk_enqueue(:tags => tags)
+          Appsignal::Transaction.complete_current!
+
+          expect(enqueued_tags).to eq(tags)
         end
       end
 
@@ -643,8 +721,11 @@ if DependencyHelper.que_present?
 
           # No producer span for the suppressed batch...
           expect(event_spans_for("bulk_enqueue.que")).to be_empty
-          # ...but the trace context is still injected so the jobs link back.
+          # ...but the trace context is still injected so the jobs link back, and
+          # the batch is still marked so they link instead of parenting.
           expect(enqueued_tags).to include(a_string_starting_with("traceparent:"))
+          expect(enqueued_tags)
+            .to include(Appsignal::Integrations::QueTraceContext::BULK_TAG)
         end
       end
     end

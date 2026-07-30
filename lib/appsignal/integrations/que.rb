@@ -26,6 +26,17 @@ module Appsignal
       MAX_TAG_LENGTH =
         defined?(::Que::Job::MAXIMUM_TAG_LENGTH) ? ::Que::Job::MAXIMUM_TAG_LENGTH : 100
 
+      # Marks a job as one of a batch enqueued by `bulk_enqueue`, so the worker
+      # can tell the two enqueue paths apart. Que itself records nothing that
+      # distinguishes them: both insert paths write the same columns, and the
+      # job's `data` only ever holds its tags. So the enqueue side has to say so.
+      #
+      # This deliberately contains no colon. The trace context rides in the same
+      # tags array as `"key:value"` strings, so a reader that splits tags on the
+      # colon to rebuild the carrier drops this tag on its own. That keeps it out
+      # of the carrier for us and for OpenTelemetry's own Que instrumentation.
+      BULK_TAG = "appsignal.bulk_enqueue"
+
       # Que only has tags from version 1.0 on, and they are the only carrier its
       # enqueue API exposes. On Que 0.x there is nowhere to put the trace context
       # that survives to the worker, so propagation is skipped there. Writing the
@@ -54,18 +65,32 @@ module Appsignal
       # Que's limits: propagation is skipped rather than break the enqueue.
       # Outside collector mode, and on Que versions without tags, the tags are
       # returned unchanged.
-      def inject(tags)
+      #
+      # Pass `bulk` for a `bulk_enqueue` batch, which adds the bulk marker too.
+      # Both are kept or dropped together, because a batch missing its marker
+      # would parent every job in it to the one producer span.
+      def inject(tags, bulk: false)
         original = Array(tags)
         return original unless TAGS_SUPPORTED
 
         injected = Appsignal::OpenTelemetry.if_started do
           copy = original.dup
           ::OpenTelemetry.propagation.inject(copy, :setter => TagSetter)
+          # The marker has nothing to link back to without a trace context, so
+          # only add it when the context was actually injected. The propagator
+          # writes nothing when there is no valid span to propagate.
+          copy << BULK_TAG if bulk && copy.length > original.length
           copy
         end
         return original if injected.nil? || !within_limits?(injected)
 
         injected
+      end
+
+      # Whether the job being performed was enqueued as part of a batch, which
+      # the enqueue side records by adding `BULK_TAG` to the job's tags.
+      def bulk?(tags)
+        Array(tags).include?(BULK_TAG)
       end
 
       def within_limits?(tags)
@@ -77,16 +102,26 @@ module Appsignal
     module QuePlugin
       def _run(*args)
         local_attrs = respond_to?(:que_attrs) ? que_attrs : attrs
+        tags = local_attrs.dig(:data, :tags)
+
+        # A job enqueued on its own is the only job its producer span produced, so
+        # it can be a child of that span as well as link to it. Every job in a
+        # batch shares one producer span, and a span can only have one parent, so
+        # parenting a batch would hang the whole batch off that single span. Only
+        # link those, which is what the OpenTelemetry messaging conventions ask
+        # for: they use links as the default, and allow the producer to be the
+        # parent only when it produced a single message.
+        relationship = QueTraceContext.bulk?(tags) ? :link : :both
 
         # Read the incoming trace context off the job's tags so the transaction
         # links back to the enqueuer. No-op outside collector mode.
         transaction =
           Appsignal::Transaction.create(
             Appsignal::Transaction::BACKGROUND_JOB,
-            :opentelemetry_context => QueTraceContext.extract(local_attrs.dig(:data, :tags)),
+            :opentelemetry_context => QueTraceContext.extract(tags),
             :opentelemetry_scope => ["appsignal-ruby/que", Appsignal::VERSION],
             :opentelemetry_kind => :consumer,
-            :opentelemetry_relationship => :both
+            :opentelemetry_relationship => relationship
           )
 
         begin
@@ -166,13 +201,13 @@ module Appsignal
       # the current trace context into the job's tags so the job that later
       # performs links back. Yields the (possibly tag-augmented) `job_options` to
       # do the actual enqueue.
-      def record_enqueue(job_options, event_name, title)
+      def record_enqueue(job_options, event_name, title, bulk: false)
         # Under Active Job the enqueue is already recorded as an
         # `enqueue.active_job` event, so skip recording it again here. The trace
         # context is still injected so the performed job links back.
         if Appsignal::Transaction.current? &&
             Appsignal::Transaction.current.job_enqueue_events_suppressed?
-          return yield job_options_with_context(job_options)
+          return yield job_options_with_context(job_options, :bulk => bulk)
         end
 
         Appsignal.instrument(
@@ -181,15 +216,15 @@ module Appsignal
           :opentelemetry_kind => :producer,
           :opentelemetry_scope => ["appsignal-ruby/que", Appsignal::VERSION]
         ) do
-          yield job_options_with_context(job_options)
+          yield job_options_with_context(job_options, :bulk => bulk)
         end
       end
 
       # In collector mode, injects the current trace context into a copy of the
       # job's tags and returns the tag-augmented `job_options`; a no-op that
       # returns `job_options` unchanged outside collector mode.
-      def job_options_with_context(job_options)
-        tags = QueTraceContext.inject(job_options[:tags])
+      def job_options_with_context(job_options, bulk: false)
+        tags = QueTraceContext.inject(job_options[:tags], :bulk => bulk)
         tags.empty? ? job_options : job_options.merge(:tags => tags)
       end
     end
@@ -203,7 +238,12 @@ module Appsignal
     # the inner enqueues are pass-throughs.
     module QueBulkClientPlugin
       def bulk_enqueue(job_options: {}, **rest, &block)
-        record_enqueue(job_options, "bulk_enqueue.que", bulk_enqueue_title(job_options)) do |merged|
+        record_enqueue(
+          job_options,
+          "bulk_enqueue.que",
+          bulk_enqueue_title(job_options),
+          :bulk => true
+        ) do |merged|
           # Flag the batch so the enqueues this block triggers pass through
           # without recording, without reading Que's internal bulk state.
           was_bulk = Thread.current[:appsignal_que_bulk_enqueue]
