@@ -823,6 +823,41 @@ module Appsignal
       @backend.set_metadata(key, value)
     end
 
+    # Add OpenTelemetry attributes to the span AppSignal is currently
+    # recording.
+    #
+    # In collector mode, AppSignal records a transaction as an OpenTelemetry
+    # span, and every instrumented event as a child span. This adds attributes
+    # to whichever of those spans is open right now: the innermost event
+    # started by {Appsignal::Helpers::Instrumentation#instrument}, or the
+    # transaction's own span when no event is open.
+    #
+    # Use this to describe what is being instrumented in OpenTelemetry's own
+    # terms, following the OpenTelemetry semantic conventions where they apply.
+    # Attributes have no equivalent outside collector mode, so this does
+    # nothing when collector mode is not active.
+    #
+    # @example Describing a database query
+    #   Appsignal.instrument("query.my_database") do
+    #     Appsignal::Transaction.current.add_opentelemetry_attributes(
+    #       "db.system.name" => "mysql"
+    #     )
+    #     run_the_query
+    #   end
+    #
+    # @param attributes [Hash<String, Object>, nil] Attributes to add to the
+    #   current span. Values that are not a String, Integer, Float or boolean
+    #   are converted to a String. Nothing is added when this is nil or empty.
+    # @return [void]
+    #
+    # @see https://opentelemetry.io/docs/specs/semconv/
+    #   OpenTelemetry semantic conventions
+    def add_opentelemetry_attributes(attributes = {})
+      return if attributes.nil? || attributes.empty?
+
+      @backend.set_attributes(attributes)
+    end
+
     # @!visibility private
     # @see Appsignal::Helpers::Instrumentation#report_error
     def add_error(error, source: nil, &block)

@@ -42,6 +42,13 @@ module Appsignal
         raise NotImplementedError
       end
 
+      # OpenTelemetry span attributes, set on whichever span the backend is
+      # currently recording. Only meaningful in collector mode; agent mode has
+      # no span to hang them on.
+      def set_attributes(_attributes)
+        raise NotImplementedError
+      end
+
       # Maps each logical params channel (`:params`, `:request_payload`,
       # `:function_parameters`) to the storage bucket it lands in. Channels that
       # share a bucket merge into one `SampleData` object on the transaction;
