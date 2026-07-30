@@ -699,7 +699,23 @@ if DependencyHelper.active_job_present?
         let(:options) { { :enable_job_enqueue_instrumentation => false } }
         before { ActiveJob::Base.queue_adapter = :test }
 
-        it "does not record an enqueue event but still enqueues the job" do
+        # Captures the job as the adapter receives it, so the test can check what
+        # trace context the enqueue wrote onto it.
+        def enqueue_and_capture_job
+          captured = nil
+          adapter = ActiveJob::Base.queue_adapter
+          allow(adapter).to receive(:enqueue).and_wrap_original do |method, job|
+            captured = job
+            method.call(job)
+          end
+
+          set_current_transaction(http_request_transaction)
+          ActiveJobTestJob.perform_later
+
+          captured
+        end
+
+        it "does not record an enqueue event but still enqueues the job", :agent_mode do
           start_agent(**start_agent_args)
           transaction = http_request_transaction
           set_current_transaction(transaction)
@@ -709,6 +725,20 @@ if DependencyHelper.active_job_present?
           enqueue_events =
             transaction.to_h["events"].select { |event| event["name"] == "enqueue.active_job" }
           expect(enqueue_events).to be_empty
+          expect(ActiveJob::Base.queue_adapter.enqueued_jobs.count).to eq(1)
+        end
+
+        it "emits no enqueue span and writes no trace context", :collector_mode do
+          start_collector_agent
+
+          job = enqueue_and_capture_job
+          Appsignal::Transaction.complete_current!
+
+          # No enqueue event means no producer span, so there is nothing for the
+          # performing job to link back to and no trace context is written. The
+          # job starts its own trace instead of linking to the web request.
+          expect(event_spans_for("enqueue.active_job")).to be_empty
+          expect(job.serialize).to_not have_key("__otel_headers")
           expect(ActiveJob::Base.queue_adapter.enqueued_jobs.count).to eq(1)
         end
       end

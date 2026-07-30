@@ -486,6 +486,38 @@ if DependencyHelper.sidekiq_present?
         expect(job).to have_key("traceparent")
       end
     end
+
+    context "when enqueue instrumentation is disabled" do
+      let(:start_agent_args) do
+        { :options => { :enable_job_enqueue_instrumentation => false } }
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
+
+        expect(enqueue).to eq(:enqueued)
+
+        event_names = transaction.to_h["events"].map { |event| event["name"] }
+        expect(event_names).to_not include("enqueue.sidekiq")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
+
+        expect(enqueue).to eq(:enqueued)
+        Appsignal::Transaction.complete_current!
+
+        # No enqueue event means no producer span, so there is nothing for the
+        # performing job to link back to and no trace context is written. The
+        # job starts its own trace instead of linking to the web request.
+        expect(event_spans_for("enqueue.sidekiq")).to be_empty
+        expect(job).to_not have_key("traceparent")
+      end
+    end
   end
 
   describe Appsignal::Integrations::SidekiqMiddleware do

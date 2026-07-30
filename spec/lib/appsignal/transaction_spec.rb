@@ -1082,8 +1082,12 @@ describe Appsignal::Transaction do
     context "when enqueue instrumentation is disabled" do
       let(:options) { { :enable_job_enqueue_instrumentation => false } }
 
-      it "reports enqueue events as suppressed" do
-        expect(transaction.job_enqueue_events_suppressed?).to be(true)
+      # The config option is not part of this question. Each enqueue
+      # integration checks it separately, because disabling enqueue
+      # instrumentation also disables trace context propagation, while
+      # suppression by an outer integration keeps it.
+      it "does not report enqueue events as suppressed" do
+        expect(transaction.job_enqueue_events_suppressed?).to be(false)
       end
     end
   end
