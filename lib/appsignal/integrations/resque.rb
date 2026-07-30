@@ -48,6 +48,13 @@ module Appsignal
     # @!visibility private
     module ResquePushIntegration
       def push(queue, item)
+        # When enqueue instrumentation is disabled, drop the trace context along
+        # with the event. Without an enqueue event there is no producer span, so
+        # the context we would write is that of whatever span is current, such as
+        # the surrounding web request. The job that performs later would then
+        # link back to a span that is not a producer.
+        return super if Appsignal.config && !Appsignal.config[:enable_job_enqueue_instrumentation]
+
         # Under Active Job the enqueue is already recorded as an
         # `enqueue.active_job` event, so skip recording it again here. The trace
         # context is still injected so the performed job links back.

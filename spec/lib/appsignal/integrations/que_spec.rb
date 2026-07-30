@@ -601,6 +601,40 @@ if DependencyHelper.que_present?
       end
     end
 
+    context "when enqueue instrumentation is disabled" do
+      let(:start_agent_args) do
+        { :options => { :enable_job_enqueue_instrumentation => false } }
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
+
+        enqueue
+
+        event_names = transaction.to_h["events"].map { |event| event["name"] }
+        expect(event_names).to_not include("enqueue.que")
+        expect_job_arguments_untouched
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
+
+        enqueue
+        Appsignal::Transaction.complete_current!
+
+        # No enqueue event means no producer span, so there is nothing for the
+        # performing job to link back to and no trace context is written. The
+        # job starts its own trace instead of linking to the web request.
+        expect(event_spans_for("enqueue.que")).to be_empty
+        expect(enqueued_tags).to eq(["user:42"]) if DependencyHelper.que1_present?
+        expect_job_arguments_untouched
+      end
+    end
+
     # `bulk_enqueue` is Que 2 only. The whole batch shares one `job_options`, so
     # it records a single producer event and the inner enqueues are pass-throughs.
     describe "#bulk_enqueue", :if => DependencyHelper.que2_present? do

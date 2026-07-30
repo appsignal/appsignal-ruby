@@ -403,12 +403,13 @@ module Appsignal
     end
 
     # @!visibility private
+    #
+    # True when an outer integration (Active Job) is already recording this
+    # enqueue. Nested integrations use it to skip their own enqueue event, but
+    # they must still propagate trace context: the outer integration's producer
+    # span is what the performing job links back to, and only the nested
+    # integration owns the carrier that job travels on.
     def job_enqueue_events_suppressed?
-      # When enqueue instrumentation is disabled, every enqueue integration
-      # treats its event as suppressed. That is how the config option turns the
-      # enqueue events off across all integrations at once.
-      return true if Appsignal.config && !Appsignal.config[:enable_job_enqueue_instrumentation]
-
       store("job_enqueue")[:suppressed] == true
     end
 

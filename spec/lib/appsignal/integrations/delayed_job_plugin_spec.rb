@@ -66,6 +66,36 @@ if DependencyHelper.delayed_job_present?
         end
       end
 
+      context "when enqueue instrumentation is disabled" do
+        let(:start_agent_args) do
+          { :options => { :enable_job_enqueue_instrumentation => false } }
+        end
+
+        it "records no enqueue event but still enqueues the job", :agent_mode do
+          start_agent(**start_agent_args)
+          transaction = http_request_transaction
+          set_current_transaction(transaction)
+
+          expect { Delayed::Job.enqueue(DelayedTestJob.new) }
+            .to change { Delayed::Backend::Test::Job.count }.by(1)
+
+          event_names = transaction.to_h["events"].map { |event| event["name"] }
+          expect(event_names).to_not include("enqueue.delayed_job")
+        end
+
+        it "emits no enqueue span but still enqueues the job", :collector_mode do
+          start_collector_agent
+          transaction = http_request_transaction
+          set_current_transaction(transaction)
+
+          expect { Delayed::Job.enqueue(DelayedTestJob.new) }
+            .to change { Delayed::Backend::Test::Job.count }.by(1)
+          Appsignal::Transaction.complete_current!
+
+          expect(event_spans_for("enqueue.delayed_job")).to be_empty
+        end
+      end
+
       context "without an active transaction" do
         it "is a transparent pass-through", :agent_mode do
           start_agent
