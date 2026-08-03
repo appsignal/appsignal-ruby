@@ -19,7 +19,30 @@ module Appsignal
         # the dedicated Sequel hook (which already tags its own query events as
         # CLIENT). Including it keeps a Sequel query CLIENT regardless of which
         # path records it.
-        CLIENT_EVENT_NAMES = ["sql.active_record", "sql.sequel"].freeze
+        #
+        # `search.elasticsearch` is a query sent to an Elasticsearch cluster, so
+        # it is a client call for the same reason a SQL query is.
+        CLIENT_EVENT_NAMES = [
+          "sql.active_record",
+          "sql.sequel",
+          "search.elasticsearch"
+        ].freeze
+
+        # OpenTelemetry attributes to add to an event's span, by event name.
+        # These name the kind of work an event represents, which is what the
+        # trace timeline reads to tell one kind of span from another.
+        #
+        # SQL events are not listed here: their span already gets
+        # `db.system.name` from the SQL body format, which also tells the
+        # collector to sanitize the query.
+        EVENT_ATTRIBUTES = {
+          "search.elasticsearch" => {
+            "db.system.name" => "elasticsearch",
+            # This notification is only emitted for a search, so that is the
+            # operation every one of these spans describes.
+            "db.operation.name" => "search"
+          }.freeze
+        }.freeze
 
         # Events a dedicated AppSignal integration already records with richer
         # semantics, so the generic notifications path must not record them a
@@ -61,12 +84,42 @@ module Appsignal
           return unless record_event?(name)
 
           title, body, body_format = Appsignal::EventFormatter.format(name, payload)
-          Appsignal::Transaction.current.finish_event(
+          transaction = Appsignal::Transaction.current
+          # Set while the event's span is still open, so the attributes land on
+          # the event rather than on the transaction.
+          attributes = EVENT_ATTRIBUTES[name.to_s]
+          transaction.add_opentelemetry_attributes(attributes) if attributes
+          transaction.add_opentelemetry_attributes(payload_attributes(name, payload))
+          transaction.finish_event(
             name.to_s,
             title,
             body,
             body_format
           )
+        end
+
+        # Attributes whose value has to be read from the event's payload, so they
+        # cannot live in the static map above. An event with nothing to read gets
+        # no attributes.
+        def payload_attributes(name, payload)
+          case name.to_s
+          when "search.elasticsearch"
+            { "db.collection.name" => search_index(payload) }.compact
+          else
+            {}
+          end
+        end
+
+        # The index a search ran against, which the notification carries in the
+        # search it describes. A search that names more than one index, or none
+        # at all, is left without this attribute rather than described with a
+        # value that is not an index name.
+        def search_index(payload)
+          search = payload[:search]
+          return unless search.respond_to?(:[])
+
+          index = search[:index]
+          index if index.is_a?(String)
         end
 
         # Events starting with a bang are internal to Rails; suppressed events

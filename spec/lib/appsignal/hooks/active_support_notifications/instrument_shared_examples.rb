@@ -92,6 +92,101 @@ shared_examples "activesupport instrument override" do
     end
   end
 
+  describe "an Elasticsearch search event" do
+    def perform
+      as.instrument(
+        "search.elasticsearch",
+        :name => "Search",
+        :klass => "User",
+        :search => { :index => "users" }
+      ) { "value" }
+    end
+
+    it "in agent mode", :agent_mode do
+      start_agent
+      transaction = http_request_transaction
+      set_current_transaction(transaction)
+      as.notifier = notifier
+
+      expect(perform).to eq "value"
+      expect(transaction).to include_event(
+        "name" => "search.elasticsearch",
+        "title" => "Search: User",
+        # The formatter inspects the sanitized search, and Hash#inspect changed
+        # format in Ruby 3.4, so match on the content rather than the layout.
+        "body" => a_string_including("users")
+      )
+    end
+
+    it "in collector mode", :collector_mode do
+      start_collector_agent
+      transaction = http_request_transaction
+      set_current_transaction(transaction)
+      as.notifier = notifier
+
+      expect(perform).to eq "value"
+      Appsignal::Transaction.complete_current!
+
+      span = event_span_for("search.elasticsearch")
+      expect(span).not_to be_nil
+      expect(span.parent_span_id).to eq(root_span.span_id)
+      # A search is an outgoing call to the cluster, so it carries CLIENT kind.
+      expect(span.kind).to eq(:client)
+      # There is no SQL body to infer the datastore from, so it is named
+      # explicitly. Without it the trace timeline cannot tell this span apart
+      # from any other kind of work.
+      expect(span.attributes["db.system.name"]).to eq("elasticsearch")
+      # This notification is only emitted for a search, so that is the
+      # operation. The index comes off the search itself.
+      expect(span.attributes["db.operation.name"]).to eq("search")
+      expect(span.attributes["db.collection.name"]).to eq("users")
+      expect(event_category(span)).to eq("search.elasticsearch")
+      expect(scope_of(span)).to eq(["appsignal-ruby/elasticsearch", Appsignal::VERSION])
+    end
+  end
+
+  describe "an Elasticsearch search event across more than one index" do
+    def perform
+      as.instrument(
+        "search.elasticsearch",
+        :name => "Search",
+        :klass => "User",
+        :search => { :index => ["users", "admins"] }
+      ) { "value" }
+    end
+
+    it "in agent mode", :agent_mode do
+      start_agent
+      transaction = http_request_transaction
+      set_current_transaction(transaction)
+      as.notifier = notifier
+
+      expect(perform).to eq "value"
+      expect(transaction).to include_event(
+        "name" => "search.elasticsearch",
+        "title" => "Search: User",
+        "body" => a_string_including("users")
+      )
+    end
+
+    it "in collector mode", :collector_mode do
+      start_collector_agent
+      transaction = http_request_transaction
+      set_current_transaction(transaction)
+      as.notifier = notifier
+
+      expect(perform).to eq "value"
+      Appsignal::Transaction.complete_current!
+
+      span = event_span_for("search.elasticsearch")
+      expect(span).not_to be_nil
+      expect(span.attributes["db.operation.name"]).to eq("search")
+      # The attribute names one index, so a search across several is left
+      # without it rather than described with a value that is not an index name.
+      expect(span.attributes).to_not have_key("db.collection.name")
+    end
+  end
+
   describe "an event with no registered formatter" do
     def perform
       as.instrument("no-registered.formatter", :key => "something") { "value" }
