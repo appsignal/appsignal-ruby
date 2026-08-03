@@ -903,9 +903,12 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
   describe "#set_error" do
     def exception_event(backend)
       backend.complete
+      root_span_of(backend).events.find { |e| e.name == "exception" }
+    end
+
+    def root_span_of(backend)
       backend_span_id = backend.instance_variable_get(:@span).context.span_id
-      root = span_exporter.finished_spans.find { |s| s.span_id == backend_span_id }
-      root.events.find { |e| e.name == "exception" }
+      span_exporter.finished_spans.find { |s| s.span_id == backend_span_id }
     end
 
     it "records an exception span-event on the root span" do
@@ -927,6 +930,43 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
       backend_span_id = backend.instance_variable_get(:@span).context.span_id
       root = span_exporter.finished_spans.find { |s| s.span_id == backend_span_id }
       expect(root.status.code).to eq(::OpenTelemetry::Trace::Status::ERROR)
+    end
+
+    it "sets error.type on the span to the exception class" do
+      backend = create_backend
+      backend.set_error("RuntimeError", "boom", ["line 1"], [], false)
+      backend.complete
+
+      expect(root_span_of(backend).attributes["error.type"]).to eq("RuntimeError")
+    end
+
+    it "keeps the last error.type when a span collects more than one error" do
+      backend = create_backend
+      backend.set_error("RuntimeError", "first", ["line 1"], [], false)
+      backend.set_error("ArgumentError", "second", ["line 2"], [], false)
+      backend.complete
+
+      expect(root_span_of(backend).attributes["error.type"]).to eq("ArgumentError")
+    end
+
+    it "sets error.type on the span that is current when called" do
+      backend = create_backend
+      backend.start_event
+      backend.set_error("RuntimeError", "boom", ["line 1"], [], false)
+      backend.finish_event("sql.query", "title", "body", Appsignal::EventFormatter::DEFAULT)
+      backend.complete
+
+      event_span = span_exporter.finished_spans.find { |s| s.name == "sql.query (title)" }
+
+      expect(event_span.attributes["error.type"]).to eq("RuntimeError")
+      expect(root_span_of(backend).attributes).not_to have_key("error.type")
+    end
+
+    it "does not set error.type when no error is set" do
+      backend = create_backend
+      backend.complete
+
+      expect(root_span_of(backend).attributes).not_to have_key("error.type")
     end
 
     it "omits exception.stacktrace content when there is no backtrace" do

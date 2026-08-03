@@ -3265,6 +3265,7 @@ describe Appsignal do
         expect(span.attributes["appsignal.body"]).to eq("body")
         expect(span.attributes).not_to have_key("db.query.text")
         expect(span.attributes).not_to have_key("db.system.name")
+        expect(span.attributes).not_to have_key("error.type")
       end
     end
 
@@ -3295,6 +3296,39 @@ describe Appsignal do
         expect(span.name).to eq("name (title)")
         expect(span.attributes).not_to have_key("appsignal.category")
         expect(span.attributes["appsignal.body"]).to eq("body")
+        # The block raised, so the operation the span describes failed.
+        expect(span.attributes["error.type"]).to eq("ExampleException")
+      end
+    end
+
+    describe "when an error is raised in the block of an ignored event" do
+      def perform
+        expect do
+          Appsignal.ignore_instrumentation_events do
+            Appsignal.instrument("name", "title", "body") { raise ExampleException, "foo" }
+          end
+        end.to raise_error(ExampleException, "foo")
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent
+        set_current_transaction(transaction)
+        perform
+
+        expect(transaction).to_not include_event("name" => "name")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        set_current_transaction(transaction)
+        perform
+        Appsignal::Transaction.complete_current!
+
+        # No event span was started, so there is no span of this event's to
+        # describe. The failure must not end up on the transaction's own span
+        # instead.
+        expect(event_spans).to be_empty
+        expect(root_span.attributes).not_to have_key("error.type")
       end
     end
 
@@ -3325,6 +3359,9 @@ describe Appsignal do
         expect(span.name).to eq("name (title)")
         expect(span.attributes).not_to have_key("appsignal.category")
         expect(span.attributes["appsignal.body"]).to eq("body")
+        # Throwing a symbol is control flow rather than a failure, so there is
+        # no kind of failure to report.
+        expect(span.attributes).not_to have_key("error.type")
       end
     end
   end

@@ -952,6 +952,22 @@ module Appsignal
         :opentelemetry_scope => opentelemetry_scope
       )
       yield if block_given?
+    rescue Exception => error
+      # The block raised, so the operation this event describes failed. Say what
+      # kind of failure it was, which the OpenTelemetry semantic conventions ask
+      # for. This runs before the `ensure` below finishes the event, so the
+      # attribute lands on the event's own span. The error itself is not reported
+      # here; whatever catches it decides that.
+      #
+      # A paused transaction never started an event span, so there would be no
+      # span of this event's to describe.
+      unless paused?
+        add_opentelemetry_attributes(
+          Appsignal::OpenTelemetry::ErrorType.attributes_for(error.class.name)
+        )
+      end
+
+      raise
     ensure
       finish_event(name, title, body, body_format)
     end
