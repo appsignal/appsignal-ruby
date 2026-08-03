@@ -14,11 +14,22 @@ module Appsignal
           :opentelemetry_kind => :consumer,
           :opentelemetry_relationship => :both
         )
+        # Describes this span as a job being performed. The messaging system is
+        # what the trace timeline reads to recognize background job work, and
+        # `resque` is the value OpenTelemetry's own Resque instrumentation uses.
+        transaction.add_opentelemetry_attributes(
+          Appsignal::OpenTelemetry::Messaging
+            .perform_attributes("resque", :destination => queue)
+        )
 
         Appsignal.instrument(
           "perform.resque",
           :opentelemetry_scope => ["appsignal-ruby/resque", Appsignal::VERSION]
         ) do
+          Appsignal::Transaction.current.add_opentelemetry_attributes(
+            Appsignal::OpenTelemetry::Messaging
+              .perform_attributes("resque", :destination => queue)
+          )
           super
         end
       rescue Exception => exception
@@ -70,6 +81,10 @@ module Appsignal
           :opentelemetry_kind => :producer,
           :opentelemetry_scope => ["appsignal-ruby/resque", Appsignal::VERSION]
         ) do
+          Appsignal::Transaction.current.add_opentelemetry_attributes(
+            Appsignal::OpenTelemetry::Messaging
+              .enqueue_attributes("resque", :destination => queue)
+          )
           Appsignal::OpenTelemetry.inject_context(item)
           super
         end

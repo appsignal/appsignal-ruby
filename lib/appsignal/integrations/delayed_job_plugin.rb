@@ -43,6 +43,14 @@ module Appsignal
           :opentelemetry_kind => :producer,
           :opentelemetry_scope => ["appsignal-ruby/delayed_job", Appsignal::VERSION]
         ) do
+          # Describes this span as a job being enqueued. The messaging system
+          # is what the trace timeline reads to recognize background job work,
+          # and `delayed_job` is the value OpenTelemetry's own Delayed Job
+          # instrumentation uses.
+          Appsignal::Transaction.current.add_opentelemetry_attributes(
+            Appsignal::OpenTelemetry::Messaging
+              .enqueue_attributes("delayed_job", :destination => queue_name(job))
+          )
           block.call(job)
         end
       end
@@ -53,6 +61,12 @@ module Appsignal
       # `enqueue Class#method job` rather than the bare `enqueue Class job`. We
       # accept that inconsistency so the enqueue and perform events stay tied to
       # the same name for the rare job that sets it.
+      # The queue a job is on. Not every Delayed Job backend has queues, so a
+      # job that does not know its queue is described without one.
+      def self.queue_name(job)
+        job.queue if job.respond_to?(:queue)
+      end
+
       def self.enqueue_name(job)
         payload = job.payload_object
         appsignal_name = extract_value(payload, :appsignal_name, nil)
@@ -69,12 +83,20 @@ module Appsignal
             :opentelemetry_kind => :consumer,
             :opentelemetry_relationship => :both
           )
+        transaction.add_opentelemetry_attributes(
+          Appsignal::OpenTelemetry::Messaging
+            .perform_attributes("delayed_job", :destination => queue_name(job))
+        )
 
         begin
           Appsignal.instrument(
             "perform_job.delayed_job",
             :opentelemetry_scope => ["appsignal-ruby/delayed_job", Appsignal::VERSION]
           ) do
+            Appsignal::Transaction.current.add_opentelemetry_attributes(
+              Appsignal::OpenTelemetry::Messaging
+                .perform_attributes("delayed_job", :destination => queue_name(job))
+            )
             block.call(job)
           end
         rescue Exception => error

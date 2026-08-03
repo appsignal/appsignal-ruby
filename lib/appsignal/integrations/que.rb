@@ -127,12 +127,25 @@ module Appsignal
             :opentelemetry_kind => :consumer,
             :opentelemetry_relationship => relationship
           )
+        # Describes this span as a job being performed. The messaging system is
+        # what the trace timeline reads to recognize background job work, and
+        # `que` is the value OpenTelemetry's own Que instrumentation uses.
+        transaction.add_opentelemetry_attributes(
+          Appsignal::OpenTelemetry::Messaging
+            .perform_attributes("que", :destination => local_attrs[:queue])
+        )
 
         begin
           Appsignal.instrument(
             "perform_job.que",
             :opentelemetry_scope => ["appsignal-ruby/que", Appsignal::VERSION]
-          ) { super }
+          ) do
+            Appsignal::Transaction.current.add_opentelemetry_attributes(
+              Appsignal::OpenTelemetry::Messaging
+                .perform_attributes("que", :destination => local_attrs[:queue])
+            )
+            super
+          end
         rescue Exception => error
           transaction.set_error(error)
           raise error
@@ -230,6 +243,10 @@ module Appsignal
           :opentelemetry_kind => :producer,
           :opentelemetry_scope => ["appsignal-ruby/que", Appsignal::VERSION]
         ) do
+          Appsignal::Transaction.current.add_opentelemetry_attributes(
+            Appsignal::OpenTelemetry::Messaging
+              .enqueue_attributes("que", :destination => job_options[:queue])
+          )
           yield job_options_with_context(job_options, :bulk => bulk)
         end
       end

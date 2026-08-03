@@ -44,6 +44,9 @@ module Appsignal
             :opentelemetry_kind => :consumer,
             :opentelemetry_relationship => :both
           )
+          transaction.add_opentelemetry_attributes(
+            Appsignal::OpenTelemetry::Messaging.perform_attributes("sidekiq")
+          )
           transaction.set_action_if_nil("SidekiqInternal")
           transaction.set_metadata("sidekiq_error", sidekiq_context[:context])
           transaction.add_function_parameters_if_nil(:jobstr => sidekiq_context[:jobstr])
@@ -138,6 +141,14 @@ module Appsignal
           :opentelemetry_kind => :producer,
           :opentelemetry_scope => ["appsignal-ruby/sidekiq", Appsignal::VERSION]
         ) do
+          # Describes this span as a job being enqueued. The messaging system
+          # is what the trace timeline reads to recognize background job work,
+          # and `sidekiq` is the value OpenTelemetry's own Sidekiq
+          # instrumentation uses.
+          Appsignal::Transaction.current.add_opentelemetry_attributes(
+            Appsignal::OpenTelemetry::Messaging
+              .enqueue_attributes("sidekiq", :destination => job["queue"])
+          )
           Appsignal::OpenTelemetry.inject_context(job)
           yield
         end
@@ -172,6 +183,10 @@ module Appsignal
           :opentelemetry_kind => :consumer,
           :opentelemetry_relationship => :both
         )
+        transaction.add_opentelemetry_attributes(
+          Appsignal::OpenTelemetry::Messaging
+            .perform_attributes("sidekiq", :destination => item["queue"])
+        )
         transaction.set_action_if_nil(action_name)
 
         formatted_metadata(item).each do |key, value|
@@ -181,9 +196,14 @@ module Appsignal
         begin
           Appsignal.instrument(
             "perform_job.sidekiq",
-            :opentelemetry_scope => ["appsignal-ruby/sidekiq", Appsignal::VERSION],
-            &block
-          )
+            :opentelemetry_scope => ["appsignal-ruby/sidekiq", Appsignal::VERSION]
+          ) do
+            Appsignal::Transaction.current.add_opentelemetry_attributes(
+              Appsignal::OpenTelemetry::Messaging
+                .perform_attributes("sidekiq", :destination => item["queue"])
+            )
+            block.call
+          end
         rescue Exception => exception
           job_status = :failed
           raise exception
