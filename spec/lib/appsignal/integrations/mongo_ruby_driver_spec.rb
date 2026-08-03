@@ -26,8 +26,8 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
       )
     end
 
-    # `failure` is the error document MongoDB replied with, which carries its
-    # own code for the error in the `code` field.
+    # `failure` is the error document MongoDB replied with, which names the error
+    # in its `codeName` field.
     def command_failed_event( # rubocop:disable Metrics/ParameterLists
       started_event, request_id: 1, command_name: "find",
       database_name: "test", duration: 0.9919,
@@ -103,7 +103,7 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
         # This command names no collection, so none is reported.
         expect(span.attributes).not_to have_key("db.collection.name")
         expect(span.attributes["appsignal.body"]).to eq("{\"foo\":\"?\"}")
-        expect(span.attributes).not_to have_key("db.response.status_code")
+        expect(span.attributes).not_to have_key("error.type")
 
         snapshot = metric_snapshot("mongodb_query_duration")
         expect(snapshot).not_to be_nil
@@ -194,13 +194,14 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
         expect(scope_of(span)).to eq(["appsignal-ruby/mongo", Appsignal::VERSION])
         expect(span.attributes["db.system.name"]).to eq("mongodb")
         expect(span.attributes["appsignal.body"]).to eq("{\"foo\":\"?\"}")
-        # The query failed, and MongoDB reported its own code for the error in
-        # the document it replied with.
+        # The query failed, and MongoDB named the error in the document it
+        # replied with, along with its own code for it.
+        expect(span.attributes["error.type"]).to eq("NamespaceNotFound")
         expect(span.attributes["db.response.status_code"]).to eq("26")
       end
     end
 
-    describe "instrumenting a query that failed without an error code" do
+    describe "instrumenting a query that failed without a named error" do
       let(:started_event) { command_started_event(:request_id => 2) }
       let(:failed_event) do
         command_failed_event(started_event, :request_id => 2, :failure => {})
@@ -235,7 +236,9 @@ describe Appsignal::Hooks::MongoMonitorSubscriber do
         span = event_span_for("query.mongodb")
         expect(span).not_to be_nil
         # A dropped connection is a failure MongoDB never replied to, so there
-        # is no code to report.
+        # is no error name or code to report. The span says what it can with
+        # the fallback the semantic conventions define.
+        expect(span.attributes["error.type"]).to eq("_OTHER")
         expect(span.attributes).to_not have_key("db.response.status_code")
       end
     end

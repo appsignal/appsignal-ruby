@@ -65,15 +65,20 @@ module Appsignal
         store   = transaction.store("mongo_driver")
         command = store.delete(event.request_id) || {}
 
-        # MongoDB's own code for the error, which the conventions ask for
-        # whenever the database reported one. The driver reports a failure by
-        # calling us rather than by raising, so this is the only place it can be
-        # read. Set before the event is finished, so it lands on the query's own
-        # span.
+        # Say what kind of failure ended the query, which the OpenTelemetry
+        # semantic conventions ask for on a span whose operation failed. The
+        # driver reports a failure by calling us rather than by raising, so this
+        # is the only place it can be read. Set before the event is finished, so
+        # it lands on the query's own span.
         #
         # Only a failure event carries a failure, which is what tells the two
         # apart here.
         if event.respond_to?(:failure)
+          transaction.add_opentelemetry_attributes(
+            Appsignal::OpenTelemetry::ErrorType.attributes_for(error_name(event.failure))
+          )
+          # MongoDB's own code for the error, which the conventions ask for
+          # whenever the database reported one.
           transaction.add_opentelemetry_attributes(
             { "db.response.status_code" => error_code(event.failure) }.compact
           )
@@ -119,6 +124,13 @@ module Appsignal
         return unless failure.respond_to?(:[])
 
         failure["code"]&.to_s
+      end
+
+      # MongoDB names an error in the `codeName` field of the error document it
+      # replies with. A failure the driver never got a document for, such as a
+      # connection that dropped, has no name.
+      def error_name(failure)
+        failure["codeName"] if failure.respond_to?(:[])
       end
     end
   end

@@ -2,6 +2,7 @@
 
 require "appsignal/opentelemetry/attributes"
 require "appsignal/opentelemetry/dependencies"
+require "appsignal/opentelemetry/error_type"
 require "appsignal/opentelemetry/http_client_request"
 require "appsignal/opentelemetry/http_method"
 require "appsignal/opentelemetry/http_response"
