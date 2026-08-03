@@ -39,6 +39,14 @@ if DependencyHelper.http_present?
         span = event_spans.first
         expect(span.name).to eq("request.http_rb (GET http://www.google.com)")
         expect(span.kind).to eq(:client)
+        expect(span.attributes["http.request.method"]).to eq("GET")
+        # The client hands us the method as a lowercase Symbol, so the
+        # canonical form is recorded and the original kept alongside it.
+        expect(span.attributes["http.request.method_original"]).to eq("get")
+        expect(span.attributes["server.address"]).to eq("www.google.com")
+        expect(span.attributes["server.port"]).to eq(80)
+        expect(span.attributes["url.full"]).to eq("http://www.google.com/")
+        expect(span.attributes["http.response.status_code"]).to eq(200)
         expect(span.parent_span_id).to eq(root_span.span_id)
         expect(event_category(span)).to eq("request.http_rb")
         expect(scope_of(span)).to eq(["appsignal-ruby/http_rb", Appsignal::VERSION])
@@ -84,6 +92,14 @@ if DependencyHelper.http_present?
         span = event_spans.first
         expect(span.name).to eq("request.http_rb (GET https://www.google.com)")
         expect(span.kind).to eq(:client)
+        expect(span.attributes["http.request.method"]).to eq("GET")
+        # The client hands us the method as a lowercase Symbol, so the
+        # canonical form is recorded and the original kept alongside it.
+        expect(span.attributes["http.request.method_original"]).to eq("get")
+        expect(span.attributes["server.address"]).to eq("www.google.com")
+        expect(span.attributes["server.port"]).to eq(443)
+        expect(span.attributes["url.full"]).to eq("https://www.google.com/")
+        expect(span.attributes["http.response.status_code"]).to eq(200)
         expect(span.parent_span_id).to eq(root_span.span_id)
         expect(event_category(span)).to eq("request.http_rb")
         expect(scope_of(span)).to eq(["appsignal-ruby/http_rb", Appsignal::VERSION])
@@ -125,6 +141,10 @@ if DependencyHelper.http_present?
           expect(event_category(span)).to eq("request.http_rb")
           expect(scope_of(span)).to eq(["appsignal-ruby/http_rb", Appsignal::VERSION])
           expect(span.attributes).not_to have_key("appsignal.body")
+          # The query parameters are the client's to add, and they stay out of
+          # the URL too.
+          expect(span.attributes["url.full"]).to eq("https://www.google.com/")
+          expect(span.attributes["http.response.status_code"]).to eq(200)
         end
       end
 
@@ -199,6 +219,10 @@ if DependencyHelper.http_present?
         span = event_spans.first
         expect(span.name).to eq("request.http_rb (GET http://www.google.com)")
         expect(span.kind).to eq(:client)
+        expect(span.attributes["http.request.method"]).to eq("GET")
+        # The client hands us the method as a lowercase Symbol, so the
+        # canonical form is recorded and the original kept alongside it.
+        expect(span.attributes["http.request.method_original"]).to eq("get")
         expect(event_category(span)).to eq("request.http_rb")
         expect(scope_of(span)).to eq(["appsignal-ruby/http_rb", Appsignal::VERSION])
       end

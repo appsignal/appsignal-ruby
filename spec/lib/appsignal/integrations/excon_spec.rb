@@ -38,6 +38,19 @@ if DependencyHelper.excon_present?
         span = event_span_for("request.excon")
         expect(span).not_to be_nil
         expect(span.kind).to eq(:client)
+        expect(span.attributes["http.request.method"]).to eq("GET")
+        # The client hands us the method as a lowercase Symbol, so the
+        # canonical form is recorded and the original kept alongside it.
+        expect(span.attributes["http.request.method_original"]).to eq("get")
+        expect(span.attributes["server.address"]).to eq("www.example.com")
+        expect(span.attributes["server.port"]).to eq(80)
+        expect(span.attributes["url.full"]).to eq("http://www.example.com/")
+        # Excon reports the request and the response as two separate
+        # notifications, so the status lands on the response's own span rather
+        # than on this one.
+        expect(span.attributes).to_not have_key("http.response.status_code")
+        expect(event_span_for("response.excon").attributes["http.response.status_code"])
+          .to eq(200)
         expect(span.parent_span_id).to eq(root_span.span_id)
         expect(scope_of(span)).to eq(["appsignal-ruby/excon", Appsignal::VERSION])
 

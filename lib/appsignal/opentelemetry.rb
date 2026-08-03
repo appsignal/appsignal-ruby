@@ -2,6 +2,9 @@
 
 require "appsignal/opentelemetry/attributes"
 require "appsignal/opentelemetry/dependencies"
+require "appsignal/opentelemetry/http_client_request"
+require "appsignal/opentelemetry/http_method"
+require "appsignal/opentelemetry/http_response"
 
 module Appsignal
   # @!visibility private

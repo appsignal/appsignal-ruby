@@ -114,6 +114,10 @@ describe Appsignal::Hooks::ExconHook do
           span = event_spans.first
           expect(span.name).to eq("request.excon (GET http://www.google.com)")
           expect(span.kind).to eq(:client)
+          expect(span.attributes["http.request.method"]).to eq("GET")
+          # The client hands us the method as a lowercase Symbol, so the
+          # canonical form is recorded and the original kept alongside it.
+          expect(span.attributes["http.request.method_original"]).to eq("get")
           expect(span.parent_span_id).to eq(root_span.span_id)
           expect(event_category(span)).to eq("request.excon")
           expect(span.attributes).not_to have_key("appsignal.body")
@@ -156,6 +160,9 @@ describe Appsignal::Hooks::ExconHook do
           expect(span.parent_span_id).to eq(root_span.span_id)
           expect(event_category(span)).to eq("response.excon")
           expect(span.attributes).not_to have_key("appsignal.body")
+          # This notification carries no request method, so none is set rather
+          # than an empty one.
+          expect(span.attributes).not_to have_key("http.request.method")
         end
       end
     end
