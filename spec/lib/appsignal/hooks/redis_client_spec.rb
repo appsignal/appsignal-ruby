@@ -112,6 +112,11 @@ describe Appsignal::Hooks::RedisClientHook do
                   expect(span.attributes["appsignal.body"]).to eq("get ?")
                   expect(event_category(span)).to eq("query.redis")
                   expect(scope_of(span)).to eq(["appsignal-ruby/redis_client", Appsignal::VERSION])
+                  expect(span.attributes["db.system.name"]).to eq("redis")
+                  # The command name, in the case the application wrote it.
+                  expect(span.attributes["db.operation.name"]).to eq("get")
+                  # The index of the database the connection is on, as a String.
+                  expect(span.attributes["db.namespace"]).to eq("0")
                   expect(span.attributes).not_to have_key("db.query.text")
                 end
               end
@@ -153,6 +158,11 @@ describe Appsignal::Hooks::RedisClientHook do
                   expect(span.parent_span_id).to eq(root_span.span_id)
                   expect(span.attributes["appsignal.body"]).to eq("#{script} ? ?")
                   expect(event_category(span)).to eq("query.redis")
+                  expect(span.attributes["db.system.name"]).to eq("redis")
+                  # A script is run with the EVAL command, so that is the operation.
+                  # The script itself stays in the event body.
+                  expect(span.attributes["db.operation.name"]).to eq("eval")
+                  expect(span.attributes["db.namespace"]).to eq("0")
                   expect(span.attributes).not_to have_key("db.query.text")
                 end
               end
@@ -244,6 +254,11 @@ describe Appsignal::Hooks::RedisClientHook do
                     expect(span.parent_span_id).to eq(root_span.span_id)
                     expect(span.attributes["appsignal.body"]).to eq("get ?")
                     expect(event_category(span)).to eq("query.redis")
+                    expect(span.attributes["db.system.name"]).to eq("redis")
+                    # The command name, in the case the application wrote it.
+                    expect(span.attributes["db.operation.name"]).to eq("get")
+                    # The index of the database the connection is on, as a String.
+                    expect(span.attributes["db.namespace"]).to eq("0")
                     expect(span.attributes).not_to have_key("db.query.text")
                   end
                 end
@@ -284,6 +299,11 @@ describe Appsignal::Hooks::RedisClientHook do
                     expect(span.parent_span_id).to eq(root_span.span_id)
                     expect(span.attributes["appsignal.body"]).to eq("#{script} ? ?")
                     expect(event_category(span)).to eq("query.redis")
+                    expect(span.attributes["db.system.name"]).to eq("redis")
+                    # A script is run with the EVAL command, so that is the operation.
+                    # The script itself stays in the event body.
+                    expect(span.attributes["db.operation.name"]).to eq("eval")
+                    expect(span.attributes["db.namespace"]).to eq("0")
                     expect(span.attributes).not_to have_key("db.query.text")
                   end
                 end

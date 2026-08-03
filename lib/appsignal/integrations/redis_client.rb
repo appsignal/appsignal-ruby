@@ -11,6 +11,7 @@ module Appsignal
           else
             "#{command[0]}#{" ?" * (command.size - 1)}"
           end
+        operation_name = command[0].to_s
 
         Appsignal.instrument(
           "query.redis",
@@ -19,6 +20,23 @@ module Appsignal
           :opentelemetry_kind => :client,
           :opentelemetry_scope => ["appsignal-ruby/redis_client", Appsignal::VERSION]
         ) do
+          # Names the datastore this span talks to, which is what the trace
+          # timeline reads to recognize a cache call, along with the command that
+          # was run and the database it ran against. The command stays in the
+          # event body rather than moving to `db.query.text`: it is already
+          # sanitized here, and the collector sanitizes `db.query.text` again
+          # for Redis, which would mangle what we send.
+          #
+          # The command name is reported in the case the application wrote it,
+          # which is what the semantic conventions ask for. The database is
+          # reported as the index the connection is on, as a String.
+          Appsignal::Transaction.current.add_opentelemetry_attributes(
+            {
+              "db.system.name" => "redis",
+              "db.operation.name" => (operation_name unless operation_name.empty?),
+              "db.namespace" => (@config.db.to_s if @config.respond_to?(:db) && @config.db)
+            }.compact
+          )
           super
         end
       end
