@@ -18,6 +18,8 @@ module Appsignal
         # there is only room for one of them, so registering ours would replace
         # any the application set up itself.
         ::Excon::Connection.prepend Appsignal::Integrations::ExconIntegration
+
+        Appsignal::Environment.report_enabled("excon")
       end
     end
   end
