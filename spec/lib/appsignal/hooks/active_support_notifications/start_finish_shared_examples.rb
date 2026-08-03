@@ -39,10 +39,11 @@ shared_examples "activesupport start finish override" do
       expect(span.parent_span_id).to eq(root_span.span_id)
       # A database query is an outgoing call, so it carries CLIENT kind.
       expect(span.kind).to eq(:client)
-      # The formatter received an empty finish payload, so body is empty —
-      # the OTel backend skips writing db.query.text / db.system.name.
+      # The formatter received an empty finish payload, so there is no query to
+      # record. The datastore is named anyway, because this is a database query
+      # either way.
       expect(span.attributes).not_to have_key("db.query.text")
-      expect(span.attributes).not_to have_key("db.system.name")
+      expect(span.attributes["db.system.name"]).to eq("other_sql")
     end
   end
 
