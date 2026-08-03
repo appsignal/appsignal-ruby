@@ -13,9 +13,30 @@ module Appsignal
           "request.http_rb",
           "#{verb.to_s.upcase} #{request_uri}",
           :opentelemetry_kind => :client,
-          :opentelemetry_scope => ["appsignal-ruby/http_rb", Appsignal::VERSION],
-          &block
-        )
+          :opentelemetry_scope => ["appsignal-ruby/http_rb", Appsignal::VERSION]
+        ) do
+          # Describes the span as an outgoing HTTP request. Together with the
+          # CLIENT kind, this is what the trace timeline reads to recognize it
+          # as one.
+          Appsignal::Transaction.current.add_opentelemetry_attributes(
+            Appsignal::OpenTelemetry::HttpClientRequest.attributes_for(
+              :method => verb,
+              :scheme => parsed_request_uri.scheme,
+              :host => parsed_request_uri.host,
+              :port => parsed_request_uri.port,
+              :path => parsed_request_uri.path
+            )
+          )
+          # Describes the response on the same span, which the semantic
+          # conventions ask for whenever one was received. The event is still
+          # open here, so it lands on the request's own span. A request that
+          # followed redirects reports the status of the response it ended on.
+          block.call.tap do |response|
+            Appsignal::Transaction.current.add_opentelemetry_attributes(
+              Appsignal::OpenTelemetry::HttpResponse.attributes_for(response&.code)
+            )
+          end
+        end
       end
 
       # The event is recorded at the request boundary, so a redirected request
