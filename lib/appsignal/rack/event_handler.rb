@@ -68,6 +68,22 @@ module Appsignal
             :opentelemetry_context => Appsignal::OpenTelemetry.extract_rack_context(request.env),
             :opentelemetry_scope => ["appsignal-ruby/rack", Appsignal::VERSION]
           )
+          # Describes the transaction's span as an incoming HTTP request.
+          # Together with the SERVER span kind the transaction already carries,
+          # this is what the trace timeline reads to recognize a web request.
+          #
+          # Set before the event below starts, because attributes go on
+          # whichever span is open and these belong on the transaction's own
+          # span. That event stays open until the response finishes, so there is
+          # no later point in the request at which these could be set.
+          transaction.add_opentelemetry_attributes(
+            Appsignal::OpenTelemetry::HttpServerRequest.attributes_for(
+              :method => Appsignal::Rack::Utils.request_method_from(request),
+              :path => Appsignal::Rack::Utils.request_value_from(request, :path),
+              :scheme => Appsignal::Rack::Utils.request_value_from(request, :scheme),
+              :query => Appsignal::Rack::Utils.request_value_from(request, :query_string)
+            )
+          )
           transaction.start_event(
             :opentelemetry_scope => ["appsignal-ruby/rack", Appsignal::VERSION]
           )
@@ -131,6 +147,17 @@ module Appsignal
           end
           queue_start = Appsignal::Rack::Utils.queue_start_from(request.env)
           transaction.set_queue_start(queue_start) if queue_start
+          # Describes the response on the transaction's span, which the semantic
+          # conventions ask for whenever a response was sent. It can be set here
+          # because the `process_request.rack` event was finished above, which
+          # leaves the transaction's own span as the one attributes go on.
+          #
+          # Only a response the app actually produced counts. The 500 below
+          # stands in for a status that was never sent, so it is reported as a
+          # tag and a metric but not as this attribute.
+          transaction.add_opentelemetry_attributes(
+            Appsignal::OpenTelemetry::HttpResponse.attributes_for(response&.status)
+          )
           response_status =
             if response
               response.status

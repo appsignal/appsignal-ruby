@@ -49,6 +49,7 @@ module Appsignal
             # middleware can detect if there is parent instrumentation
             # middleware active.
             env[Appsignal::Rack::APPSIGNAL_TRANSACTION] = transaction
+            add_opentelemetry_request_attributes(transaction, request)
           end
 
           begin
@@ -67,8 +68,13 @@ module Appsignal
           ensure
             add_transaction_metadata_after(transaction, request)
 
-            # Complete transaction because this is the top instrumentation middleware.
-            Appsignal::Transaction.complete_current! unless wrapped_instrumentation
+            unless wrapped_instrumentation
+              add_opentelemetry_response_attributes(transaction, request)
+
+              # Complete transaction because this is the top instrumentation
+              # middleware.
+              Appsignal::Transaction.complete_current!
+            end
           end
         else
           @app.call(env)
@@ -76,6 +82,45 @@ module Appsignal
       end
 
       private
+
+      # Describes the transaction's span as an incoming HTTP request. Together
+      # with the SERVER span kind the transaction already carries, this is what
+      # the trace timeline reads to recognize a web request.
+      #
+      # Set where the transaction is created, rather than with the rest of the
+      # request metadata in {ApplyRackRequest}, which runs after the app has been
+      # called: by then an event span may be open, and the attributes would land
+      # on that instead. Only the middleware that created the transaction sets
+      # them, so nested middleware does not write them again.
+      def add_opentelemetry_request_attributes(transaction, request)
+        transaction.add_opentelemetry_attributes(
+          Appsignal::OpenTelemetry::HttpServerRequest.attributes_for(
+            :method => Appsignal::Rack::Utils.request_method_from(request),
+            :path => Appsignal::Rack::Utils.request_value_from(request, :path),
+            :scheme => Appsignal::Rack::Utils.request_value_from(request, :scheme),
+            :query => Appsignal::Rack::Utils.request_value_from(request, :query_string)
+          )
+        )
+      end
+
+      # Describes the response the app produced on the transaction's span, which
+      # the semantic conventions ask for whenever a response was sent.
+      #
+      # Set from the `ensure` in {#call} rather than from {#call_app}, where the
+      # status is first known. That runs inside the instrumented event, so the
+      # attribute would land on the event span instead of on the transaction's
+      # own span. The status travels between the two in the request environment
+      # for that reason.
+      #
+      # A request whose app raised never produced a status, and is described
+      # without one.
+      def add_opentelemetry_response_attributes(transaction, request)
+        transaction.add_opentelemetry_attributes(
+          Appsignal::OpenTelemetry::HttpResponse.attributes_for(
+            request.env[Appsignal::Rack::APPSIGNAL_RESPONSE_STATUS]
+          )
+        )
+      end
 
       # Another instrumentation middleware is active earlier in the stack, so
       # don't report any exceptions here, the top instrumentation middleware
@@ -100,6 +145,9 @@ module Appsignal
 
       def call_app(env, transaction)
         status, headers, obody = @app.call(env)
+        # Remember the status for {#add_opentelemetry_response_attributes}, which
+        # runs once this event has closed.
+        env[Appsignal::Rack::APPSIGNAL_RESPONSE_STATUS] = status
         body =
           if env[Appsignal::Rack::APPSIGNAL_RESPONSE_INSTRUMENTED]
             obody

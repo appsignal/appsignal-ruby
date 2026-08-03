@@ -74,6 +74,46 @@ if DependencyHelper.webmachine_present?
         end
       end
 
+      describe "marking the transaction as an incoming HTTP request" do
+        # These describe the request as a whole, so they belong on the
+        # transaction's span and on none of the events recorded within it.
+        it "sets the request attributes on the transaction span only", :collector_mode do
+          start_collector_agent
+          perform
+
+          expect(root_span.attributes["http.request.method"]).to eq("GET")
+          # The path and scheme come off the request's URI, which Webmachine
+          # builds from the full request URL. The query string is a separate
+          # attribute, so it must not end up in the path.
+          expect(root_span.attributes["url.path"]).to eq("/foo")
+          expect(root_span.attributes["url.scheme"]).to eq("http")
+          expect(root_span.attributes["url.query"])
+            .to eq("param1=value1&param2=value2")
+          expect(event_spans).to_not be_empty
+          event_spans.each do |span|
+            expect(span.attributes).to_not have_key("http.request.method")
+            expect(span.attributes).to_not have_key("url.path")
+            expect(span.attributes).to_not have_key("url.scheme")
+            expect(span.attributes).to_not have_key("url.query")
+          end
+        end
+      end
+
+      describe "describing the response" do
+        # The event has closed by the time the response code is known, which is
+        # what makes the transaction's own span the one this lands on.
+        it "sets the response status on the transaction span only", :collector_mode do
+          start_collector_agent
+          perform
+
+          expect(root_span.attributes["http.response.status_code"]).to eq(200)
+          expect(event_spans).to_not be_empty
+          event_spans.each do |span|
+            expect(span.attributes).to_not have_key("http.response.status_code")
+          end
+        end
+      end
+
       context "with action already set" do
         let(:app) do
           proc do
