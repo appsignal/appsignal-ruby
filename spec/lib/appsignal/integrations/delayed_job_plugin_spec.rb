@@ -40,7 +40,7 @@ if DependencyHelper.delayed_job_present?
           transaction = http_request_transaction
           set_current_transaction(transaction)
 
-          Delayed::Job.enqueue(DelayedTestJob.new)
+          Delayed::Job.enqueue(DelayedTestJob.new, :queue => "dj-queue")
 
           event = transaction.to_h["events"].find { |e| e["name"] == "enqueue.delayed_job" }
           expect(event).to_not be_nil
@@ -52,7 +52,7 @@ if DependencyHelper.delayed_job_present?
           transaction = http_request_transaction
           set_current_transaction(transaction)
 
-          Delayed::Job.enqueue(DelayedTestJob.new)
+          Delayed::Job.enqueue(DelayedTestJob.new, :queue => "dj-queue")
           Appsignal::Transaction.complete_current!
 
           # Delayed Job has no envelope to carry trace context, so -- like
@@ -62,6 +62,10 @@ if DependencyHelper.delayed_job_present?
           expect(producer.name).to eq("enqueue.delayed_job (enqueue DelayedTestJob job)")
           expect(scope_of(producer)).to eq(["appsignal-ruby/delayed_job", Appsignal::VERSION])
           expect(producer.kind).to eq(:producer)
+          expect(producer.attributes["messaging.system"]).to eq("delayed_job")
+          expect(producer.attributes["messaging.operation.name"]).to eq("enqueue")
+          expect(producer.attributes["messaging.operation.type"]).to eq("send")
+          expect(producer.attributes["messaging.destination.name"]).to eq("dj-queue")
           expect(producer.parent_span_id).to eq(root_span.span_id)
         end
       end
@@ -144,7 +148,7 @@ if DependencyHelper.delayed_job_present?
       context "with a normal job" do
         it "wraps it in a background_job transaction", :agent_mode do
           start_agent
-          job = Delayed::Job.enqueue(DelayedTestJob.new)
+          job = Delayed::Job.enqueue(DelayedTestJob.new, :queue => "dj-queue")
 
           keep_transactions { perform_job(job) }
 
@@ -158,16 +162,24 @@ if DependencyHelper.delayed_job_present?
 
         it "wraps it in a consumer span", :collector_mode do
           start_collector_agent
-          job = Delayed::Job.enqueue(DelayedTestJob.new)
+          job = Delayed::Job.enqueue(DelayedTestJob.new, :queue => "dj-queue")
 
           perform_job(job)
           Appsignal::Transaction.complete_current!
 
           expect(root_span.kind).to eq(:consumer)
+          expect(root_span.attributes["messaging.system"]).to eq("delayed_job")
+          expect(root_span.attributes["messaging.operation.name"]).to eq("perform")
+          expect(root_span.attributes["messaging.operation.type"]).to eq("process")
+          expect(root_span.attributes["messaging.destination.name"]).to eq("dj-queue")
           expect(root_span.attributes["appsignal.action_name"]).to eq("DelayedTestJob#perform")
           expect(root_span.attributes["appsignal.namespace"]).to eq("background")
           expect(event_spans.map(&:name)).to include("perform_job.delayed_job")
           perform_span = event_spans.find { |s| s.name == "perform_job.delayed_job" }
+          expect(perform_span.attributes["messaging.system"]).to eq("delayed_job")
+          expect(perform_span.attributes["messaging.operation.name"]).to eq("perform")
+          expect(perform_span.attributes["messaging.operation.type"]).to eq("process")
+          expect(perform_span.attributes["messaging.destination.name"]).to eq("dj-queue")
           expect(scope_of(root_span)).to eq(["appsignal-ruby/delayed_job", Appsignal::VERSION])
           expect(scope_of(perform_span)).to eq(["appsignal-ruby/delayed_job", Appsignal::VERSION])
         end

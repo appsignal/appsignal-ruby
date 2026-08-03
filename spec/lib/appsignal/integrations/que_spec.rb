@@ -80,11 +80,19 @@ if DependencyHelper.que_present?
             expect { perform }.to change { created_transactions.length }.by(1)
 
             expect(root_span.kind).to eq(:consumer)
+            expect(root_span.attributes["messaging.system"]).to eq("que")
+            expect(root_span.attributes["messaging.operation.name"]).to eq("perform")
+            expect(root_span.attributes["messaging.operation.type"]).to eq("process")
+            expect(root_span.attributes["messaging.destination.name"]).to eq("dfl")
             expect(root_span.attributes["appsignal.namespace"])
               .to eq("background")
             expect(root_span.attributes["appsignal.action_name"]).to eq("MyQueJob#run")
             expect(exception_events).to be_empty
             span = event_spans.find { |s| s.name == "perform_job.que" }
+            expect(span.attributes["messaging.system"]).to eq("que")
+            expect(span.attributes["messaging.operation.name"]).to eq("perform")
+            expect(span.attributes["messaging.operation.type"]).to eq("process")
+            expect(span.attributes["messaging.destination.name"]).to eq("dfl")
             expect(span).not_to be_nil
             expect(span.parent_span_id).to eq(root_span.span_id)
             expect(span.attributes).not_to have_key("appsignal.body")
@@ -500,6 +508,13 @@ if DependencyHelper.que_present?
         expect(producer.name).to eq("enqueue.que (enqueue MyQueJob job)")
         expect(scope_of(producer)).to eq(["appsignal-ruby/que", Appsignal::VERSION])
         expect(producer.kind).to eq(:producer)
+        expect(producer.attributes["messaging.system"]).to eq("que")
+        expect(producer.attributes["messaging.operation.name"]).to eq("enqueue")
+        expect(producer.attributes["messaging.operation.type"]).to eq("send")
+        # Que only records the queue on the job itself. An enqueue that does not
+        # name one gets Que's default, which this integration cannot see, so no
+        # queue is reported.
+        expect(producer.attributes).to_not have_key("messaging.destination.name")
         expect(producer.parent_span_id).to eq(root_span.span_id)
 
         if DependencyHelper.que1_present?
@@ -654,6 +669,12 @@ if DependencyHelper.que_present?
           producer = producers.first
           expect(producer.name).to eq("bulk_enqueue.que (bulk enqueue MyQueJob jobs)")
           expect(producer.kind).to eq(:producer)
+          expect(producer.attributes["messaging.system"]).to eq("que")
+          expect(producer.attributes["messaging.operation.name"]).to eq("enqueue")
+          expect(producer.attributes["messaging.operation.type"]).to eq("send")
+          # As with a single enqueue, a batch that does not name a queue gets
+          # Que's default, which this integration cannot see.
+          expect(producer.attributes).to_not have_key("messaging.destination.name")
           expect(producer.parent_span_id).to eq(root_span.span_id)
 
           # Every job in the batch carries the one producer span's context, plus
