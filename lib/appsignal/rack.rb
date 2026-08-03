@@ -7,9 +7,46 @@ module Appsignal
     APPSIGNAL_EVENT_HANDLER_ID = "appsignal.event_handler_id"
     APPSIGNAL_EVENT_HANDLER_HAS_ERROR = "appsignal.event_handler.error"
     APPSIGNAL_RESPONSE_INSTRUMENTED = "appsignal.response_instrumentation_active"
+    APPSIGNAL_RESPONSE_STATUS = "appsignal.response_status"
     RACK_AFTER_REPLY = "rack.after_reply"
 
     class Utils
+      # Fetch the HTTP request method from the request.
+      #
+      # The request class is configurable, so reading the method can raise.
+      # Log and return nil in that case, leaving it to the caller to skip
+      # whatever it needed the method for.
+      #
+      # @param request [Rack::Request] Request object.
+      # @return [String, NilClass]
+      def self.request_method_from(request)
+        request.request_method
+      rescue => error
+        Appsignal.internal_logger.error(
+          "Exception while fetching the HTTP request method: #{error.class}: #{error}"
+        )
+        nil
+      end
+
+      # Fetch a value that describes the request, named after the method that
+      # reads it.
+      #
+      # The request class is configurable, so reading from the request can
+      # raise. Log and return nil in that case, leaving it to the caller to skip
+      # whatever it needed the value for.
+      #
+      # @param request [Rack::Request] Request object.
+      # @param name [Symbol] Name of the method that reads the value.
+      # @return [Object, NilClass]
+      def self.request_value_from(request, name)
+        request.public_send(name)
+      rescue => error
+        Appsignal.internal_logger.error(
+          "Exception while fetching the HTTP request #{name}: #{error.class}: #{error}"
+        )
+        nil
+      end
+
       # Fetch the queue start time from the request environment.
       #
       # @since 3.11.0
@@ -53,7 +90,7 @@ module Appsignal
         # TODO: Remove in next major/minor version
         transaction.set_metadata("path", request_path)
 
-        request_method = request_method_for(request)
+        request_method = Appsignal::Rack::Utils.request_method_from(request)
         if request_method
           transaction.set_metadata("request_method", request_method)
           # TODO: Remove in next major/minor version
@@ -80,15 +117,6 @@ module Appsignal
         Appsignal.internal_logger.error(
           "Exception while fetching params from '#{request.class}##{@params_method}': " \
             "#{error.class} #{error}"
-        )
-        nil
-      end
-
-      def request_method_for(request)
-        request.request_method
-      rescue => error
-        Appsignal.internal_logger.error(
-          "Exception while fetching the HTTP request method: #{error.class}: #{error}"
         )
         nil
       end
