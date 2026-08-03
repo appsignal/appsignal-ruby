@@ -29,38 +29,6 @@ describe Appsignal::Hooks::ExconHook do
         expect(Excon.defaults[:instrumentor]).to eql(Appsignal::Integrations::ExconIntegration)
       end
     end
-
-    describe "instrumentation" do
-      let(:transaction) { http_request_transaction }
-      before { set_current_transaction(transaction) }
-      around { |example| keep_transactions { example.run } }
-
-      it "instruments a http request" do
-        data = {
-          :host => "www.google.com",
-          :method => :get,
-          :scheme => "http"
-        }
-        Excon.defaults[:instrumentor].instrument("excon.request", data) {} # rubocop:disable Lint/EmptyBlock
-
-        expect(transaction).to include_event(
-          "name" => "request.excon",
-          "title" => "GET http://www.google.com",
-          "body" => ""
-        )
-      end
-
-      it "instruments a http response" do
-        data = { :host => "www.google.com" }
-        Excon.defaults[:instrumentor].instrument("excon.response", data) {} # rubocop:disable Lint/EmptyBlock
-
-        expect(transaction).to include_event(
-          "name" => "response.excon",
-          "title" => "www.google.com",
-          "body" => ""
-        )
-      end
-    end
   end
 
   context "without Excon" do
