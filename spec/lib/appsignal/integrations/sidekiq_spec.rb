@@ -140,6 +140,12 @@ if DependencyHelper.sidekiq_present?
             perform
 
             expect(root_span.kind).to eq(:consumer)
+            expect(root_span.attributes["messaging.system"]).to eq("sidekiq")
+            expect(root_span.attributes["messaging.operation.name"]).to eq("perform")
+            expect(root_span.attributes["messaging.operation.type"]).to eq("process")
+            # This transaction stands in for a job that could not be processed,
+            # so there is no job and no queue to name.
+            expect(root_span.attributes).to_not have_key("messaging.destination.name")
             expect(scope_of(root_span)).to eq(["appsignal-ruby/sidekiq", Appsignal::VERSION])
             expect(root_span.attributes["appsignal.action_name"])
               .to eq("SidekiqInternal")
@@ -327,7 +333,9 @@ if DependencyHelper.sidekiq_present?
 
   describe Appsignal::Integrations::SidekiqClientMiddleware do
     let(:plugin) { described_class.new }
-    let(:job) { { "class" => "TestClass", "args" => [] } }
+    # Sidekiq fills the queue in before it calls the client middleware, so the
+    # job hash the middleware is given always names one.
+    let(:job) { { "class" => "TestClass", "args" => [], "queue" => "default" } }
 
     def enqueue
       plugin.call("TestClass", job, "default", nil) { :enqueued }
@@ -362,6 +370,10 @@ if DependencyHelper.sidekiq_present?
         producer = event_span_for("enqueue.sidekiq")
         expect(producer.name).to eq("enqueue.sidekiq (enqueue TestClass job)")
         expect(producer.kind).to eq(:producer)
+        expect(producer.attributes["messaging.system"]).to eq("sidekiq")
+        expect(producer.attributes["messaging.operation.name"]).to eq("enqueue")
+        expect(producer.attributes["messaging.operation.type"]).to eq("send")
+        expect(producer.attributes["messaging.destination.name"]).to eq("default")
         expect(producer.parent_span_id).to eq(root_span.span_id)
         expect(scope_of(producer)).to eq(["appsignal-ruby/sidekiq", Appsignal::VERSION])
 
@@ -933,6 +945,10 @@ if DependencyHelper.sidekiq_present?
           expect(root_span.attributes["appsignal.tag.request_id"]).to eq(jid)
           expect(event_spans.size).to eq(1)
           span = event_spans.find { |s| s.name == "perform_job.sidekiq" }
+          expect(span.attributes["messaging.system"]).to eq("sidekiq")
+          expect(span.attributes["messaging.operation.name"]).to eq("perform")
+          expect(span.attributes["messaging.operation.type"]).to eq("process")
+          expect(span.attributes["messaging.destination.name"]).to eq("default")
           expect(span).not_to be_nil
           expect(span.parent_span_id).to eq(root_span.span_id)
           expect(span.attributes).not_to have_key("appsignal.body")

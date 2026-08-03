@@ -79,6 +79,10 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
           expect { perform }.to change { created_transactions.length }.by(1)
 
           expect(root_span.kind).to eq(:consumer)
+          expect(root_span.attributes["messaging.system"]).to eq("aws_sqs")
+          expect(root_span.attributes["messaging.operation.name"]).to eq("perform")
+          expect(root_span.attributes["messaging.operation.type"]).to eq("process")
+          expect(root_span.attributes["messaging.destination.name"]).to eq("some-funky-queue-name")
           expect(root_span.attributes["appsignal.namespace"])
             .to eq("background")
           expect(root_span.name).to eq("DemoShoryukenWorker#perform")
@@ -86,6 +90,14 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
             .to eq("DemoShoryukenWorker#perform")
           expect(exception_events).to be_empty
           span = event_spans.find { |s| s.name == "perform_job.shoryuken" }
+          expect(span.attributes["messaging.system"]).to eq("aws_sqs")
+          expect(span.attributes["messaging.operation.name"]).to eq("perform")
+          expect(span.attributes["messaging.operation.type"]).to eq("process")
+          expect(span.attributes["messaging.destination.name"]).to eq("some-funky-queue-name")
+          # A single message is not a batch, so the conventions say a span for
+          # one must not carry a message count.
+          expect(root_span.attributes).to_not have_key("messaging.batch.message_count")
+          expect(span.attributes).to_not have_key("messaging.batch.message_count")
           expect(span).not_to be_nil
           expect(span.parent_span_id).to eq(root_span.span_id)
           expect(span.attributes).not_to have_key("appsignal.body")
@@ -349,6 +361,9 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
           )
         expect(root_span.attributes["appsignal.tag.batch"]).to eq(true)
         expect(root_span.attributes["appsignal.tag.queue"]).to eq("some-funky-queue-name")
+        # This call covers a batch, so it says how many messages are in it.
+        expect(root_span.attributes["messaging.batch.message_count"]).to eq(2)
+        expect(span.attributes["messaging.batch.message_count"]).to eq(2)
         # Earliest/oldest timestamp from messages
         expect(root_span.attributes["appsignal.tag.SentTimestamp"])
           .to eq(sent_timestamp.to_s)
@@ -414,6 +429,10 @@ describe Appsignal::Integrations::ShoryukenClientMiddleware do
         expect(producer.name).to eq("enqueue.shoryuken (enqueue MyShoryukenWorker job)")
         expect(scope_of(producer)).to eq(["appsignal-ruby/shoryuken", Appsignal::VERSION])
         expect(producer.kind).to eq(:producer)
+        expect(producer.attributes["messaging.system"]).to eq("aws_sqs")
+        expect(producer.attributes["messaging.operation.name"]).to eq("enqueue")
+        expect(producer.attributes["messaging.operation.type"]).to eq("send")
+        expect(producer.attributes["messaging.destination.name"]).to eq("my-queue")
         expect(producer.parent_span_id).to eq(root_span.span_id)
 
         # The message carries the producer span's trace context as an SQS message

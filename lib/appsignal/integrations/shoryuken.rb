@@ -70,6 +70,8 @@ module Appsignal
     class ShoryukenMiddleware
       def call(worker_instance, queue, sqs_msg, body, &block)
         batch = sqs_msg.is_a?(Array)
+        # How many messages this call covers, which is only reported for a batch.
+        batch_size = sqs_msg.size if batch
 
         # Read the incoming trace context off the message so the transaction
         # links back to the enqueuer. A batch carries messages from multiple
@@ -84,12 +86,27 @@ module Appsignal
           :opentelemetry_kind => :consumer,
           :opentelemetry_relationship => :both
         )
+        # Describes this span as a job being performed. The messaging system is
+        # what the trace timeline reads to recognize background job work.
+        # Shoryuken runs on Amazon SQS, so it takes the `aws_sqs` value the
+        # OpenTelemetry semantic conventions define for it.
+        transaction.add_opentelemetry_attributes(
+          Appsignal::OpenTelemetry::Messaging.perform_attributes(
+            "aws_sqs", :destination => queue, :batch_size => batch_size
+          )
+        )
 
         Appsignal.instrument(
           "perform_job.shoryuken",
-          :opentelemetry_scope => ["appsignal-ruby/shoryuken", Appsignal::VERSION],
-          &block
-        )
+          :opentelemetry_scope => ["appsignal-ruby/shoryuken", Appsignal::VERSION]
+        ) do
+          Appsignal::Transaction.current.add_opentelemetry_attributes(
+            Appsignal::OpenTelemetry::Messaging.perform_attributes(
+              "aws_sqs", :destination => queue, :batch_size => batch_size
+            )
+          )
+          block.call
+        end
       rescue Exception => error
         transaction.set_error(error)
         raise
@@ -187,6 +204,10 @@ module Appsignal
           :opentelemetry_kind => :producer,
           :opentelemetry_scope => ["appsignal-ruby/shoryuken", Appsignal::VERSION]
         ) do
+          Appsignal::Transaction.current.add_opentelemetry_attributes(
+            Appsignal::OpenTelemetry::Messaging
+              .enqueue_attributes("aws_sqs", :destination => queue_name(options))
+          )
           ShoryukenTraceContext.inject(options)
           yield
         end
@@ -201,8 +222,13 @@ module Appsignal
         worker_class = options.dig(:message_attributes, "shoryuken_class", :string_value)
         return "enqueue #{worker_class} job" if worker_class
 
-        queue = options[:queue_url].to_s.split("/").last
-        "enqueue on #{queue}"
+        "enqueue on #{queue_name(options)}"
+      end
+
+      # The queue a message is being sent to, which SQS identifies by a URL whose
+      # last segment is the queue's name.
+      def queue_name(options)
+        options[:queue_url].to_s.split("/").last
       end
     end
   end
