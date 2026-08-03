@@ -113,6 +113,32 @@ describe Appsignal::Rack::AbstractMiddleware do
           end
         end
 
+        context "with a nested instrumentation middleware" do
+          let(:options) { { :instrument_event_name => "outer_event.category" } }
+          let(:app) do
+            described_class.new(
+              DummyApp.new,
+              :instrument_event_name => "inner_event.category"
+            )
+          end
+
+          # Only the middleware that created the transaction describes the
+          # response. The nested one finishes while the outer one's event is
+          # still open, so it would describe that event rather than the
+          # transaction.
+          it "describes the response on the transaction span only", :collector_mode do
+            start_collector_agent
+            make_request
+
+            expect(root_span.attributes["http.response.status_code"]).to eq(200)
+            expect(event_spans.map(&:name))
+              .to include("outer_event.category", "inner_event.category")
+            event_spans.each do |span|
+              expect(span.attributes).to_not have_key("http.response.status_code")
+            end
+          end
+        end
+
         context "without :instrument_event_name option set" do
           let(:options) { {} }
 

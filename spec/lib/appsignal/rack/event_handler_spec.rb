@@ -132,6 +132,44 @@ describe Appsignal::Rack::EventHandler do
       end
     end
 
+    describe "marking the transaction as an incoming HTTP request" do
+      # The `process_request.rack` event opens together with the transaction and
+      # stays open until the response finishes. An attribute set anywhere later
+      # in the request would land on that event span instead of the transaction
+      # span, which is why these are set before the event starts.
+      it "sets the request attributes on the transaction span only", :collector_mode do
+        start_collector_agent
+        on_start
+        Appsignal::Transaction.complete_current!
+
+        expect(root_span.attributes["http.request.method"]).to eq("POST")
+        expect(root_span.attributes["url.path"]).to eq("/path")
+        # Sent whole and unfiltered. The collector filters it with the
+        # `filter_request_query_parameters` option.
+        expect(root_span.attributes["url.query"])
+          .to eq("query_param1=value1&query_param2=value2")
+        # This environment carries no scheme, so there is nothing to report and
+        # the attribute is left out rather than sent empty.
+        expect(root_span.attributes).to_not have_key("url.scheme")
+        expect(event_spans).to_not be_empty
+        event_spans.each do |span|
+          expect(span.attributes).to_not have_key("http.request.method")
+          expect(span.attributes).to_not have_key("url.path")
+          expect(span.attributes).to_not have_key("url.scheme")
+          expect(span.attributes).to_not have_key("url.query")
+        end
+      end
+
+      it "reads the scheme off the request", :collector_mode do
+        env["rack.url_scheme"] = "https"
+        start_collector_agent
+        on_start
+        Appsignal::Transaction.complete_current!
+
+        expect(root_span.attributes["url.scheme"]).to eq("https")
+      end
+    end
+
     context "when not active" do
       let(:appsignal_env) { :inactive_env }
 
@@ -790,6 +828,19 @@ describe Appsignal::Rack::EventHandler do
           end
         end
 
+        it "does not describe a response that was never sent", :collector_mode do
+          start_collector_agent
+          use_test_logger
+          on_start
+          on_error(ExampleStandardError.new("the error"))
+          on_finish(request, nil)
+
+          # The 500 stands in for a status the app never sent, so it is reported
+          # as a tag but not as the attribute the conventions define.
+          expect(root_span.attributes["appsignal.tag.response_status"]).to eq(500)
+          expect(root_span.attributes).to_not have_key("http.response.status_code")
+        end
+
         describe "increments the response status counter for response status 500" do
           def perform
             on_start
@@ -935,6 +986,33 @@ describe Appsignal::Rack::EventHandler do
     end
 
     context "with response" do
+      describe "describing the response" do
+        # The `process_request.rack` event is finished at the start of
+        # `on_finish`, which leaves the transaction's own span as the one
+        # attributes go on.
+        it "sets the response status on the transaction span only", :collector_mode do
+          start_collector_agent
+          use_test_logger
+          on_start
+          on_finish
+
+          expect(root_span.attributes["http.response.status_code"]).to eq(200)
+          expect(event_spans).to_not be_empty
+          event_spans.each do |span|
+            expect(span.attributes).to_not have_key("http.response.status_code")
+          end
+        end
+
+        it "reads the status off the response", :collector_mode do
+          start_collector_agent
+          use_test_logger
+          on_start
+          on_finish(request, Rack::Events::BufferedResponse.new(404, {}, ["body"]))
+
+          expect(root_span.attributes["http.response.status_code"]).to eq(404)
+        end
+      end
+
       describe "sets the response status as a tag" do
         def perform
           on_start
