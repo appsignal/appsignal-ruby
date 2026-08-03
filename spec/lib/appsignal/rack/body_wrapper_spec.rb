@@ -120,30 +120,28 @@ describe Appsignal::Rack::BodyWrapper do
         expect { |b| enum.each(&b) }.to yield_successive_args("a", "b", "c")
       end
 
+      # Iterating the returned Enumerator reads the body through the same
+      # instrumented `each`, so it is recorded exactly as passing a block is.
       it "in agent mode", :agent_mode do
         start_agent
 
         perform
 
-        expect(transaction).to_not include_event("name" => "process_response_body.rack")
+        expect(transaction).to include_event(
+          "name" => "process_response_body.rack",
+          "title" => "Process Rack response body (#each)"
+        )
       end
 
       it "in collector mode", :collector_mode do
         start_collector_agent
 
         perform
-        transaction.complete
 
-        # Mirrors the agent `to_not include_event` here: that matcher only
-        # excludes a *default-shaped* event (empty title). Iterating the
-        # returned Enumerator still instruments `each`, so the recorded event
-        # carries the "#each" title -- there is just never a title-less one.
-        # A title-less event names the span after its category alone, without
-        # a parenthesized title; the "#each" one never does.
-        titleless_event = event_spans_for("process_response_body.rack").find do |span|
-          span.name == "process_response_body.rack"
-        end
-        expect(titleless_event).to be_nil
+        expect_collector_event(
+          "process_response_body.rack",
+          "Process Rack response body (#each)"
+        )
       end
     end
 

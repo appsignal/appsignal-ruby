@@ -108,7 +108,13 @@ RSpec::Matchers.define :include_event do |event|
   match_when_negated(:notify_expectation_failures => true) do |transaction|
     events = transaction.to_h["events"]
     if event
-      expect(events).to_not include(format_event(event))
+      # Match on the given keys alone, rather than through `format_event`. Every
+      # key the caller leaves out is given a default there, and an event that
+      # differs from that default in any of them does not match. So an event
+      # ruled out by name alone still matched nothing as soon as it had a title,
+      # which nearly every event has, and the expectation passed while the event
+      # it ruled out was there all along.
+      expect(events).to_not include(hash_including(event.transform_keys(&:to_s)))
     else
       expect(events).to be_empty
     end
