@@ -2,14 +2,9 @@ if DependencyHelper.excon_present?
   require "excon"
   require "appsignal/integrations/excon"
 
-  # Integration test against the real Excon gem. The hook registers AppSignal as
-  # Excon's instrumentor, and Excon calls an instrumentor three times per
-  # request: once when it sends the request, once when it reads the response, and
-  # once when the request fails. AppSignal turns each of those calls into its own
-  # event.
-  #
-  # These examples record what that produces today, including the parts of it
-  # that are wrong.
+  # Integration test against the real Excon gem. The hook instruments the
+  # connection, so a request is one event that covers the whole of it: sending
+  # the request, waiting for the remote service, and reading the response.
   describe "Excon integration" do
     before { Appsignal::Hooks::ExconHook.new.install }
 
@@ -33,15 +28,10 @@ if DependencyHelper.excon_present?
         Excon.get("http://www.example.com/")
       end
 
-      it "records the request and the response as two separate events" do
+      it "records the request as one event" do
         perform
 
-        expect(event_names).to eq(["request.excon", "response.excon"])
-      end
-
-      it "titles the request event after the request" do
-        perform
-
+        expect(event_names).to eq(["request.excon"])
         expect(transaction).to include_event(
           "name" => "request.excon",
           "title" => "GET http://www.example.com",
@@ -49,27 +39,15 @@ if DependencyHelper.excon_present?
         )
       end
 
-      # Excon gives an instrumentor only the response when it reads one, and the
-      # response holds no host, so the title this event is built from is never
-      # there. It has been titleless since the integration was written.
-      it "leaves the response event without a title" do
-        perform
-
-        expect(transaction).to include_event(
-          "name" => "response.excon",
-          "title" => "",
-          "body" => ""
-        )
+      it "returns the response to the caller" do
+        expect(perform.status).to eq(200)
       end
     end
 
     # Excon runs its middleware stack twice for a request: once on the way out to
-    # send it, and again on the way back to read the response. Those are two
-    # separate passes, and the middleware that reads the response off the socket
-    # runs outside the one that calls the instrumentor.
-    #
-    # So the time spent waiting for the remote service lands on neither event. An
-    # Excon request is reported as taking almost no time, however slow it was.
+    # send it, and again on the way back to read the response. Instrumenting the
+    # connection puts both passes inside the event, so the wait for the remote
+    # service is measured.
     describe "the time spent reading the response" do
       # Stands in for Excon's own ResponseParser middleware. It spends time in
       # the response pass, in the same place Excon really blocks.
@@ -90,11 +68,10 @@ if DependencyHelper.excon_present?
         )
       end
 
-      it "is recorded on neither event" do
+      it "is recorded on the event" do
         perform
 
-        expect(event_duration("request.excon")).to be < 50
-        expect(event_duration("response.excon")).to be < 50
+        expect(event_duration("request.excon")).to be >= 100
       end
     end
 
@@ -105,23 +82,10 @@ if DependencyHelper.excon_present?
           .to raise_error(Excon::Error::Timeout)
       end
 
-      it "records the request and the failure as two separate events" do
+      it "records the request as one event, and lets the error through" do
         perform
 
-        expect(event_names).to eq(["request.excon", "error.excon"])
-      end
-
-      # Excon gives an instrumentor only the error when a request fails. The
-      # title is built from a request that is not there, so every failed request
-      # is titled with the leftover punctuation of that format.
-      it "titles the failure event with an empty request" do
-        perform
-
-        expect(transaction).to include_event(
-          "name" => "error.excon",
-          "title" => " ://",
-          "body" => ""
-        )
+        expect(event_names).to eq(["request.excon"])
       end
     end
 
@@ -144,7 +108,8 @@ if DependencyHelper.excon_present?
 
     # Excon retries a request when it is marked idempotent and fails with a
     # socket error. It retries by asking the connection to make the request
-    # again, so each attempt is instrumented on its own.
+    # again, from inside the request it is retrying, so the retries are part of
+    # the same event.
     describe "a request that is retried" do
       def perform
         stub_request(:get, "http://www.example.com/").to_timeout
@@ -157,19 +122,16 @@ if DependencyHelper.excon_present?
         end.to raise_error(Excon::Error::Timeout)
       end
 
-      it "records an event per attempt, and one for the failure" do
+      it "records every attempt as one event" do
         perform
 
-        expect(event_names).to eq(
-          ["request.excon", "retry.excon", "retry.excon", "error.excon"]
-        )
+        expect(event_names).to eq(["request.excon"])
       end
     end
 
-    # Excon follows a redirect by making the request again against the new
-    # location, so each hop is instrumented on its own. The hop that redirects
-    # never reaches the instrumentor with its response, because the middleware
-    # that follows the redirect replaces it, so only the last hop records one.
+    # Excon follows a redirect the same way, by making the request again from
+    # inside the request being redirected, so every hop is part of the same
+    # event.
     describe "a request that is redirected" do
       def perform
         stub_request(:get, "http://www.example.com/").to_return(
@@ -184,11 +146,15 @@ if DependencyHelper.excon_present?
         )
       end
 
-      it "records an event per hop, and one response for the last hop" do
+      it "records every hop as one event" do
         perform
 
-        expect(event_names).to eq(
-          ["request.excon", "request.excon", "response.excon"]
+        expect(event_names).to eq(["request.excon"])
+        # The event is titled after the request that was made, not the location
+        # it ended up at.
+        expect(transaction).to include_event(
+          "name" => "request.excon",
+          "title" => "GET http://www.example.com"
         )
       end
     end

@@ -4,11 +4,8 @@ describe Appsignal::Hooks::ExconHook do
 
   context "with Excon" do
     before do
-      stub_const("Excon", Class.new do
-        def self.defaults
-          @defaults ||= {}
-        end
-      end)
+      stub_const("Excon", Module.new)
+      stub_const("Excon::Connection", Class.new)
       Appsignal::Hooks::ExconHook.new.install
     end
 
@@ -25,8 +22,9 @@ describe Appsignal::Hooks::ExconHook do
     end
 
     describe "#install" do
-      it "adds the AppSignal instrumentor to Excon" do
-        expect(Excon.defaults[:instrumentor]).to eql(Appsignal::Integrations::ExconIntegration)
+      it "adds the AppSignal integration to Excon connections" do
+        expect(Excon::Connection.ancestors)
+          .to include(Appsignal::Integrations::ExconIntegration)
       end
     end
   end
