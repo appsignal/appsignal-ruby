@@ -84,6 +84,21 @@ module Appsignal
               )
             end
 
+          unless has_wrapper_transaction
+            # Describes this span as a job being performed. The messaging
+            # system is what the trace timeline reads to recognize background
+            # job work, and `active_job` is the value OpenTelemetry's own Active
+            # Job instrumentation uses.
+            #
+            # Only set when this hook created the transaction. When an adapter
+            # integration created it, that adapter already named itself, and its
+            # answer is the more specific one.
+            transaction.add_opentelemetry_attributes(
+              Appsignal::OpenTelemetry::Messaging
+                .perform_attributes("active_job", :destination => job["queue_name"])
+            )
+          end
+
           begin
             transaction.add_function_parameters_if_nil(job["arguments"])
 
@@ -179,6 +194,10 @@ module Appsignal
             :opentelemetry_kind => :producer,
             :opentelemetry_scope => ["appsignal-ruby/active_job", Appsignal::VERSION]
           ) do
+            Appsignal::Transaction.current.add_opentelemetry_attributes(
+              Appsignal::OpenTelemetry::Messaging
+                .enqueue_attributes("active_job", :destination => queue_name)
+            )
             Appsignal::OpenTelemetry.inject_context(__otel_headers)
             # Active Job enqueues through an adapter (Sidekiq, Resque, ...) that
             # has its own enqueue instrumentation. Suppress it so the enqueue is
