@@ -187,6 +187,50 @@ shared_examples "activesupport instrument override" do
     end
   end
 
+  describe "a template render event" do
+    def perform
+      as.instrument("render_template.action_view", :identifier => "/app/views/a.erb") { "value" }
+    end
+
+    it "in agent mode", :agent_mode do
+      start_agent
+      transaction = http_request_transaction
+      set_current_transaction(transaction)
+      as.notifier = notifier
+
+      expect(perform).to eq "value"
+      # The title comes from the Action View formatter, which only registers
+      # when Rails is loaded. These shared examples also run under gemfiles
+      # that have ActiveSupport without Rails, where the event has no title,
+      # so match any String rather than one particular value.
+      expect(transaction).to include_event(
+        "name" => "render_template.action_view",
+        "title" => kind_of(String)
+      )
+      # The render group only means something to the trace timeline, so
+      # nothing is recorded for it here.
+      expect(transaction).to_not include_tags("appsignal.group" => "render")
+    end
+
+    it "in collector mode", :collector_mode do
+      start_collector_agent
+      transaction = http_request_transaction
+      set_current_transaction(transaction)
+      as.notifier = notifier
+
+      expect(perform).to eq "value"
+      Appsignal::Transaction.complete_current!
+
+      span = event_span_for("render_template.action_view")
+      expect(span).not_to be_nil
+      expect(span.parent_span_id).to eq(root_span.span_id)
+      # There is no OpenTelemetry convention for template rendering, so the
+      # span says which group it belongs to directly.
+      expect(span.attributes["appsignal.group"]).to eq("render")
+      expect(scope_of(span)).to eq(["appsignal-ruby/action_view", Appsignal::VERSION])
+    end
+  end
+
   describe "an event with no registered formatter" do
     def perform
       as.instrument("no-registered.formatter", :key => "something") { "value" }
