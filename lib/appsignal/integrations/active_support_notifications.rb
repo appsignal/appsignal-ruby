@@ -103,6 +103,7 @@ module Appsignal
           attributes = EVENT_ATTRIBUTES[name.to_s]
           transaction.add_opentelemetry_attributes(attributes) if attributes
           transaction.add_opentelemetry_attributes(payload_attributes(name, payload))
+          record_error_type(transaction, payload)
           transaction.finish_event(
             name.to_s,
             title,
@@ -142,6 +143,23 @@ module Appsignal
         def job_queue_name(payload)
           job = payload[:job]
           job.queue_name if job.respond_to?(:queue_name)
+        end
+
+        # Says what kind of failure ended the event, which the OpenTelemetry
+        # semantic conventions ask for on a span whose operation failed.
+        #
+        # ActiveSupport puts the exception in the payload when the instrumented
+        # block raised, and it does so before it hands control to any of the
+        # paths this integration hooks into. So the failure is readable here and
+        # there is nothing to rescue, whether the event was reported through a
+        # block or through a `start` and `finish` pair.
+        def record_error_type(transaction, payload)
+          error = payload[:exception_object]
+          return unless error
+
+          transaction.add_opentelemetry_attributes(
+            Appsignal::OpenTelemetry::ErrorType.attributes_for(error.class.name)
+          )
         end
 
         # Events starting with a bang are internal to Rails; suppressed events
