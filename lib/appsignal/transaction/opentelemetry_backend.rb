@@ -777,12 +777,15 @@ module Appsignal
       end
 
       def write_event_body_attributes(span, body, body_format)
-        return if body.nil? || body.empty?
+        has_body = !body.to_s.empty?
 
         if body_format == Appsignal::EventFormatter::SQL_BODY_FORMAT
-          span.set_attribute("db.query.text", body)
+          # Name the datastore whether or not there is a query to record with it.
+          # The semantic conventions require the attribute on every database
+          # span, and a SQL event with nothing in its body is still a SQL event.
           span.set_attribute("db.system.name", SQL_DB_SYSTEM)
-        else
+          span.set_attribute("db.query.text", body) if has_body
+        elsif has_body
           span.set_attribute("appsignal.body", body)
         end
       end

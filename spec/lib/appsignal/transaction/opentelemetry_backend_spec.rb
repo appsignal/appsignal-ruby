@@ -1513,6 +1513,22 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
         expect(empty_body.attributes).not_to have_key("db.query.text")
       end
 
+      # The semantic conventions require the datastore on every database span,
+      # and an event with a SQL body format is a database span whether or not
+      # there is a query to record with it.
+      it "names the datastore for a SQL body format without a query" do
+        backend = create_backend
+        backend.start_event
+        backend.finish_event("sql.no_query", "T", nil,
+          Appsignal::EventFormatter::SQL_BODY_FORMAT)
+
+        attrs = span_exporter.finished_spans
+          .find { |s| s.name == "sql.no_query (T)" }.attributes
+        expect(attrs["db.system.name"]).to eq("other_sql")
+        expect(attrs).not_to have_key("db.query.text")
+        expect(attrs).not_to have_key("appsignal.body")
+      end
+
       it "falls back to the event name as the span name when title is empty or nil" do
         backend = create_backend
         backend.start_event
