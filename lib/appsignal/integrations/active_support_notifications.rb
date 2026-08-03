@@ -41,7 +41,9 @@ module Appsignal
             # This notification is only emitted for a search, so that is the
             # operation every one of these spans describes.
             "db.operation.name" => "search"
-          }.freeze
+          }.freeze,
+          "perform.active_job" =>
+            Appsignal::OpenTelemetry::Messaging.perform_attributes("active_job").freeze
         }.freeze
 
         # Events a dedicated AppSignal integration already records with richer
@@ -105,6 +107,8 @@ module Appsignal
           case name.to_s
           when "search.elasticsearch"
             { "db.collection.name" => search_index(payload) }.compact
+          when "perform.active_job"
+            { "messaging.destination.name" => job_queue_name(payload) }.compact
           else
             {}
           end
@@ -120,6 +124,13 @@ module Appsignal
 
           index = search[:index]
           index if index.is_a?(String)
+        end
+
+        # The queue the job being performed is on, which the notification carries
+        # as the job itself.
+        def job_queue_name(payload)
+          job = payload[:job]
+          job.queue_name if job.respond_to?(:queue_name)
         end
 
         # Events starting with a bang are internal to Rails; suppressed events

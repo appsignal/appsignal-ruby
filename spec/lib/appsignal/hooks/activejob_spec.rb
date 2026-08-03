@@ -154,6 +154,10 @@ if DependencyHelper.active_job_present?
         last_transaction.complete
 
         expect(root_span.kind).to eq(:consumer)
+        expect(root_span.attributes["messaging.system"]).to eq("active_job")
+        expect(root_span.attributes["messaging.operation.name"]).to eq("perform")
+        expect(root_span.attributes["messaging.operation.type"]).to eq("process")
+        expect(root_span.attributes["messaging.destination.name"]).to eq("default")
         expect(scope_of(root_span)).to eq(["appsignal-ruby/active_job", Appsignal::VERSION])
         expect(root_span.attributes["appsignal.namespace"]).to eq("background")
         expect(root_span.attributes["appsignal.action_name"]).to eq("ActiveJobTestJob#perform")
@@ -603,6 +607,10 @@ if DependencyHelper.active_job_present?
           expect(producer.name).to eq("enqueue.active_job (enqueue ActiveJobTestJob job)")
           expect(scope_of(producer)).to eq(["appsignal-ruby/active_job", Appsignal::VERSION])
           expect(producer.kind).to eq(:producer)
+          expect(producer.attributes["messaging.system"]).to eq("active_job")
+          expect(producer.attributes["messaging.operation.name"]).to eq("enqueue")
+          expect(producer.attributes["messaging.operation.type"]).to eq("send")
+          expect(producer.attributes["messaging.destination.name"]).to eq("default")
           expect(producer.parent_span_id).to eq(root_span.span_id)
 
           # The serialized job carries that span's context, so the performed job

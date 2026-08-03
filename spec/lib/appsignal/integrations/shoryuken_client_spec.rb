@@ -61,6 +61,10 @@ if DependencyHelper.shoryuken_present?
       producer = event_span_for("enqueue.shoryuken")
       expect(producer.name).to eq("enqueue.shoryuken (enqueue on test-queue)")
       expect(producer.kind).to eq(:producer)
+      expect(producer.attributes["messaging.system"]).to eq("aws_sqs")
+      expect(producer.attributes["messaging.operation.name"]).to eq("enqueue")
+      expect(producer.attributes["messaging.operation.type"]).to eq("send")
+      expect(producer.attributes["messaging.destination.name"]).to eq("test-queue")
 
       # The middleware the hook registered injected the producer span's trace
       # context onto the real outgoing message, wire-equivalent to OpenTelemetry's

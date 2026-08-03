@@ -53,12 +53,20 @@ if DependencyHelper.resque_present?
         perform
 
         expect(root_span.kind).to eq(:consumer)
+        expect(root_span.attributes["messaging.system"]).to eq("resque")
+        expect(root_span.attributes["messaging.operation.name"]).to eq("perform")
+        expect(root_span.attributes["messaging.operation.type"]).to eq("process")
+        expect(root_span.attributes["messaging.destination.name"]).to eq("default")
         expect(root_span.attributes["appsignal.namespace"]).to eq("background")
         expect(root_span.attributes["appsignal.action_name"]).to eq("ResqueTestJob#perform")
         expect(exception_events).to be_empty
         expect(root_span.attributes).to_not have_key("appsignal.tag.metadata_key")
         expect(root_span.attributes["appsignal.tag.queue"]).to eq(queue)
         span = event_spans.find { |s| s.name == "perform.resque" }
+        expect(span.attributes["messaging.system"]).to eq("resque")
+        expect(span.attributes["messaging.operation.name"]).to eq("perform")
+        expect(span.attributes["messaging.operation.type"]).to eq("process")
+        expect(span.attributes["messaging.destination.name"]).to eq("default")
         expect(span).not_to be_nil
         expect(span.parent_span_id).to eq(root_span.span_id)
         expect(scope_of(root_span)).to eq(["appsignal-ruby/resque", Appsignal::VERSION])
@@ -271,6 +279,10 @@ if DependencyHelper.resque_present?
           expect(producer.name).to eq("enqueue.resque (enqueue ResqueTestJob job)")
           expect(scope_of(producer)).to eq(["appsignal-ruby/resque", Appsignal::VERSION])
           expect(producer.kind).to eq(:producer)
+          expect(producer.attributes["messaging.system"]).to eq("resque")
+          expect(producer.attributes["messaging.operation.name"]).to eq("enqueue")
+          expect(producer.attributes["messaging.operation.type"]).to eq("send")
+          expect(producer.attributes["messaging.destination.name"]).to eq("default")
           expect(producer.parent_span_id).to eq(root_span.span_id)
 
           # The job carries the producer span's trace context, so the job that

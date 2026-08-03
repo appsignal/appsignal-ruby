@@ -6,6 +6,7 @@ require "appsignal/opentelemetry/http_client_request"
 require "appsignal/opentelemetry/http_method"
 require "appsignal/opentelemetry/http_response"
 require "appsignal/opentelemetry/http_server_request"
+require "appsignal/opentelemetry/messaging"
 
 module Appsignal
   # @!visibility private
