@@ -28,6 +28,12 @@ module Appsignal
           "search.elasticsearch"
         ].freeze
 
+        # Template rendering has no semantic convention to describe it, so
+        # these events say which group they belong to directly. The trace
+        # timeline reads `appsignal.group` before it looks at any convention
+        # attribute, and "render" is the group it shows as "Templating".
+        RENDER_ATTRIBUTES = { "appsignal.group" => "render" }.freeze
+
         # OpenTelemetry attributes to add to an event's span, by event name.
         # These name the kind of work an event represents, which is what the
         # trace timeline reads to tell one kind of span from another.
@@ -43,7 +49,12 @@ module Appsignal
             "db.operation.name" => "search"
           }.freeze,
           "perform.active_job" =>
-            Appsignal::OpenTelemetry::Messaging.perform_attributes("active_job").freeze
+            Appsignal::OpenTelemetry::Messaging.perform_attributes("active_job").freeze,
+          "render_template.action_view" => RENDER_ATTRIBUTES,
+          "render_partial.action_view" => RENDER_ATTRIBUTES,
+          "render_collection.action_view" => RENDER_ATTRIBUTES,
+          "render_layout.action_view" => RENDER_ATTRIBUTES,
+          "render.view_component" => RENDER_ATTRIBUTES
         }.freeze
 
         # Events a dedicated AppSignal integration already records with richer
