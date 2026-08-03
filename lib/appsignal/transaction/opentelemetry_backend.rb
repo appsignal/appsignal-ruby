@@ -322,6 +322,12 @@ module Appsignal
         end
 
         span.add_event("exception", :attributes => attributes)
+        # `error.type` is what the semantic conventions read to tell what kind of
+        # failure ended the operation. It is an attribute of the span, unlike the
+        # `exception.type` above, which is an attribute of the exception event.
+        # When a span collects more than one error the last one wins, because a
+        # span can only say one thing here.
+        span.add_attributes(Appsignal::OpenTelemetry::ErrorType.attributes_for(class_name))
         span.status = ::OpenTelemetry::Trace::Status.error
       end
 

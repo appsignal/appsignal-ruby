@@ -41,6 +41,7 @@ shared_examples "activesupport instrument override" do
       # The scope is derived from the event group (the part after the last dot).
       expect(scope_of(span)).to eq(["appsignal-ruby/active_record", Appsignal::VERSION])
       expect(span.attributes).not_to have_key("appsignal.body")
+      expect(span.attributes).not_to have_key("error.type")
     end
   end
 
@@ -414,6 +415,8 @@ shared_examples "activesupport instrument override" do
       expect(span.kind).to eq(:client)
       expect(span.attributes["db.query.text"]).to eq("SQL")
       expect(span.attributes["db.system.name"]).to eq("other_sql")
+      # The block raised, so the operation the span describes failed.
+      expect(span.attributes["error.type"]).to eq("ExampleException")
     end
   end
 
