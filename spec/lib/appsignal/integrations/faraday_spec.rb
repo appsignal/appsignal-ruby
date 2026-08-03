@@ -45,6 +45,14 @@ if DependencyHelper.faraday_present?
         faraday_span = event_span("request.faraday")
         expect(faraday_span).not_to be_nil
         expect(faraday_span.kind).to eq(:client)
+        expect(faraday_span.attributes["http.request.method"]).to eq("GET")
+        # The client hands us the method as a lowercase Symbol, so the
+        # canonical form is recorded and the original kept alongside it.
+        expect(faraday_span.attributes["http.request.method_original"]).to eq("get")
+        expect(faraday_span.attributes["server.address"]).to eq("www.example.com")
+        expect(faraday_span.attributes["server.port"]).to eq(80)
+        expect(faraday_span.attributes["url.full"]).to eq("http://www.example.com/")
+        expect(faraday_span.attributes["http.response.status_code"]).to eq(200)
         expect(faraday_span.parent_span_id).to eq(root_span.span_id)
         expect(scope_of(faraday_span)).to eq(["appsignal-ruby/faraday", Appsignal::VERSION])
 
