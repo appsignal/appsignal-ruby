@@ -40,7 +40,12 @@ module Appsignal
         # only the sending.
         title = ExconIntegration.title_for(data.merge(params))
 
-        Appsignal.instrument("request.excon", title) do
+        Appsignal.instrument(
+          "request.excon",
+          title,
+          :opentelemetry_kind => :client,
+          :opentelemetry_scope => ["appsignal-ruby/excon", Appsignal::VERSION]
+        ) do
           if Appsignal::Transaction.current?
             # Excon retries a request, and follows a redirect, by calling this
             # method again from inside the request it is retrying or following.
