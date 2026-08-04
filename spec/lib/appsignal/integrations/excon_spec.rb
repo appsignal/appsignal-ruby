@@ -28,6 +28,25 @@ if DependencyHelper.excon_present?
       (span.end_timestamp - span.start_timestamp) / 1_000_000.0
     end
 
+    # Reads the `traceparent` header off the last recorded outgoing request to
+    # `url`. Returns nil when nothing wrote one.
+    def injected_traceparent(url)
+      traceparent = nil
+      # The block is a predicate, so it has to match whatever it reads. It is
+      # only here to get at the headers of the requests that were made.
+      matcher = a_request(:get, url).with do |request|
+        traceparent = request.headers["Traceparent"]
+        true
+      end
+      expect(matcher).to have_been_made.at_least_once
+      traceparent
+    end
+
+    # The W3C traceparent that names `span` as the parent, sampled.
+    def traceparent_for(span)
+      "00-#{span.hex_trace_id}-#{span.hex_span_id}-01"
+    end
+
     describe "a request that succeeds" do
       def perform
         stub_request(:get, "http://www.example.com/")
@@ -45,6 +64,8 @@ if DependencyHelper.excon_present?
           "title" => "GET http://www.example.com",
           "body" => ""
         )
+        # Trace context is only written in collector mode.
+        expect(injected_traceparent("http://www.example.com/")).to be_nil
       end
 
       it "in collector mode", :collector_mode do
@@ -59,6 +80,10 @@ if DependencyHelper.excon_present?
         expect(span.kind).to eq(:client)
         expect(span.parent_span_id).to eq(root_span.span_id)
         expect(scope_of(span)).to eq(["appsignal-ruby/excon", Appsignal::VERSION])
+
+        # The called service joins this trace, as a child of the client span.
+        expect(injected_traceparent("http://www.example.com/"))
+          .to eq(traceparent_for(span))
       end
     end
 
@@ -197,6 +222,10 @@ if DependencyHelper.excon_present?
         Appsignal::Transaction.complete_current!
 
         expect(event_spans.size).to eq(1)
+        # Every attempt shares the one span, so every attempt carries the same
+        # trace context.
+        expect(injected_traceparent("http://www.example.com/"))
+          .to eq(traceparent_for(excon_span))
       end
     end
 
