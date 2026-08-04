@@ -4,16 +4,20 @@ module Appsignal
   module Integrations
     # @!visibility private
     module ExconIntegration
+      # The method of a request. Excon defaults it to GET further down, so the
+      # same default is applied here.
+      def self.method_for(datum)
+        datum[:method] || :get
+      end
+
       # The title of the event, built the way the Net::HTTP integration builds
       # its own: the request method and where the request went, without the
       # path, so paths stay out of event titles.
       #
       # Excon splits a request's data between the connection it is made on and
-      # the call that makes it, so both are read to build this. Excon defaults
-      # the method to GET itself, so the same default is applied here.
+      # the call that makes it, so both are read to build this.
       def self.title_for(datum)
-        method = (datum[:method] || :get).to_s.upcase
-        "#{method} #{datum[:scheme]}://#{datum[:host]}"
+        "#{method_for(datum).to_s.upcase} #{datum[:scheme]}://#{datum[:host]}"
       end
 
       def request(params = {})
@@ -38,23 +42,51 @@ module Appsignal
         # A pipelined request is the exception to this method being the whole of
         # a request. It returns before the response is read, so its event covers
         # only the sending.
-        title = ExconIntegration.title_for(data.merge(params))
+        datum = data.merge(params)
 
         Appsignal.instrument(
           "request.excon",
-          title,
+          ExconIntegration.title_for(datum),
           :opentelemetry_kind => :client,
           :opentelemetry_scope => ["appsignal-ruby/excon", Appsignal::VERSION]
         ) do
-          if Appsignal::Transaction.current?
-            # Excon retries a request, and follows a redirect, by calling this
-            # method again from inside the request it is retrying or following.
-            # Suppressing those means they count towards this event rather than
-            # becoming events of their own, so one request stays one event.
-            Appsignal::Transaction.current.suppress_http_client_events { super }
-          else
-            super
-          end
+          # Describes the span as an outgoing HTTP request. Together with the
+          # CLIENT kind, this is what the trace timeline reads to recognize it
+          # as one.
+          Appsignal::Transaction.current.add_opentelemetry_attributes(
+            Appsignal::OpenTelemetry::HttpClientRequest.attributes_for(
+              :method => ExconIntegration.method_for(datum),
+              :scheme => datum[:scheme],
+              :host => datum[:host],
+              :port => datum[:port],
+              :path => datum[:path]
+            )
+          )
+
+          response =
+            if Appsignal::Transaction.current?
+              # Excon retries a request, and follows a redirect, by calling this
+              # method again from inside the request it is retrying or
+              # following. Suppressing those means they count towards this event
+              # rather than becoming events of their own, so one request stays
+              # one event.
+              Appsignal::Transaction.current.suppress_http_client_events { super }
+            else
+              super
+            end
+
+          # Describes the response on the same span as the request, which the
+          # semantic conventions ask for whenever one was received.
+          #
+          # A pipelined request returns the request data rather than a response,
+          # because its response has not been read yet, so there is no status to
+          # report for it.
+          Appsignal::Transaction.current.add_opentelemetry_attributes(
+            Appsignal::OpenTelemetry::HttpResponse.attributes_for(
+              response.respond_to?(:status) ? response.status : nil
+            )
+          )
+          response
         end
       end
     end

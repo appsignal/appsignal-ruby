@@ -81,6 +81,18 @@ if DependencyHelper.excon_present?
         expect(span.parent_span_id).to eq(root_span.span_id)
         expect(scope_of(span)).to eq(["appsignal-ruby/excon", Appsignal::VERSION])
 
+        # The request and the response are described on the same span. Excon's
+        # own instrumentor could only report the status on a span of its own,
+        # which carried nothing else.
+        expect(span.attributes["http.request.method"]).to eq("GET")
+        # Excon hands us the method as a lowercase Symbol, so the canonical form
+        # is recorded and the original kept alongside it.
+        expect(span.attributes["http.request.method_original"]).to eq("get")
+        expect(span.attributes["server.address"]).to eq("www.example.com")
+        expect(span.attributes["server.port"]).to eq(80)
+        expect(span.attributes["url.full"]).to eq("http://www.example.com/")
+        expect(span.attributes["http.response.status_code"]).to eq(200)
+
         # The called service joins this trace, as a child of the client span.
         expect(injected_traceparent("http://www.example.com/"))
           .to eq(traceparent_for(span))
@@ -158,7 +170,15 @@ if DependencyHelper.excon_present?
         Appsignal::Transaction.complete_current!
 
         expect(event_spans.size).to eq(1)
-        expect(excon_span.kind).to eq(:client)
+        span = excon_span
+        expect(span.kind).to eq(:client)
+        # Says what kind of failure ended the request, which the conventions ask
+        # for on a span whose operation failed. Recorded because the whole
+        # request now runs inside one instrumented block, which sets this when
+        # the block raises.
+        expect(span.attributes["error.type"]).to eq("Excon::Error::Timeout")
+        # No response was received, so there is no status to describe.
+        expect(span.attributes).to_not have_key("http.response.status_code")
       end
     end
 
@@ -267,7 +287,45 @@ if DependencyHelper.excon_present?
         Appsignal::Transaction.complete_current!
 
         expect(event_spans.size).to eq(1)
-        expect(excon_span.name).to eq("request.excon (GET http://www.example.com)")
+        span = excon_span
+        expect(span.name).to eq("request.excon (GET http://www.example.com)")
+        # The span describes the request that was made and the response that
+        # came back, so the URL is the one asked for and the status is the one
+        # the last hop answered with.
+        expect(span.attributes["url.full"]).to eq("http://www.example.com/")
+        expect(span.attributes["http.response.status_code"]).to eq(200)
+      end
+    end
+
+    # A pipelined request is the one case where the event does not cover a whole
+    # request. Excon returns from the call once the request has been sent, and
+    # the response is read later, so there is no response to describe. It hands
+    # back the request data rather than a response.
+    describe "a pipelined request" do
+      def perform
+        stub_request(:get, "http://www.example.com/")
+        Excon.new("http://www.example.com/")
+          .request(:method => :get, :pipeline => true)
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent
+        set_current_transaction(transaction)
+
+        expect(perform).to be_kind_of(Hash)
+        expect(event_names).to eq(["request.excon"])
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        set_current_transaction(transaction)
+        perform
+        Appsignal::Transaction.complete_current!
+
+        expect(event_spans.size).to eq(1)
+        span = excon_span
+        expect(span.attributes["url.full"]).to eq("http://www.example.com/")
+        expect(span.attributes).to_not have_key("http.response.status_code")
       end
     end
   end
