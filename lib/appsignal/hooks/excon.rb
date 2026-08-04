@@ -12,21 +12,14 @@ module Appsignal
 
       def install
         require "appsignal/integrations/excon"
-        require "appsignal/integrations/excon/appsignal_middleware"
-        ::Excon.defaults[:instrumentor] = Appsignal::Integrations::ExconIntegration
+        # Instrument the request at the connection, rather than by registering
+        # AppSignal as Excon's instrumentor. An instrumentor is told about a
+        # request in pieces, none of which covers the wait for the response, and
+        # there is only room for one of them, so registering ours would replace
+        # any the application set up itself.
+        ::Excon::Connection.prepend Appsignal::Integrations::ExconIntegration
 
-        # Insert our middleware just before the Mock middleware (the innermost,
-        # where the response is produced) so its `request_call` runs before the
-        # request is sent -- and, being inside the Instrumentor middleware, while
-        # our event span is current, so the injected `traceparent` reflects it.
-        # Appending to the end would place it after Mock, which short-circuits
-        # the request chain before reaching it.
-        middlewares = ::Excon.defaults[:middlewares].dup
-        return if middlewares.include?(Appsignal::Integrations::ExconMiddleware)
-
-        index = middlewares.index(::Excon::Middleware::Mock) || middlewares.length
-        middlewares.insert(index, Appsignal::Integrations::ExconMiddleware)
-        ::Excon.defaults[:middlewares] = middlewares
+        Appsignal::Environment.report_enabled("excon")
       end
     end
   end
