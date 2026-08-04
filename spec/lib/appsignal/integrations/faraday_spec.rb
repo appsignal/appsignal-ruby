@@ -57,11 +57,62 @@ if DependencyHelper.faraday_present?
       end
     end
 
-    # With a non-Net::HTTP adapter (here Faraday's test adapter), our inject
-    # middleware is the only thing writing context, so the request carries the
-    # `request.faraday` client span's traceparent -- proving the middleware runs
-    # and injects inside that event's span. This is the path that gives Faraday
-    # propagation for adapters AppSignal doesn't instrument directly.
+    # Excon is the other adapter AppSignal instruments itself, so it is the other
+    # adapter that has to be suppressed. Net::HTTP above suppresses through its
+    # own integration; Excon suppresses through a different one, so both are
+    # worth a test.
+    describe "a request over the Excon adapter", :if => DependencyHelper.excon_present? do
+      before { Appsignal::Hooks::ExconHook.new.install }
+
+      def perform
+        stub_request(:get, "http://www.example.com/")
+        connection = Faraday.new("http://www.example.com") do |faraday|
+          faraday.adapter :excon
+        end
+        connection.get("/")
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
+        perform
+
+        expect(transaction).to include_event(
+          "name" => "request.faraday",
+          "title" => "GET http://www.example.com",
+          "body" => ""
+        )
+        # Excon is suppressed under Faraday, so it isn't recorded again.
+        expect(transaction).to_not include_event("name" => "request.excon")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
+        perform
+        Appsignal::Transaction.complete_current!
+
+        # Excon is suppressed, so there's no nested excon span.
+        expect(event_span("request.excon")).to be_nil
+
+        # Faraday writes the wire traceparent. Excon's own inject middleware
+        # still runs, but with no Excon event span of its own it can only write
+        # the same client span Faraday already wrote.
+        faraday_span = event_span("request.faraday")
+        expect(faraday_span).not_to be_nil
+        expect(injected_traceparent("http://www.example.com/"))
+          .to eq("00-#{faraday_span.hex_trace_id}-#{faraday_span.hex_span_id}-01")
+      end
+    end
+
+    # With an adapter AppSignal does not instrument at all (here Faraday's test
+    # adapter), our inject middleware is the only thing writing context, so the
+    # request carries the `request.faraday` client span's traceparent -- proving
+    # the middleware runs and injects inside that event's span. This is the path
+    # that gives Faraday propagation for adapters AppSignal doesn't instrument
+    # directly.
     it "injects the Faraday client context on a non-Net::HTTP adapter", :collector_mode do
       start_collector_agent
       transaction = http_request_transaction
