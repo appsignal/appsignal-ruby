@@ -85,9 +85,12 @@ class Runner
     read_output
     @finished = true
 
-    return if @status.exitstatus.zero?
+    # Asked of the status rather than the exit code, because a process killed by
+    # a signal has no exit code. Reading one would raise a NoMethodError on nil
+    # and hide both the signal and the output below.
+    return if @status.success?
 
-    raise "Runner '#{@script_file}' exited with status #{@status.exitstatus}.\n" \
+    raise "Runner '#{@script_file}' did not exit successfully (#{@status}).\n" \
       "Output:\n#{@output}"
   ensure
     FileUtils.remove_entry(@working_dir) if @working_dir && File.exist?(@working_dir)
