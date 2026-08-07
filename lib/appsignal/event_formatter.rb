@@ -118,6 +118,18 @@ module Appsignal
         formatter.opentelemetry_kind
       end
 
+      # The OpenTelemetry attributes describing an event, which its formatter
+      # can build from the event's payload. An event with no formatter, or
+      # whose formatter describes nothing, gets no attributes of its own.
+      #
+      # @!visibility private
+      def opentelemetry_attributes(name, payload)
+        formatter = formatter_for(name)
+        return unless formatter.respond_to?(:opentelemetry_attributes)
+
+        formatter.opentelemetry_attributes(payload)
+      end
+
       private
 
       # The formatter registered for an event name.

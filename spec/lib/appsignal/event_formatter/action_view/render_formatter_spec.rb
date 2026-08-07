@@ -19,6 +19,12 @@ describe Appsignal::EventFormatter::ActionView::RenderFormatter do
           klass)).to be_truthy
       end
 
+      describe "#opentelemetry_attributes" do
+        subject { formatter.opentelemetry_attributes({}) }
+
+        it { is_expected.to eq("appsignal.group" => "render") }
+      end
+
       describe "#root_path" do
         subject { formatter.root_path }
 
@@ -53,15 +59,34 @@ describe Appsignal::EventFormatter::ActionView::RenderFormatter do
     end
   else
     context "when not in a Rails app" do
-      it "does not register the event formatter" do
+      let(:formatter) { klass.new }
+
+      it "registers every event that renders a template" do
         expect(Appsignal::EventFormatter.registered?("render_partial.action_view",
-          klass)).to be_falsy
+          klass)).to be_truthy
         expect(Appsignal::EventFormatter.registered?("render_template.action_view",
-          klass)).to be_falsy
+          klass)).to be_truthy
         expect(Appsignal::EventFormatter.registered?("render_collection.action_view",
-          klass)).to be_falsy
+          klass)).to be_truthy
         expect(Appsignal::EventFormatter.registered?("render_layout.action_view",
-          klass)).to be_falsy
+          klass)).to be_truthy
+      end
+
+      describe "#opentelemetry_attributes" do
+        subject { formatter.opentelemetry_attributes({}) }
+
+        it "still says the event is template rendering" do
+          is_expected.to eq("appsignal.group" => "render")
+        end
+      end
+
+      describe "#format" do
+        subject { formatter.format(payload) }
+
+        let(:payload) { { :identifier => "/var/www/app/20130101/app/views/home/index/html.erb" } }
+
+        # There is no application root to make the template's path relative to.
+        it { is_expected.to be_nil }
       end
     end
   end

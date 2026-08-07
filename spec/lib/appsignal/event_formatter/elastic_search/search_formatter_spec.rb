@@ -14,6 +14,44 @@ describe Appsignal::EventFormatter::ElasticSearch::SearchFormatter do
     it { is_expected.to eq :client }
   end
 
+  describe "#opentelemetry_attributes" do
+    subject { formatter.opentelemetry_attributes(payload) }
+
+    context "with a search naming one index" do
+      let(:payload) { { :search => { :index => "users" } } }
+
+      it "names the index it searched" do
+        is_expected.to eq(
+          "db.system.name" => "elasticsearch",
+          "db.operation.name" => "search",
+          "db.collection.name" => "users"
+        )
+      end
+    end
+
+    context "with a search naming more than one index" do
+      let(:payload) { { :search => { :index => ["users", "accounts"] } } }
+
+      it "names no index rather than a value that is not one" do
+        is_expected.to eq(
+          "db.system.name" => "elasticsearch",
+          "db.operation.name" => "search"
+        )
+      end
+    end
+
+    context "without a search" do
+      let(:payload) { {} }
+
+      it "still describes the span as an Elasticsearch search" do
+        is_expected.to eq(
+          "db.system.name" => "elasticsearch",
+          "db.operation.name" => "search"
+        )
+      end
+    end
+  end
+
   describe "#format" do
     let(:payload) do
       {
