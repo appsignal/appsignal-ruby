@@ -3233,7 +3233,8 @@ describe Appsignal::Transaction do
 
         event = root_span.events.find { |e| e.name == "appsignal.queue_start" }
         expect(event).not_to be_nil
-        expect(event.attributes["appsignal.queue_start"]).to eq(queue_start)
+        expect(event.timestamp)
+          .to eq((Time.at(queue_start / 1000.0).to_r * 1_000_000_000).to_i)
 
         # The "http_request" namespace is emitted as "web".
         snapshot = metric_snapshot("transaction_queue_duration")

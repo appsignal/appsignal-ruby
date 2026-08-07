@@ -1061,8 +1061,9 @@ if DependencyHelper.sidekiq_present?
           expect(root_span.attributes["appsignal.tag.queue"]).to eq("default")
           expect(root_span.attributes["appsignal.tag.retry_count"]).to eq("0")
           queue_event = Array(root_span.events).find { |e| e.name == "appsignal.queue_start" }
-          expect(queue_event.attributes["appsignal.queue_start"])
-            .to eq(Time.parse("2001-01-01 10:00:00UTC").to_i * 1000)
+          expect(queue_event.timestamp).to eq(
+            (Time.at(Time.parse("2001-01-01 10:00:00UTC").to_i).to_r * 1_000_000_000).to_i
+          )
           expect(event_spans.size).to eq(1)
           span = event_spans.find { |s| s.name == "perform_job.sidekiq" }
           expect(span).not_to be_nil
@@ -1230,7 +1231,8 @@ if DependencyHelper.sidekiq_present?
             .to eq([expected_args])
           expect(root_span.attributes["appsignal.tag.executions"]).to eq(1)
           queue_event = Array(root_span.events).find { |e| e.name == "appsignal.queue_start" }
-          expect(queue_event.attributes["appsignal.queue_start"]).to eq(time.to_i * 1000)
+          expect(queue_event.timestamp)
+            .to eq((Time.at(time.to_i).to_r * 1_000_000_000).to_i)
           # The job is enqueued without an active transaction here, so no
           # enqueue event/producer span is recorded -- only the perform events.
           expect(event_spans.map(&:name)).to match_array(expected_perform_events)
@@ -1284,7 +1286,8 @@ if DependencyHelper.sidekiq_present?
             expect(event.attributes["appsignal.alert_this_error"]).to eq(true)
             expect(root_span.attributes["appsignal.tag.queue"]).to eq("default")
             queue_event = Array(root_span.events).find { |e| e.name == "appsignal.queue_start" }
-            expect(queue_event.attributes["appsignal.queue_start"]).to eq(time.to_i * 1000)
+            expect(queue_event.timestamp)
+              .to eq((Time.at(time.to_i).to_r * 1_000_000_000).to_i)
             expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
               .to eq([expected_args])
             sidekiq_span = event_spans.find { |s| s.name == "perform_job.sidekiq" }

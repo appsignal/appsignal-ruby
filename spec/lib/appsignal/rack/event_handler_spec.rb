@@ -229,7 +229,8 @@ describe Appsignal::Rack::EventHandler do
         perform
 
         queue_event = Array(root_span.events).find { |e| e.name == "appsignal.queue_start" }
-        expect(queue_event.attributes["appsignal.queue_start"]).to eq(queue_start_time.to_i)
+        expect(queue_event.timestamp)
+          .to eq((Time.at(queue_start_time.to_i / 1000.0).to_r * 1_000_000_000).to_i)
         event = event_span_for("process_request.rack")
         expect(event).not_to be_nil
         expect(event.parent_span_id).to eq(root_span.span_id)

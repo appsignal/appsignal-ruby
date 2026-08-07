@@ -110,7 +110,8 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
           expect(root_span.attributes["appsignal.tag.queue"]).to eq(queue)
           expect(root_span.attributes["appsignal.tag.SentTimestamp"]).to eq(sent_timestamp)
           queue_event = Array(root_span.events).find { |e| e.name == "appsignal.queue_start" }
-          expect(queue_event.attributes["appsignal.queue_start"]).to eq(sent_timestamp)
+          expect(queue_event.timestamp)
+            .to eq((Time.at(sent_timestamp / 1000.0).to_r * 1_000_000_000).to_i)
           expect(last_transaction).to be_completed
         end
       end
@@ -368,7 +369,8 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
         expect(root_span.attributes["appsignal.tag.SentTimestamp"])
           .to eq(sent_timestamp.to_s)
         queue_event = Array(root_span.events).find { |e| e.name == "appsignal.queue_start" }
-        expect(queue_event.attributes["appsignal.queue_start"]).to eq(sent_timestamp)
+        expect(queue_event.timestamp)
+          .to eq((Time.at(sent_timestamp / 1000.0).to_r * 1_000_000_000).to_i)
 
         # A batch carries messages from multiple traces, so it is not linked back.
         expect(Array(root_span.links)).to be_empty
