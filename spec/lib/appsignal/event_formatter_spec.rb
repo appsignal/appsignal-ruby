@@ -26,6 +26,12 @@ class ClientMockFormatter < Appsignal::EventFormatter
   end
 end
 
+class DescribedMockFormatter < Appsignal::EventFormatter
+  def opentelemetry_attributes(payload)
+    { "mock.attribute" => payload[:value] }
+  end
+end
+
 class IncorrectFormatMockFormatter < Appsignal::EventFormatter
   def format
   end
@@ -264,6 +270,38 @@ describe Appsignal::EventFormatter do
     context "when no formatter with the name is registered" do
       it "returns nil" do
         expect(klass.opentelemetry_kind("nonsense")).to be_nil
+      end
+    end
+  end
+
+  describe ".opentelemetry_attributes" do
+    context "when the formatter describes the event" do
+      it "returns the attributes it reads from the payload" do
+        klass.register("mock.described", DescribedMockFormatter)
+        expect(klass.opentelemetry_attributes("mock.described", :value => "read"))
+          .to eq("mock.attribute" => "read")
+      end
+    end
+
+    context "when the formatter describes nothing" do
+      it "returns nil" do
+        klass.register("mock", MockFormatter)
+        expect(klass.opentelemetry_attributes("mock", {})).to be_nil
+      end
+    end
+
+    context "when the event name is a Symbol" do
+      it "returns what the formatter registered under the String describes" do
+        klass.register("mock.symbol_described", DescribedMockFormatter)
+
+        expect(klass.opentelemetry_attributes(:"mock.symbol_described", :value => "read"))
+          .to eq("mock.attribute" => "read")
+      end
+    end
+
+    context "when no formatter with the name is registered" do
+      it "returns nil" do
+        expect(klass.opentelemetry_attributes("nonsense", {})).to be_nil
       end
     end
   end

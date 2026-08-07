@@ -7,35 +7,6 @@ module Appsignal
       class << self
         BANG = "!"
 
-        # Template rendering has no semantic convention to describe it, so
-        # these events say which group they belong to directly. The trace
-        # timeline reads `appsignal.group` before it looks at any convention
-        # attribute, and "render" is the group it shows as "Templating".
-        RENDER_ATTRIBUTES = { "appsignal.group" => "render" }.freeze
-
-        # OpenTelemetry attributes to add to an event's span, by event name.
-        # These name the kind of work an event represents, which is what the
-        # trace timeline reads to tell one kind of span from another.
-        #
-        # SQL events are not listed here: their span already gets
-        # `db.system.name` from the SQL body format, which also tells the
-        # collector to sanitize the query.
-        EVENT_ATTRIBUTES = {
-          "search.elasticsearch" => {
-            "db.system.name" => "elasticsearch",
-            # This notification is only emitted for a search, so that is the
-            # operation every one of these spans describes.
-            "db.operation.name" => "search"
-          }.freeze,
-          "perform.active_job" =>
-            Appsignal::OpenTelemetry::Messaging.perform_attributes("active_job").freeze,
-          "render_template.action_view" => RENDER_ATTRIBUTES,
-          "render_partial.action_view" => RENDER_ATTRIBUTES,
-          "render_collection.action_view" => RENDER_ATTRIBUTES,
-          "render_layout.action_view" => RENDER_ATTRIBUTES,
-          "render.view_component" => RENDER_ATTRIBUTES
-        }.freeze
-
         # Events a dedicated AppSignal integration already records with richer
         # semantics, so the generic notifications path must not record them a
         # second time. The ActiveJob hook owns `enqueue.active_job`: it wraps the
@@ -82,9 +53,9 @@ module Appsignal
           transaction = Appsignal::Transaction.current
           # Set while the event's span is still open, so the attributes land on
           # the event rather than on the transaction.
-          attributes = EVENT_ATTRIBUTES[name.to_s]
-          transaction.add_opentelemetry_attributes(attributes) if attributes
-          transaction.add_opentelemetry_attributes(payload_attributes(name, payload))
+          transaction.add_opentelemetry_attributes(
+            Appsignal::EventFormatter.opentelemetry_attributes(name, payload)
+          )
           record_error_type(transaction, payload)
           transaction.finish_event(
             name.to_s,
@@ -92,39 +63,6 @@ module Appsignal
             body,
             body_format
           )
-        end
-
-        # Attributes whose value has to be read from the event's payload, so they
-        # cannot live in the static map above. An event with nothing to read gets
-        # no attributes.
-        def payload_attributes(name, payload)
-          case name.to_s
-          when "search.elasticsearch"
-            { "db.collection.name" => search_index(payload) }.compact
-          when "perform.active_job"
-            { "messaging.destination.name" => job_queue_name(payload) }.compact
-          else
-            {}
-          end
-        end
-
-        # The index a search ran against, which the notification carries in the
-        # search it describes. A search that names more than one index, or none
-        # at all, is left without this attribute rather than described with a
-        # value that is not an index name.
-        def search_index(payload)
-          search = payload[:search]
-          return unless search.respond_to?(:[])
-
-          index = search[:index]
-          index if index.is_a?(String)
-        end
-
-        # The queue the job being performed is on, which the notification carries
-        # as the job itself.
-        def job_queue_name(payload)
-          job = payload[:job]
-          job.queue_name if job.respond_to?(:queue_name)
         end
 
         # Says what kind of failure ended the event, which the OpenTelemetry
