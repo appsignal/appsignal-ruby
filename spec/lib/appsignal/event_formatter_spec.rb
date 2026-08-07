@@ -20,6 +20,12 @@ end
 class UntitledMockFormatter < Appsignal::EventFormatter
 end
 
+class ClientMockFormatter < Appsignal::EventFormatter
+  def opentelemetry_kind
+    :client
+  end
+end
+
 class IncorrectFormatMockFormatter < Appsignal::EventFormatter
   def format
   end
@@ -226,6 +232,38 @@ describe Appsignal::EventFormatter do
             klass.unregister("nonse.unregister", MockFormatter)
           end.to_not(change { klass.formatters })
         end.to_not(change { klass.formatter_classes })
+      end
+    end
+  end
+
+  describe ".opentelemetry_kind" do
+    context "when the formatter declares a kind" do
+      it "returns it" do
+        klass.register("mock.client", ClientMockFormatter)
+        expect(klass.opentelemetry_kind("mock.client")).to eq(:client)
+      end
+    end
+
+    context "when the formatter declares no kind" do
+      it "returns nil" do
+        klass.register("mock", MockFormatter)
+        expect(klass.opentelemetry_kind("mock")).to be_nil
+      end
+    end
+
+    # An event can be instrumented under a Symbol name, while every formatter
+    # is registered under a String one.
+    context "when the event name is a Symbol" do
+      it "returns the kind the formatter registered under the String declares" do
+        klass.register("mock.symbol_kind", ClientMockFormatter)
+
+        expect(klass.opentelemetry_kind(:"mock.symbol_kind")).to eq(:client)
+      end
+    end
+
+    context "when no formatter with the name is registered" do
+      it "returns nil" do
+        expect(klass.opentelemetry_kind("nonsense")).to be_nil
       end
     end
   end
