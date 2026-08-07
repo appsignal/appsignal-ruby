@@ -11,15 +11,26 @@ module Appsignal
   # So only keep global configuration as state and pass the payload around as an
   # argument if you need to use helper methods.
   class EventFormatter
+    # There is one registry of event formatters, shared by this class and by
+    # every formatter that inherits from it. It is kept in a constant because a
+    # class instance variable is not shared with subclasses. Without this, a
+    # formatter that registers or unregisters itself would read and write a
+    # registry of its own that nothing else looks at.
+    REGISTRY = {
+      :formatters => {},
+      :formatter_classes => {}
+    }.freeze
+    private_constant :REGISTRY
+
     class << self
       # @!visibility private
       def formatters
-        @formatters ||= {}
+        REGISTRY[:formatters]
       end
 
       # @!visibility private
       def formatter_classes
-        @formatter_classes ||= {}
+        REGISTRY[:formatter_classes]
       end
 
       # Registers an event formatter for a specific event name.

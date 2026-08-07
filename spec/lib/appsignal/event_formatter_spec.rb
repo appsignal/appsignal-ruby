@@ -69,6 +69,15 @@ describe Appsignal::EventFormatter do
       end
     end
 
+    context "when the formatter registers itself" do
+      it "registers it where the other formatters are registered" do
+        MockFormatter.register("mock.self_register", MockFormatter)
+
+        expect(klass.registered?("mock.self_register")).to be_truthy
+        expect(klass.format("mock.self_register", {})).to eq ["title", "some value"]
+      end
+    end
+
     context "when there is an error initializing the formatter" do
       it "does not register the formatter and logs an error" do
         logs = capture_logs do
@@ -164,6 +173,17 @@ describe Appsignal::EventFormatter do
 
         klass.unregister("mock.unregister", MockFormatter)
         expect(klass.registered?("mock.unregister")).to be_falsy
+      end
+    end
+
+    context "when the formatter unregisters itself" do
+      it "unregisters the formatter" do
+        klass.register("mock.self_unregister", MockFormatter)
+        expect(klass.registered?("mock.self_unregister")).to be_truthy
+
+        MockFormatter.unregister("mock.self_unregister")
+
+        expect(klass.registered?("mock.self_unregister")).to be_falsy
       end
     end
 
