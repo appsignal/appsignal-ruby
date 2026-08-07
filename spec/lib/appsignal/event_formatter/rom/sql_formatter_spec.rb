@@ -8,6 +8,12 @@ describe Appsignal::EventFormatter::Rom::SqlFormatter do
     expect(Appsignal::EventFormatter.registered?("sql.dry", klass)).to be_truthy
   end
 
+  describe "#opentelemetry_kind" do
+    subject { formatter.opentelemetry_kind }
+
+    it { is_expected.to eq :client }
+  end
+
   describe "#format" do
     let(:payload) do
       {

@@ -7,27 +7,6 @@ module Appsignal
       class << self
         BANG = "!"
 
-        # ActiveSupport::Notifications events whose span represents an outgoing
-        # call to a datastore, so they carry CLIENT kind in collector mode (to
-        # match the dedicated DB integrations). Kept deliberately narrow:
-        # `start_event` runs for every instrumented Rails event and span kind is
-        # immutable, so only genuine client calls belong here. Object
-        # instantiation (`instantiation.active_record`) is not a client call.
-        #
-        # `sql.sequel` is emitted by the sequel-rails gem through
-        # ActiveSupport::Notifications, so it reaches us here rather than through
-        # the dedicated Sequel hook (which already tags its own query events as
-        # CLIENT). Including it keeps a Sequel query CLIENT regardless of which
-        # path records it.
-        #
-        # `search.elasticsearch` is a query sent to an Elasticsearch cluster, so
-        # it is a client call for the same reason a SQL query is.
-        CLIENT_EVENT_NAMES = [
-          "sql.active_record",
-          "sql.sequel",
-          "search.elasticsearch"
-        ].freeze
-
         # Template rendering has no semantic convention to describe it, so
         # these events say which group they belong to directly. The trace
         # timeline reads `appsignal.group` before it looks at any convention
@@ -70,8 +49,11 @@ module Appsignal
         def start_event(name)
           return unless record_event?(name)
 
+          # The event's formatter says what kind of work the event is, such as
+          # a SQL query being an outgoing call to a database. Span kind is
+          # immutable, so it has to be set here at event start.
           Appsignal::Transaction.current.start_event(
-            :opentelemetry_kind => CLIENT_EVENT_NAMES.include?(name.to_s) ? :client : nil,
+            :opentelemetry_kind => Appsignal::EventFormatter.opentelemetry_kind(name),
             :opentelemetry_scope => scope_for(name)
           )
         end

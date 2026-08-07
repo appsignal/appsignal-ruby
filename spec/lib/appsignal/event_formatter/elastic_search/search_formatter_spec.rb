@@ -8,6 +8,12 @@ describe Appsignal::EventFormatter::ElasticSearch::SearchFormatter do
     ).to be_truthy
   end
 
+  describe "#opentelemetry_kind" do
+    subject { formatter.opentelemetry_kind }
+
+    it { is_expected.to eq :client }
+  end
+
   describe "#format" do
     let(:payload) do
       {

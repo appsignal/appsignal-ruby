@@ -102,7 +102,36 @@ module Appsignal
         formatter&.format(payload)
       end
 
+      # The OpenTelemetry span kind for an event, which its formatter can
+      # declare. An event with no formatter, or whose formatter declares
+      # nothing, has no kind of its own and falls back to the default.
+      #
+      # A formatter written against the documented interface only implements
+      # `format`, so ask whether this one answers to the method at all rather
+      # than assuming every formatter does.
+      #
+      # @!visibility private
+      def opentelemetry_kind(name)
+        formatter = formatter_for(name)
+        return unless formatter.respond_to?(:opentelemetry_kind)
+
+        formatter.opentelemetry_kind
+      end
+
       private
+
+      # The formatter registered for an event name.
+      #
+      # A formatter is registered under whatever key was given to `register`,
+      # which is a String for every formatter in this gem. An event can be
+      # instrumented under a Symbol name, so fall back to the String form of it.
+      #
+      # `format` does not do this, on purpose. It has always looked a name up
+      # exactly as given, so making it match a Symbol name would start giving a
+      # title to events that have never had one.
+      def formatter_for(name)
+        formatters[name] || formatters[name.to_s]
+      end
 
       def initialize_formatter(name, formatter)
         format_method = formatter.instance_method(:format)
