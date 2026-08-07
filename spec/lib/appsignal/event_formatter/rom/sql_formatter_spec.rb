@@ -15,14 +15,21 @@ describe Appsignal::EventFormatter::Rom::SqlFormatter do
   end
 
   describe "#format" do
-    let(:payload) do
-      {
-        :name => "postgres",
-        :query => "SELECT * FROM users"
-      }
-    end
     subject { formatter.format(payload) }
 
-    it { is_expected.to eq ["query.postgres", "SELECT * FROM users", 1] }
+    # ROM reports the database it is talking to as the event's `name`, as
+    # Sequel's database type. Every ROM query is named after ROM whichever
+    # database that is, so that they are all in one group.
+    context "with a PostgreSQL database" do
+      let(:payload) { { :name => :postgres, :query => "SELECT * FROM users" } }
+
+      it { is_expected.to eq ["query.rom", "SELECT * FROM users", 1] }
+    end
+
+    context "with a SQLite database" do
+      let(:payload) { { :name => :sqlite, :query => "SELECT * FROM users" } }
+
+      it { is_expected.to eq ["query.rom", "SELECT * FROM users", 1] }
+    end
   end
 end

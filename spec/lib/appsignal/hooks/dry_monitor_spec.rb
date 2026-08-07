@@ -38,7 +38,7 @@ if DependencyHelper.dry_monitor_present?
       let(:event_id) { :sql }
       let(:payload) do
         {
-          :name => "postgres",
+          :name => :postgres,
           :query => "SELECT * FROM users"
         }
       end
@@ -56,8 +56,8 @@ if DependencyHelper.dry_monitor_present?
           "body" => "SELECT * FROM users",
           "body_format" => Appsignal::EventFormatter::SQL_BODY_FORMAT,
           "count" => 1,
-          "name" => "query.postgres",
-          "title" => "query.postgres"
+          "name" => "query.rom",
+          "title" => ""
         )
       end
 
@@ -70,7 +70,7 @@ if DependencyHelper.dry_monitor_present?
 
         expect(event_spans.size).to eq(1)
         span = event_spans.first
-        expect(span.name).to eq("query.postgres")
+        expect(span.name).to eq("query.rom")
         expect(span.parent_span_id).to eq(root_span.span_id)
         # ROM emits its queries as dry-monitor `sql` events; a query is an
         # outgoing call, so it carries CLIENT kind.
@@ -78,7 +78,7 @@ if DependencyHelper.dry_monitor_present?
         attrs = span.attributes
         expect(attrs["db.query.text"]).to eq("SELECT * FROM users")
         expect(attrs["db.system.name"]).to eq("other_sql")
-        expect(event_category(span)).to eq("query.postgres")
+        expect(event_category(span)).to eq("query.rom")
         expect(scope_of(span)).to eq(["appsignal-ruby/dry_monitor", Appsignal::VERSION])
         expect(attrs).not_to have_key("appsignal.body")
       end
@@ -146,7 +146,7 @@ if DependencyHelper.dry_monitor_present?
           "body" => "",
           "body_format" => Appsignal::EventFormatter::DEFAULT,
           "count" => 1,
-          "name" => "foo",
+          "name" => "foo.dry",
           "title" => ""
         )
       end
@@ -160,12 +160,12 @@ if DependencyHelper.dry_monitor_present?
 
         expect(event_spans.size).to eq(1)
         span = event_spans.first
-        expect(span.name).to eq("foo")
+        expect(span.name).to eq("foo.dry")
         expect(span.parent_span_id).to eq(root_span.span_id)
         # A non-SQL dry event is not an outgoing call, so it keeps the default kind.
         expect(span.kind).to eq(:internal)
         attrs = span.attributes
-        expect(event_category(span)).to eq("foo")
+        expect(event_category(span)).to eq("foo.dry")
         expect(attrs).not_to have_key("appsignal.body")
         expect(attrs).not_to have_key("db.query.text")
         expect(attrs).not_to have_key("db.system.name")
