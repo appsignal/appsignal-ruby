@@ -12,7 +12,14 @@ module Appsignal
 
       def install
         require "appsignal/integrations/excon"
-        ::Excon.defaults[:instrumentor] = Appsignal::Integrations::ExconIntegration
+        # Instrument the request at the connection, rather than by registering
+        # AppSignal as Excon's instrumentor. An instrumentor is told about a
+        # request in pieces, none of which covers the wait for the response, and
+        # there is only room for one of them, so registering ours would replace
+        # any the application set up itself.
+        ::Excon::Connection.prepend Appsignal::Integrations::ExconIntegration
+
+        Appsignal::Environment.report_enabled("excon")
       end
     end
   end

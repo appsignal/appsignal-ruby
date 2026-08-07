@@ -62,7 +62,10 @@ if DependencyHelper.faraday_present?
           "body" => ""
         )
         # Excon is suppressed under Faraday, so it isn't recorded again.
-        expect(transaction).to_not include_event("name" => "request.excon")
+        # Asserted on the whole list of event names, so that an Excon event with
+        # any title at all fails this.
+        expect(transaction.to_h["events"].map { |event| event["name"] })
+          .to eq(["request.faraday"])
       end
     end
   end
