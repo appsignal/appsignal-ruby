@@ -32,6 +32,12 @@ class DescribedMockFormatter < Appsignal::EventFormatter
   end
 end
 
+class UnrecordedMockFormatter < Appsignal::EventFormatter
+  def record?
+    false
+  end
+end
+
 class IncorrectFormatMockFormatter < Appsignal::EventFormatter
   def format
   end
@@ -302,6 +308,36 @@ describe Appsignal::EventFormatter do
     context "when no formatter with the name is registered" do
       it "returns nil" do
         expect(klass.opentelemetry_attributes("nonsense", {})).to be_nil
+      end
+    end
+  end
+
+  describe ".record?" do
+    context "when the formatter says another integration records the event" do
+      it "returns false" do
+        klass.register("mock.elsewhere", UnrecordedMockFormatter)
+        expect(klass.record?("mock.elsewhere")).to be(false)
+      end
+    end
+
+    context "when the formatter says nothing about it" do
+      it "returns true" do
+        klass.register("mock", MockFormatter)
+        expect(klass.record?("mock")).to be(true)
+      end
+    end
+
+    context "when the event name is a Symbol" do
+      it "returns what the formatter registered under the String says" do
+        klass.register("mock.symbol_claimed", UnrecordedMockFormatter)
+
+        expect(klass.record?(:"mock.symbol_claimed")).to be(false)
+      end
+    end
+
+    context "when no formatter with the name is registered" do
+      it "returns true" do
+        expect(klass.record?("nonsense")).to be(true)
       end
     end
   end

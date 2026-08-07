@@ -344,9 +344,27 @@ shared_examples "activesupport instrument override" do
     end
   end
 
-  describe "a suppressed event, recorded by a dedicated integration" do
+  describe "an event claimed by a dedicated integration" do
+    # An integration claims its event as it installs, so which events are
+    # claimed depends on which integrations are running. Claim one here, so
+    # that this covers the generic path leaving a claimed event alone whichever
+    # integrations this gemfile happens to have.
+    before do
+      Appsignal::EventFormatter.register(
+        "claimed.example",
+        Appsignal::EventFormatter::RecordedElsewhere
+      )
+    end
+
+    after do
+      Appsignal::EventFormatter.unregister(
+        "claimed.example",
+        Appsignal::EventFormatter::RecordedElsewhere
+      )
+    end
+
     def perform
-      as.instrument("request.faraday", :method => :get) { "value" }
+      as.instrument("claimed.example", :method => :get) { "value" }
     end
 
     it "in agent mode", :agent_mode do

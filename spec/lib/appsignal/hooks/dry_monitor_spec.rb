@@ -84,6 +84,51 @@ if DependencyHelper.dry_monitor_present?
       end
     end
 
+    describe "an event that another integration records" do
+      let(:event_id) { :claimed }
+      let(:payload) { { :name => "claimed" } }
+
+      before do
+        Appsignal::EventFormatter.register(
+          "claimed.dry",
+          Appsignal::EventFormatter::RecordedElsewhere
+        )
+      end
+
+      after do
+        Appsignal::EventFormatter.unregister(
+          "claimed.dry",
+          Appsignal::EventFormatter::RecordedElsewhere
+        )
+      end
+
+      def perform
+        notifications.instrument(event_id, payload) { "block value" }
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
+
+        expect(perform).to eq("block value")
+
+        expect(transaction.to_h["events"]).to be_empty
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
+
+        expect(perform).to eq("block value")
+
+        Appsignal::Transaction.complete_current!
+
+        expect(event_spans).to be_empty
+      end
+    end
+
     describe "an unregistered formatter event" do
       let(:event_id) { :foo }
       let(:payload) { { :name => "foo" } }
