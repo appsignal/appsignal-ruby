@@ -8,10 +8,14 @@ describe Appsignal::EventFormatter::ActionView::RenderFormatter do
       let(:formatter) { klass.new }
       before { allow(Rails.root).to receive(:to_s).and_return("/var/www/app/20130101") }
 
-      it "registers render_partial.action_view and render_template.action_view" do
+      it "registers every event that renders a template" do
         expect(Appsignal::EventFormatter.registered?("render_partial.action_view",
           klass)).to be_truthy
         expect(Appsignal::EventFormatter.registered?("render_template.action_view",
+          klass)).to be_truthy
+        expect(Appsignal::EventFormatter.registered?("render_collection.action_view",
+          klass)).to be_truthy
+        expect(Appsignal::EventFormatter.registered?("render_layout.action_view",
           klass)).to be_truthy
       end
 
@@ -53,6 +57,10 @@ describe Appsignal::EventFormatter::ActionView::RenderFormatter do
         expect(Appsignal::EventFormatter.registered?("render_partial.action_view",
           klass)).to be_falsy
         expect(Appsignal::EventFormatter.registered?("render_template.action_view",
+          klass)).to be_falsy
+        expect(Appsignal::EventFormatter.registered?("render_collection.action_view",
+          klass)).to be_falsy
+        expect(Appsignal::EventFormatter.registered?("render_layout.action_view",
           klass)).to be_falsy
       end
     end
