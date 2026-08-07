@@ -39,12 +39,26 @@ end
 
 describe Appsignal::EventFormatter do
   let(:klass) { described_class }
+
+  # Registering an event formatter writes to a registry that is shared by the
+  # whole test suite, so this file has to leave it as it found it.
+  before(:context) do
+    @formatters = Appsignal::EventFormatter.formatters.dup
+    @formatter_classes = Appsignal::EventFormatter.formatter_classes.dup
+  end
+
+  after(:context) do
+    expect(Appsignal::EventFormatter.formatters).to eq(@formatters)
+    expect(Appsignal::EventFormatter.formatter_classes).to eq(@formatter_classes)
+  end
+
   around do |example|
-    original_formatters = described_class.formatters
+    formatters = described_class.formatters.dup
+    formatter_classes = described_class.formatter_classes.dup
     example.run
-    # rubocop:disable Style/ClassVars
-    described_class.class_variable_set(:@@formatters, original_formatters)
-    # rubocop:enable Style/ClassVars
+  ensure
+    described_class.formatters.replace(formatters)
+    described_class.formatter_classes.replace(formatter_classes)
   end
 
   describe "the event formatters in this gem" do
