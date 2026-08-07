@@ -43,3 +43,14 @@ Appsignal::EventFormatter.register(
   "render_template.action_view",
   Appsignal::EventFormatter::ActionView::RenderFormatter
 )
+# Action View reports the template's path for these two as well, so they are
+# titled the same way. A collection reports the partial it rendered for each
+# item, and a layout reports itself.
+Appsignal::EventFormatter.register(
+  "render_collection.action_view",
+  Appsignal::EventFormatter::ActionView::RenderFormatter
+)
+Appsignal::EventFormatter.register(
+  "render_layout.action_view",
+  Appsignal::EventFormatter::ActionView::RenderFormatter
+)
