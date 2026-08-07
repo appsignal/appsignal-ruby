@@ -5,8 +5,13 @@ module Appsignal
     # @!visibility private
     module DryMonitorIntegration
       # The event's formatter says what kind of work the event is, such as ROM
-      # reporting a SQL query as a dry-monitor `"sql"` event. Span kind is
-      # immutable, so it has to be set here at event start.
+      # reporting a SQL query as a dry-monitor `"sql"` event, and which library
+      # the instrumentation is for. Both are immutable once the span exists, so
+      # they have to be set here at event start.
+      #
+      # dry-monitor is a notification bus, so an event arriving over it is not
+      # necessarily dry-monitor's own work. A formatter that knows better says
+      # so; anything else is attributed to dry-monitor.
       def instrument(event_id, payload = {}, &block)
         name = "#{event_id}.dry"
         # An event a dedicated integration already records is not recorded a
@@ -16,7 +21,9 @@ module Appsignal
         begin
           Appsignal::Transaction.current.start_event(
             :opentelemetry_kind => Appsignal::EventFormatter.opentelemetry_kind(name),
-            :opentelemetry_scope => ["appsignal-ruby/dry_monitor", Appsignal::VERSION]
+            :opentelemetry_scope =>
+              Appsignal::EventFormatter.opentelemetry_scope(name) ||
+                ["appsignal-ruby/dry_monitor", Appsignal::VERSION]
           )
 
           super

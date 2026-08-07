@@ -130,6 +130,21 @@ module Appsignal
         formatter.opentelemetry_attributes(payload)
       end
 
+      # The OpenTelemetry instrumentation scope for an event, which its
+      # formatter can declare. It names the library the instrumentation is for,
+      # which is not always the library the event arrived through.
+      #
+      # An event with no formatter, or whose formatter declares nothing, is
+      # left to the scope the recording path derives for it.
+      #
+      # @!visibility private
+      def opentelemetry_scope(name)
+        formatter = formatter_for(name)
+        return unless formatter.respond_to?(:opentelemetry_scope)
+
+        formatter.opentelemetry_scope
+      end
+
       # Whether the generic instrumentation paths should record an event, which
       # its formatter can answer. An event a dedicated integration already
       # records says no, so that it is not recorded a second time. An event

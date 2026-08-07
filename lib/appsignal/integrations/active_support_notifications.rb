@@ -11,11 +11,16 @@ module Appsignal
           return unless record_event?(name)
 
           # The event's formatter says what kind of work the event is, such as
-          # a SQL query being an outgoing call to a database. Span kind is
-          # immutable, so it has to be set here at event start.
+          # a SQL query being an outgoing call to a database, and can name the
+          # library the instrumentation is for. Both are immutable once the
+          # span exists, so they have to be set here at event start.
+          #
+          # A formatter that names no library leaves the scope to be derived
+          # from the event name, which is right for everything Rails reports.
           Appsignal::Transaction.current.start_event(
             :opentelemetry_kind => Appsignal::EventFormatter.opentelemetry_kind(name),
-            :opentelemetry_scope => scope_for(name)
+            :opentelemetry_scope =>
+              Appsignal::EventFormatter.opentelemetry_scope(name) || scope_for(name)
           )
         end
 
