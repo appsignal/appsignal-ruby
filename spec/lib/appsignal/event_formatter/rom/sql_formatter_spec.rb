@@ -14,6 +14,14 @@ describe Appsignal::EventFormatter::Rom::SqlFormatter do
     it { is_expected.to eq :client }
   end
 
+  describe "#opentelemetry_scope" do
+    subject { formatter.opentelemetry_scope }
+
+    # These events arrive over dry-monitor, but ROM is what emits them, and the
+    # scope names the library the instrumentation is for.
+    it { is_expected.to eq ["appsignal-ruby/rom", Appsignal::VERSION] }
+  end
+
   describe "#format" do
     subject { formatter.format(payload) }
 

@@ -5,6 +5,13 @@ module Appsignal
     # @!visibility private
     module Rom
       class SqlFormatter < Appsignal::EventFormatter
+        # These events arrive over dry-monitor, which is a notification bus
+        # rather than a library that queries a database. ROM is what emits
+        # them, so that is what the scope names.
+        def opentelemetry_scope
+          ["appsignal-ruby/rom", Appsignal::VERSION]
+        end
+
         # A query is an outgoing call to a datastore.
         def opentelemetry_kind
           :client
