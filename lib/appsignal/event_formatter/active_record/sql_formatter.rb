@@ -4,7 +4,7 @@ module Appsignal
   class EventFormatter
     # @!visibility private
     module ActiveRecord
-      class SqlFormatter
+      class SqlFormatter < Appsignal::EventFormatter
         def format(payload)
           [payload[:name], payload[:sql], SQL_BODY_FORMAT]
         end

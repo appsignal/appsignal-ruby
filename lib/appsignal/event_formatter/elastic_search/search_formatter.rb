@@ -4,7 +4,7 @@ module Appsignal
   class EventFormatter
     # @!visibility private
     module ElasticSearch
-      class SearchFormatter
+      class SearchFormatter < Appsignal::EventFormatter
         def format(payload)
           [
             "#{payload[:name]}: #{payload[:klass]}",

@@ -39,12 +39,32 @@ end
 
 describe Appsignal::EventFormatter do
   let(:klass) { described_class }
+
+  # Registering an event formatter writes to a registry that is shared by the
+  # whole test suite, so this file has to leave it as it found it.
+  before(:context) do
+    @formatters = Appsignal::EventFormatter.formatters.dup
+    @formatter_classes = Appsignal::EventFormatter.formatter_classes.dup
+  end
+
+  after(:context) do
+    expect(Appsignal::EventFormatter.formatters).to eq(@formatters)
+    expect(Appsignal::EventFormatter.formatter_classes).to eq(@formatter_classes)
+  end
+
   around do |example|
-    original_formatters = described_class.formatters
+    formatters = described_class.formatters.dup
+    formatter_classes = described_class.formatter_classes.dup
     example.run
-    # rubocop:disable Style/ClassVars
-    described_class.class_variable_set(:@@formatters, original_formatters)
-    # rubocop:enable Style/ClassVars
+  ensure
+    described_class.formatters.replace(formatters)
+    described_class.formatter_classes.replace(formatter_classes)
+  end
+
+  describe "the event formatters in this gem" do
+    it "inherit from Appsignal::EventFormatter" do
+      expect(klass.formatter_classes.values.uniq).to all(be < described_class)
+    end
   end
 
   describe ".register" do
@@ -66,6 +86,15 @@ describe Appsignal::EventFormatter do
         expect(klass.registered?("mock.twice")).to be_truthy
         expect(logs).to contains_log :warn,
           "Formatter for 'mock.twice' already registered, not registering 'MockFormatter'"
+      end
+    end
+
+    context "when the formatter registers itself" do
+      it "registers it where the other formatters are registered" do
+        MockFormatter.register("mock.self_register", MockFormatter)
+
+        expect(klass.registered?("mock.self_register")).to be_truthy
+        expect(klass.format("mock.self_register", {})).to eq ["title", "some value"]
       end
     end
 
@@ -164,6 +193,17 @@ describe Appsignal::EventFormatter do
 
         klass.unregister("mock.unregister", MockFormatter)
         expect(klass.registered?("mock.unregister")).to be_falsy
+      end
+    end
+
+    context "when the formatter unregisters itself" do
+      it "unregisters the formatter" do
+        klass.register("mock.self_unregister", MockFormatter)
+        expect(klass.registered?("mock.self_unregister")).to be_truthy
+
+        MockFormatter.unregister("mock.self_unregister")
+
+        expect(klass.registered?("mock.self_unregister")).to be_falsy
       end
     end
 

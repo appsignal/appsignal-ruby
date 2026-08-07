@@ -4,7 +4,7 @@ module Appsignal
   class EventFormatter
     # @!visibility private
     module Rom
-      class SqlFormatter
+      class SqlFormatter < Appsignal::EventFormatter
         def format(payload)
           ["query.#{payload[:name]}", payload[:query], SQL_BODY_FORMAT]
         end
