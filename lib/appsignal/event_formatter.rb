@@ -123,6 +123,15 @@ module Appsignal
       end
     end
 
+    # The title and the body to show for an event, as an array. A formatter
+    # that is registered to describe an event in some other way, rather than to
+    # name it, does not have to implement this.
+    #
+    # @!visibility private
+    def format(_payload)
+      nil
+    end
+
     # @return [Integer]
     # @api public
     DEFAULT = 0
