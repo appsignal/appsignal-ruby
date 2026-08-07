@@ -7,16 +7,6 @@ module Appsignal
       class << self
         BANG = "!"
 
-        # Events a dedicated AppSignal integration already records with richer
-        # semantics, so the generic notifications path must not record them a
-        # second time. The ActiveJob hook owns `enqueue.active_job`: it wraps the
-        # enqueue in a producer event that also injects trace context, and the
-        # native notification fires nested inside it. The Faraday integration owns
-        # `request.faraday`: its middleware records the request as a client event
-        # and injects trace context, and Faraday's own instrumentation
-        # notification, if the user added that middleware, fires nested inside it.
-        SUPPRESSED_EVENT_NAMES = ["enqueue.active_job", "request.faraday"].freeze
-
         def start_event(name)
           return unless record_event?(name)
 
@@ -82,12 +72,12 @@ module Appsignal
           )
         end
 
-        # Events starting with a bang are internal to Rails; suppressed events
-        # are recorded by a dedicated integration instead. Both `start_event`
-        # and `finish_event` gate on this so the event stack stays balanced.
+        # Events starting with a bang are internal to Rails. An event that the
+        # registry says a dedicated integration records is not recorded again
+        # here. Both `start_event` and `finish_event` gate on this so the event
+        # stack stays balanced.
         def record_event?(name)
-          name = name.to_s
-          name[0] != BANG && !SUPPRESSED_EVENT_NAMES.include?(name)
+          name.to_s[0] != BANG && Appsignal::EventFormatter.record?(name)
         end
       end
 
