@@ -6,10 +6,8 @@ describe Appsignal::EventFormatter::ViewComponent::RenderFormatter do
       let(:formatter) { klass.new }
       before { allow(Rails.root).to receive(:to_s).and_return("/var/www/app/20130101") }
 
-      it "registers render.view_component and (deprecated) !render.view_component" do
+      it "registers render.view_component" do
         expect(Appsignal::EventFormatter.registered?("render.view_component",
-          klass)).to be_truthy
-        expect(Appsignal::EventFormatter.registered?("!render.view_component",
           klass)).to be_truthy
       end
 
@@ -32,8 +30,6 @@ describe Appsignal::EventFormatter::ViewComponent::RenderFormatter do
     context "when not in a Rails app" do
       it "does not register the event formatter" do
         expect(Appsignal::EventFormatter.registered?("render.view_component",
-          klass)).to be_falsy
-        expect(Appsignal::EventFormatter.registered?("!render.view_component",
           klass)).to be_falsy
       end
     end

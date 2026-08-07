@@ -24,8 +24,4 @@ if defined?(Rails)
     "render.view_component",
     Appsignal::EventFormatter::ViewComponent::RenderFormatter
   )
-  Appsignal::EventFormatter.register(
-    "!render.view_component",
-    Appsignal::EventFormatter::ViewComponent::RenderFormatter
-  )
 end
