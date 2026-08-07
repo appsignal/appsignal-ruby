@@ -43,19 +43,19 @@ if DependencyHelper.dry_monitor_present?
       let(:event_id) { :sql }
       let(:payload) do
         {
-          :name => "postgres",
+          :name => :postgres,
           :query => "SELECT * FROM users"
         }
       end
 
-      it "creates an sql event" do
+      it "creates an sql event named after ROM" do
         notifications.instrument(event_id, payload)
         expect(transaction).to include_event(
           "body" => "SELECT * FROM users",
           "body_format" => Appsignal::EventFormatter::SQL_BODY_FORMAT,
           "count" => 1,
-          "name" => "query.postgres",
-          "title" => "query.postgres"
+          "name" => "query.rom",
+          "title" => ""
         )
       end
     end
@@ -68,13 +68,13 @@ if DependencyHelper.dry_monitor_present?
         }
       end
 
-      it "creates a generic event" do
+      it "creates a generic event in the dry-monitor group" do
         notifications.instrument(event_id, payload)
         expect(transaction).to include_event(
           "body" => "",
           "body_format" => Appsignal::EventFormatter::DEFAULT,
           "count" => 1,
-          "name" => "foo",
+          "name" => "foo.dry",
           "title" => ""
         )
       end
