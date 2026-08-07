@@ -17,6 +17,9 @@ end
 class MissingFormatMockFormatter
 end
 
+class UntitledMockFormatter < Appsignal::EventFormatter
+end
+
 class IncorrectFormatMockFormatter < Appsignal::EventFormatter
   def format
   end
@@ -95,6 +98,15 @@ describe Appsignal::EventFormatter do
 
         expect(klass.registered?("mock.self_register")).to be_truthy
         expect(klass.format("mock.self_register", {})).to eq ["title", "some value"]
+      end
+    end
+
+    context "when the formatter does not implement format" do
+      it "registers the formatter, which gives the event no title or body" do
+        klass.register("mock.untitled", UntitledMockFormatter)
+
+        expect(klass.registered?("mock.untitled")).to be_truthy
+        expect(klass.format("mock.untitled", {})).to be_nil
       end
     end
 
