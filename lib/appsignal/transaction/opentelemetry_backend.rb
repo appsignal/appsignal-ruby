@@ -207,14 +207,16 @@ module Appsignal
       # `appsignal.queue_start` event on the root span (per-trace timeline) and,
       # at completion, a `transaction_queue_duration` metric (the aggregate
       # graph). Like the agent, we record the delta and never shift span timing.
+      #
+      # The queue start time becomes the event's timestamp (events carry their
+      # own time), so it is not duplicated as an attribute.
       def set_queue_start(start)
         return unless start && start > QUEUE_START_MIN
 
         @queue_start = start
         @span.add_event(
           "appsignal.queue_start",
-          :timestamp => Time.at(start / 1000.0),
-          :attributes => { "appsignal.queue_start" => start }
+          :timestamp => Time.at(start / 1000.0)
         )
       end
 

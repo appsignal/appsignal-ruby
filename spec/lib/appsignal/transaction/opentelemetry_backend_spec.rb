@@ -453,7 +453,8 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
       event = span_exporter.finished_spans.first.events
         .find { |e| e.name == "appsignal.queue_start" }
       expect(event).not_to be_nil
-      expect(event.attributes["appsignal.queue_start"]).to eq(1_700_000_000_000)
+      expect(event.timestamp)
+        .to eq((Time.at(1_700_000_000_000 / 1000.0).to_r * 1_000_000_000).to_i)
     end
 
     it "emits the queue duration metric in two series on completion" do

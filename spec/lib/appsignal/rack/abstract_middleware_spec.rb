@@ -531,8 +531,8 @@ describe Appsignal::Rack::AbstractMiddleware do
               perform
 
               queue_event = Array(root_span.events).find { |e| e.name == "appsignal.queue_start" }
-              expect(queue_event.attributes["appsignal.queue_start"])
-                .to eq(queue_start_time.to_i)
+              expect(queue_event.timestamp)
+                .to eq((Time.at(queue_start_time.to_i / 1000.0).to_r * 1_000_000_000).to_i)
             end
           end
         end
