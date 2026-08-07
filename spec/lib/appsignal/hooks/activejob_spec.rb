@@ -36,6 +36,40 @@ if DependencyHelper.active_job_present?
         path, _line_number = ActiveJob::Base.method(:execute).source_location
         expect(path).to end_with("/lib/appsignal/hooks/active_job.rb")
       end
+
+      context "when claiming the enqueue.active_job event" do
+        # The event formatter registry is shared by the whole test suite, so
+        # put back whatever this example changes.
+        around do |example|
+          formatters = Appsignal::EventFormatter.formatters.dup
+          formatter_classes = Appsignal::EventFormatter.formatter_classes.dup
+          example.run
+        ensure
+          Appsignal::EventFormatter.formatters.replace(formatters)
+          Appsignal::EventFormatter.formatter_classes.replace(formatter_classes)
+        end
+
+        before do
+          Appsignal::EventFormatter.unregister(
+            "enqueue.active_job",
+            Appsignal::EventFormatter::RecordedElsewhere
+          )
+        end
+
+        # This integration records the enqueue itself, so the generic
+        # notification paths must not record it a second time. Installing is
+        # what claims it, and this hook only installs when Active Job
+        # instrumentation is enabled, which the tests above cover. With it
+        # disabled nothing records the enqueue twice, so the notification is
+        # left to be recorded like any other.
+        it "claims the event" do
+          expect(Appsignal::EventFormatter.record?("enqueue.active_job")).to be(true)
+
+          described_class.new.install
+
+          expect(Appsignal::EventFormatter.record?("enqueue.active_job")).to be(false)
+        end
+      end
     end
   end
 

@@ -130,6 +130,19 @@ module Appsignal
         formatter.opentelemetry_attributes(payload)
       end
 
+      # Whether the generic instrumentation paths should record an event, which
+      # its formatter can answer. An event a dedicated integration already
+      # records says no, so that it is not recorded a second time. An event
+      # with no formatter, or whose formatter says nothing, is recorded.
+      #
+      # @!visibility private
+      def record?(name)
+        formatter = formatter_for(name)
+        return true unless formatter.respond_to?(:record?)
+
+        formatter.record?
+      end
+
       private
 
       # The formatter registered for an event name.

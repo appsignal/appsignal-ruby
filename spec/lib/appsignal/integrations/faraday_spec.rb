@@ -10,6 +10,36 @@ if DependencyHelper.faraday_present?
   describe "Faraday integration" do
     before { Appsignal::Hooks::FaradayHook.new.install }
 
+    describe "claiming the request.faraday event" do
+      # The event formatter registry is shared by the whole test suite, so put
+      # back whatever this example changes.
+      around do |example|
+        formatters = Appsignal::EventFormatter.formatters.dup
+        formatter_classes = Appsignal::EventFormatter.formatter_classes.dup
+        example.run
+      ensure
+        Appsignal::EventFormatter.formatters.replace(formatters)
+        Appsignal::EventFormatter.formatter_classes.replace(formatter_classes)
+      end
+
+      # This integration records the request itself, so Faraday's own
+      # notification must not record it a second time. Installing is what
+      # claims it, and this hook only installs when Faraday instrumentation is
+      # enabled. With it disabled nothing records the request twice, so the
+      # notification is left to be recorded like any other.
+      it "is claimed on install" do
+        Appsignal::EventFormatter.unregister(
+          "request.faraday",
+          Appsignal::EventFormatter::RecordedElsewhere
+        )
+        expect(Appsignal::EventFormatter.record?("request.faraday")).to be(true)
+
+        Appsignal::Hooks::FaradayHook.new.install
+
+        expect(Appsignal::EventFormatter.record?("request.faraday")).to be(false)
+      end
+    end
+
     # The common case: the default adapter is Net::HTTP, which AppSignal also
     # instruments. Faraday suppresses it, so the request is recorded once -- as
     # the `request.faraday` event, which also writes the `traceparent`.
