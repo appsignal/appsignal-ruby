@@ -38,6 +38,12 @@ class UnrecordedMockFormatter < Appsignal::EventFormatter
   end
 end
 
+class ScopedMockFormatter < Appsignal::EventFormatter
+  def opentelemetry_scope
+    ["appsignal-ruby/mock", "1.2.3"]
+  end
+end
+
 class IncorrectFormatMockFormatter < Appsignal::EventFormatter
   def format
   end
@@ -308,6 +314,39 @@ describe Appsignal::EventFormatter do
     context "when no formatter with the name is registered" do
       it "returns nil" do
         expect(klass.opentelemetry_attributes("nonsense", {})).to be_nil
+      end
+    end
+  end
+
+  describe ".opentelemetry_scope" do
+    context "when the formatter declares a scope" do
+      it "returns it" do
+        klass.register("mock.scoped", ScopedMockFormatter)
+
+        expect(klass.opentelemetry_scope("mock.scoped")).to eq(["appsignal-ruby/mock", "1.2.3"])
+      end
+    end
+
+    context "when the formatter declares no scope" do
+      it "returns nil" do
+        klass.register("mock", MockFormatter)
+
+        expect(klass.opentelemetry_scope("mock")).to be_nil
+      end
+    end
+
+    context "when the event name is a Symbol" do
+      it "returns what the formatter registered under the String declares" do
+        klass.register("mock.symbol_scoped", ScopedMockFormatter)
+
+        expect(klass.opentelemetry_scope(:"mock.symbol_scoped"))
+          .to eq(["appsignal-ruby/mock", "1.2.3"])
+      end
+    end
+
+    context "when no formatter with the name is registered" do
+      it "returns nil" do
+        expect(klass.opentelemetry_scope("nonsense")).to be_nil
       end
     end
   end

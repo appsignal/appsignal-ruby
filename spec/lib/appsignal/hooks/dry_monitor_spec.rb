@@ -79,7 +79,9 @@ if DependencyHelper.dry_monitor_present?
         expect(attrs["db.query.text"]).to eq("SELECT * FROM users")
         expect(attrs["db.system.name"]).to eq("other_sql")
         expect(event_category(span)).to eq("query.rom")
-        expect(scope_of(span)).to eq(["appsignal-ruby/dry_monitor", Appsignal::VERSION])
+        # ROM emits this event, so it is attributed to ROM rather than to the
+        # bus it arrived over.
+        expect(scope_of(span)).to eq(["appsignal-ruby/rom", Appsignal::VERSION])
         expect(attrs).not_to have_key("appsignal.body")
       end
     end
@@ -164,6 +166,9 @@ if DependencyHelper.dry_monitor_present?
         expect(span.parent_span_id).to eq(root_span.span_id)
         # A non-SQL dry event is not an outgoing call, so it keeps the default kind.
         expect(span.kind).to eq(:internal)
+        # No formatter names a library for this event, so it is attributed to
+        # the bus it arrived over.
+        expect(scope_of(span)).to eq(["appsignal-ruby/dry_monitor", Appsignal::VERSION])
         attrs = span.attributes
         expect(event_category(span)).to eq("foo.dry")
         expect(attrs).not_to have_key("appsignal.body")
