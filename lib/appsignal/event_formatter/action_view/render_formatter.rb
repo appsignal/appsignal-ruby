@@ -4,7 +4,7 @@ module Appsignal
   class EventFormatter
     # @!visibility private
     module ActionView
-      class RenderFormatter
+      class RenderFormatter < Appsignal::EventFormatter
         BLANK = ""
 
         def format(payload)

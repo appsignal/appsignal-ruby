@@ -9,7 +9,7 @@ module Appsignal
       # that conflict with our own sequel instrumentor. Without this event
       # formatter the sequel-rails events are recorded without the SQL query
       # that's being executed.
-      class SqlFormatter
+      class SqlFormatter < Appsignal::EventFormatter
         def format(payload)
           [payload[:name].to_s, payload[:sql], SQL_BODY_FORMAT]
         end

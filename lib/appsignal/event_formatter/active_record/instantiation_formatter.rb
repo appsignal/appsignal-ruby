@@ -4,7 +4,7 @@ module Appsignal
   class EventFormatter
     # @!visibility private
     module ActiveRecord
-      class InstantiationFormatter
+      class InstantiationFormatter < Appsignal::EventFormatter
         def format(payload)
           [payload[:class_name], nil]
         end

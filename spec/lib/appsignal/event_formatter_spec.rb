@@ -47,6 +47,12 @@ describe Appsignal::EventFormatter do
     # rubocop:enable Style/ClassVars
   end
 
+  describe "the event formatters in this gem" do
+    it "inherit from Appsignal::EventFormatter" do
+      expect(klass.formatter_classes.values.uniq).to all(be < described_class)
+    end
+  end
+
   describe ".register" do
     it "registers a formatter" do
       expect(klass.registered?("mock")).to be_falsy
