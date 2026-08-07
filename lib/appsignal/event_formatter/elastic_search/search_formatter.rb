@@ -5,6 +5,11 @@ module Appsignal
     # @!visibility private
     module ElasticSearch
       class SearchFormatter < Appsignal::EventFormatter
+        # A query is an outgoing call to a datastore.
+        def opentelemetry_kind
+          :client
+        end
+
         def format(payload)
           [
             "#{payload[:name]}: #{payload[:klass]}",

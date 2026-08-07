@@ -5,6 +5,11 @@ module Appsignal
     # @!visibility private
     module Rom
       class SqlFormatter < Appsignal::EventFormatter
+        # A query is an outgoing call to a datastore.
+        def opentelemetry_kind
+          :client
+        end
+
         # dry-monitor reports an event under an id rather than a name, so the
         # first value here names the event. Naming it after ROM keeps every ROM
         # query in one group.
