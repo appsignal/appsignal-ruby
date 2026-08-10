@@ -1,5 +1,85 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.10.0
+
+_Published on 2026-08-10._
+
+### Changed
+
+- Fix Excon requests being reported as taking almost no time. An Excon request was
+  recorded as two events, one for sending the request and one for reading the
+  response, and neither of them covered the wait for the remote service. So a slow
+  Excon request looked fast in the event timeline, however long it really took.
+
+  An Excon request is now recorded as a single `request.excon` event covering the
+  whole request, so the event lasts as long as the request did. A request that
+  Excon retried, or that was redirected, is also one event, covering every attempt
+  or every hop.
+
+  The `response.excon`, `retry.excon` and `error.excon` events no longer exist.
+  Excon does not tell an instrumentor which request those events belonged to, so
+  `response.excon` never had a title and `error.excon` was always titled `" ://"`.
+
+  AppSignal also no longer registers itself as Excon's instrumentor. Excon allows
+  only one instrumentor, so an application that set up its own was having it
+  replaced. Your own instrumentor now keeps working.
+
+  (minor [a931661f](https://github.com/appsignal/appsignal-ruby/commit/a931661f10c8a633384ba7ff71e01a03ae3cdbe5))
+- Report which template was rendered for collection and layout render events.
+
+  Rendering a template or a partial is reported with the template's path, so you
+  can tell one from another. Rendering a collection or a layout was reported
+  without one. Every collection render in an application was recorded as the same
+  event, however many different partials it rendered, and so was every layout
+  render.
+
+  They now carry the template's path as well. A collection render reports the
+  partial it rendered for each item in the collection, and a layout render
+  reports the layout.
+
+  This means an application that renders several collections, or several layouts,
+  now sees one event per template where it used to see one event in total. That
+  is what makes it possible to tell which of them is the slow one.
+
+  (patch [79d8987a](https://github.com/appsignal/appsignal-ruby/commit/79d8987acbeb0d6d935f52f95b789f2f6a993bef))
+- Name ROM query events after ROM, rather than after the database they ran
+  against.
+
+  A query made through ROM was reported as `query.postgres`, or `query.sqlite`,
+  or whatever else the application's database was. The part after the dot is what
+  AppSignal groups events by, so an application's queries were split into a group
+  per database engine, and the same application reported one group in production
+  and another one in its test suite. Those queries are now all reported as
+  `query.rom`.
+
+  Events that dry-monitor reports and AppSignal has no formatter for are now named
+  after their event id followed by `.dry`, so an event reported as `foo` becomes
+  `foo.dry`. They had no group at all before.
+
+  If you have a dashboard, trigger or saved filter that names one of these events,
+  point it at the new name.
+
+  (patch [effe80c7](https://github.com/appsignal/appsignal-ruby/commit/effe80c7c8341ceb2d4f99714d1130b292d2b16c))
+
+### Fixed
+
+- Fix a rare hang when stopping AppSignal in an application that sends check-ins.
+  Stopping AppSignal waits for any check-in events that have not been transmitted
+  yet, and it could wait forever instead of finishing.
+
+  (patch [8956d4b8](https://github.com/appsignal/appsignal-ruby/commit/8956d4b88db9ae88a9bcd7e781ee62a79154c093))
+- Fix event formatters that register or unregister themselves. Calling
+  `unregister` on the formatter itself, as in `MyFormatter.unregister("my.event")`,
+  did nothing at all. The formatter stayed registered, and no error was raised and
+  nothing was logged to say so. Calling `register` on the formatter itself stored
+  it where AppSignal never looked for it, so it was never used to format an event.
+
+  Registering and unregistering through `Appsignal::EventFormatter` itself, as in
+  `Appsignal::EventFormatter.unregister("my.event", MyFormatter)`, was not
+  affected and keeps working the same way.
+
+  (patch [ecfa4950](https://github.com/appsignal/appsignal-ruby/commit/ecfa495081c2a47c75017727e48bf17c7ae77351))
+
 ## 4.9.1
 
 _Published on 2026-07-27._
