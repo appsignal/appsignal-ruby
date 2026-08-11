@@ -3,8 +3,8 @@ bump: minor
 type: add
 ---
 
-Add configuration options that map to OpenTelemetry resource attributes under collector mode: `service_name`, `filter_attributes`, `filter_function_parameters`, `filter_request_query_parameters`, `filter_request_payload`, `response_headers`, `send_function_parameters`, `send_request_query_parameters`, and `send_request_payload`. These tell the AppSignal Collector how to filter and forward telemetry data.
+Add configuration options that map to OpenTelemetry resource attributes in collector mode: `service_name`, `filter_attributes`, `filter_function_parameters`, `filter_request_query_parameters`, `filter_request_payload`, `response_headers`, `send_function_parameters`, `send_request_query_parameters` and `send_request_payload`.
 
-When collector mode is active, existing configuration options (`name`, environment, `hostname`, `revision`, `ignore_actions`, `ignore_errors`, `ignore_namespaces`, `request_headers`, `filter_session_data`, `send_session_data`) are now passed to the collector as OpenTelemetry resource attributes.
+In collector mode, existing options are passed to the collector as resource attributes as well: `name`, environment, `hostname`, `revision`, `ignore_actions`, `ignore_errors`, `ignore_namespaces`, `request_headers`, `filter_session_data` and `send_session_data`.
 
-Setting any of these options without `collector_endpoint`, or `filter_parameters`/`filter_metadata`/`send_params` with `collector_endpoint`, now logs a warning at startup.
+Setting any of these without `collector_endpoint`, or setting `filter_parameters`, `filter_metadata` or `send_params` with it, logs a warning at startup.

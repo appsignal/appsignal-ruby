@@ -3,7 +3,7 @@ bump: minor
 type: add
 ---
 
-Add an `Appsignal::Transaction#add_opentelemetry_attributes` method. In collector mode, AppSignal records each transaction as an OpenTelemetry span and each instrumented event as a child span. This method adds attributes to whichever of those spans is open when you call it: the innermost event started by `Appsignal.instrument`, or the transaction's own span when no event is open.
+Add an `Appsignal::Transaction#add_opentelemetry_attributes` method. It adds OpenTelemetry attributes to the span AppSignal is currently recording: the innermost event opened by `Appsignal.instrument`, or the transaction itself when no event is open.
 
 Use it to describe what you are instrumenting in OpenTelemetry's own terms, following the OpenTelemetry semantic conventions where they apply:
 
@@ -16,6 +16,4 @@ Appsignal.instrument("query.my_database") do
 end
 ```
 
-Attribute values must be a String, Integer, Float or boolean. Other values are converted to a String.
-
-Attributes have no equivalent outside collector mode, so this does nothing when collector mode is not active.
+Values must be a String, Integer, Float or boolean. Anything else is converted to a String. This does nothing outside collector mode.

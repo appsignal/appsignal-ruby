@@ -3,17 +3,6 @@ bump: minor
 type: add
 ---
 
-Add a new `collector_endpoint` configuration option (`APPSIGNAL_COLLECTOR_ENDPOINT` environment variable) that puts the integration in _collector mode_. When set, AppSignal additionally configures an OpenTelemetry SDK that exports OTLP/HTTP protobuf traces, metrics, and logs to the configured endpoint. The existing AppSignal agent continues to run unchanged; no AppSignal-collected data flows through the OpenTelemetry SDK yet.
+Add a `collector_endpoint` configuration option (`APPSIGNAL_COLLECTOR_ENDPOINT` environment variable) that puts the integration in _collector mode_. In collector mode AppSignal reports traces, metrics and logs to an AppSignal Collector, over OTLP/HTTP.
 
-Collector mode requires Ruby 3.1 or newer and the OpenTelemetry gems, which are optional and not installed by default. To use it, add them to your application's `Gemfile`:
-
-```ruby
-gem "opentelemetry-sdk", ">= 1.8.0"
-gem "opentelemetry-metrics-sdk", ">= 0.7.1"
-gem "opentelemetry-logs-sdk", ">= 0.2.0"
-gem "opentelemetry-exporter-otlp", ">= 0.30.0"
-gem "opentelemetry-exporter-otlp-metrics", ">= 0.4.0"
-gem "opentelemetry-exporter-otlp-logs", ">= 0.2.0"
-```
-
-If these gems are missing or older than the minimum versions, AppSignal logs a warning and falls back to the bundled agent.
+Collector mode requires Ruby 3.1 or newer, and the OpenTelemetry gems, which are not installed by default. Add the `appsignal-opentelemetry` gem alongside `appsignal` to install them. When they are missing or too old, AppSignal logs a warning and keeps reporting through its agent.
