@@ -49,6 +49,48 @@ describe Appsignal::CLI::Helpers do
     end
   end
 
+  describe ".load_rails_app" do
+    let(:environment_path) { "/app/config/environment.rb" }
+
+    before do
+      allow(Appsignal::Utils::RailsHelper).to receive(:environment_config_path)
+        .and_return(environment_path)
+    end
+
+    it "loads the railtie and application with the selected environment" do
+      expect(cli).to receive(:require)
+        .with("appsignal/integrations/railtie").ordered
+      expect(cli).to receive(:require).with(environment_path).ordered do
+        expect(ENV.fetch("_APPSIGNAL_CONFIG_FILE_ENV", nil)).to eq("staging")
+      end
+
+      cli.send(:load_rails_app, "staging")
+
+      expect(ENV).not_to have_key("_APPSIGNAL_CONFIG_FILE_ENV")
+    end
+
+    it "clears the selected environment when loading fails" do
+      allow(cli).to receive(:require).and_raise(LoadError)
+
+      expect { cli.send(:load_rails_app, "staging") }.to raise_error(LoadError)
+      expect(ENV).not_to have_key("_APPSIGNAL_CONFIG_FILE_ENV")
+    end
+  end
+
+  describe ".rails_present?" do
+    it "returns true when Rails can be loaded" do
+      expect(cli).to receive(:require).with("rails")
+
+      expect(cli.send(:rails_present?)).to be(true)
+    end
+
+    it "returns false when Rails cannot be loaded" do
+      expect(cli).to receive(:require).with("rails").and_raise(LoadError)
+
+      expect(cli.send(:rails_present?)).to be(false)
+    end
+  end
+
   describe ".periods" do
     it "prints three periods" do
       capture_stdout(out_stream) { cli.send :periods }

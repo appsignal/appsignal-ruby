@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "appsignal/cli/helpers"
 require "appsignal/demo"
 
 module Appsignal
@@ -40,6 +41,8 @@ module Appsignal
     # @see https://docs.appsignal.com/support/debugging.html
     #   Debugging AppSignal guide
     class Demo
+      extend CLI::Helpers
+
       class << self
         # @param options [Hash]
         # @option options :environment [String] environment to load
@@ -47,6 +50,7 @@ module Appsignal
         # @return [void]
         def run(options = {})
           ENV["APPSIGNAL_APP_ENV"] = options[:environment] if options[:environment]
+          require_rails_app_if_present(options[:environment])
 
           puts "Sending demonstration sample data..."
           if Appsignal::Demo.transmit
@@ -63,6 +67,19 @@ module Appsignal
             puts
             exit 1
           end
+        end
+
+        private
+
+        def require_rails_app_if_present(environment)
+          return unless rails_present?
+
+          load_rails_app(environment)
+        rescue LoadError, StandardError => error
+          puts
+          puts "ERROR: Error encountered while loading the Rails app"
+          puts "#{error.class}: #{error.message}"
+          puts error.backtrace
         end
       end
     end

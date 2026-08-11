@@ -36,6 +36,21 @@ module Appsignal
         "\e[#{color_code}m#{text}\e[#{reset_color_code}m"
       end
 
+      def load_rails_app(environment)
+        ENV["_APPSIGNAL_CONFIG_FILE_ENV"] = environment
+        require "appsignal/integrations/railtie"
+        require Appsignal::Utils::RailsHelper.environment_config_path
+      ensure
+        ENV.delete("_APPSIGNAL_CONFIG_FILE_ENV")
+      end
+
+      def rails_present?
+        require "rails"
+        true
+      rescue LoadError
+        false
+      end
+
       def periods
         3.times do
           print "."
