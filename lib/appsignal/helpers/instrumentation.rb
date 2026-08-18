@@ -193,6 +193,14 @@ module Appsignal
       #   within the block with {#set_action}.
       #   This will not update the active transaction's action if
       #   {.monitor} is called when another transaction is already active.
+      # @param opentelemetry_kind [Symbol] In collector mode, the OpenTelemetry
+      #   span kind: one of `:server`, `:consumer`, `:producer` or `:internal`.
+      #   Defaults to `:server`.
+      # @param opentelemetry_relationship [Symbol] In collector mode, how an
+      #   incoming `opentelemetry_context` relates to this transaction's span:
+      #   one of `:parent`, `:link`, `:both` or `:none`. Defaults to `:parent`.
+      # @param opentelemetry_context In collector mode, an incoming OpenTelemetry
+      #   trace context to relate this transaction's span to.
       # @param opentelemetry_scope [Array(String, String)] In collector mode, the
       #   OpenTelemetry instrumentation scope to record this transaction's spans
       #   under, given as a `[name, version]` pair. Defaults to the AppSignal
@@ -204,7 +212,15 @@ module Appsignal
       # @return [Object, nil] The value of the given block is returned.
       #
       # @see monitor
-      def monitor_and_stop(action:, namespace: nil, opentelemetry_scope: nil, &block)
+      def monitor_and_stop( # rubocop:disable Metrics/ParameterLists
+        action:,
+        namespace: nil,
+        opentelemetry_context: nil,
+        opentelemetry_scope: nil,
+        opentelemetry_kind: nil,
+        opentelemetry_relationship: nil,
+        &block
+      )
         Appsignal::Utils::StdoutAndLoggerMessage.warning \
           "The `Appsignal.monitor_and_stop` helper is deprecated. " \
             "Use the `Appsignal.monitor` along with our `enable_at_exit_hook` " \
@@ -213,7 +229,10 @@ module Appsignal
         monitor(
           :namespace => namespace,
           :action => action,
+          :opentelemetry_context => opentelemetry_context,
           :opentelemetry_scope => opentelemetry_scope,
+          :opentelemetry_kind => opentelemetry_kind,
+          :opentelemetry_relationship => opentelemetry_relationship,
           &block
         )
       ensure

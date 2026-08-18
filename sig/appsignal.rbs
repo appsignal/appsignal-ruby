@@ -378,12 +378,25 @@ module Appsignal
   # 
   # _@param_ `action` — The action name for the transaction. The action name is required to be set for the transaction to be reported. The argument can be set to `nil` or `:set_later` if the action is set within the block with {#set_action}. This will not update the active transaction's action if {.monitor} is called when another transaction is already active.
   # 
+  # _@param_ `opentelemetry_kind` — In collector mode, the OpenTelemetry span kind: one of `:server`, `:consumer`, `:producer` or `:internal`. Defaults to `:server`.
+  # 
+  # _@param_ `opentelemetry_relationship` — In collector mode, how an incoming `opentelemetry_context` relates to this transaction's span: one of `:parent`, `:link`, `:both` or `:none`. Defaults to `:parent`.
+  # 
+  # _@param_ `opentelemetry_context` — In collector mode, an incoming OpenTelemetry trace context to relate this transaction's span to.
+  # 
   # _@param_ `opentelemetry_scope` — In collector mode, the OpenTelemetry instrumentation scope to record this transaction's spans under, given as a `[name, version]` pair. Defaults to the AppSignal scope.
   # 
   # _@return_ — The value of the given block is returned.
   # 
   # _@see_ `monitor`
-  def self.monitor_and_stop: (action: (String | Symbol | NilClass), ?namespace: (String | Symbol)?, ?opentelemetry_scope: [String, String]?) ?{ () -> Object } -> Object?
+  def self.monitor_and_stop: (
+                               action: (String | Symbol | NilClass),
+                               ?namespace: (String | Symbol)?,
+                               ?opentelemetry_context: untyped,
+                               ?opentelemetry_scope: [String, String]?,
+                               ?opentelemetry_kind: Symbol?,
+                               ?opentelemetry_relationship: Symbol?
+                             ) ?{ () -> Object } -> Object?
 
   # Send an error to AppSignal regardless of the context.
   # 
@@ -2138,12 +2151,25 @@ module Appsignal
       # 
       # _@param_ `action` — The action name for the transaction. The action name is required to be set for the transaction to be reported. The argument can be set to `nil` or `:set_later` if the action is set within the block with {#set_action}. This will not update the active transaction's action if {.monitor} is called when another transaction is already active.
       # 
+      # _@param_ `opentelemetry_kind` — In collector mode, the OpenTelemetry span kind: one of `:server`, `:consumer`, `:producer` or `:internal`. Defaults to `:server`.
+      # 
+      # _@param_ `opentelemetry_relationship` — In collector mode, how an incoming `opentelemetry_context` relates to this transaction's span: one of `:parent`, `:link`, `:both` or `:none`. Defaults to `:parent`.
+      # 
+      # _@param_ `opentelemetry_context` — In collector mode, an incoming OpenTelemetry trace context to relate this transaction's span to.
+      # 
       # _@param_ `opentelemetry_scope` — In collector mode, the OpenTelemetry instrumentation scope to record this transaction's spans under, given as a `[name, version]` pair. Defaults to the AppSignal scope.
       # 
       # _@return_ — The value of the given block is returned.
       # 
       # _@see_ `monitor`
-      def monitor_and_stop: (action: (String | Symbol | NilClass), ?namespace: (String | Symbol)?, ?opentelemetry_scope: [String, String]?) ?{ () -> Object } -> Object?
+      def monitor_and_stop: (
+                              action: (String | Symbol | NilClass),
+                              ?namespace: (String | Symbol)?,
+                              ?opentelemetry_context: untyped,
+                              ?opentelemetry_scope: [String, String]?,
+                              ?opentelemetry_kind: Symbol?,
+                              ?opentelemetry_relationship: Symbol?
+                            ) ?{ () -> Object } -> Object?
 
       # Send an error to AppSignal regardless of the context.
       # 
