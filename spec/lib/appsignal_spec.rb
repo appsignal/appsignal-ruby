@@ -1538,6 +1538,46 @@ describe Appsignal do
           end
         end.to yield_control
       end
+
+      describe "OpenTelemetry attributes" do
+        it "threads the OpenTelemetry attributes to the created transaction" do
+          allow(Appsignal).to receive(:stop)
+
+          otel_context = "some-otel-context"
+          expect(Appsignal::Transaction).to receive(:create).with(
+            Appsignal::Transaction::BACKGROUND_JOB,
+            :opentelemetry_context => otel_context,
+            :opentelemetry_scope => ["appsignal-ruby/custom", "1.2.3"],
+            :opentelemetry_kind => :consumer,
+            :opentelemetry_relationship => :both
+          ).and_call_original
+
+          silence do
+            Appsignal.monitor_and_stop(
+              :action => "MyAction",
+              :namespace => Appsignal::Transaction::BACKGROUND_JOB,
+              :opentelemetry_context => otel_context,
+              :opentelemetry_scope => ["appsignal-ruby/custom", "1.2.3"],
+              :opentelemetry_kind => :consumer,
+              :opentelemetry_relationship => :both
+            )
+          end
+        end
+
+        it "uses the given opentelemetry_kind for the span", :collector_mode do
+          start_collector_agent
+          allow(Appsignal).to receive(:stop)
+
+          silence do
+            Appsignal.monitor_and_stop(
+              :action => "MyAction",
+              :opentelemetry_kind => :consumer
+            )
+          end
+
+          expect(root_span.kind).to eq(:consumer)
+        end
+      end
     end
 
     describe ".tag_request" do
