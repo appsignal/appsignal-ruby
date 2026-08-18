@@ -22,6 +22,11 @@ def ext_path(path)
   File.join(EXT_PATH, path)
 end
 
+def ca_cert_path
+  ENV.values_at("APPSIGNAL_CA_FILE_PATH", "SSL_CERT_FILE")
+    .find { |path| path && !path.strip.empty? } || CA_CERT_PATH
+end
+
 def report
   @report ||=
     begin
@@ -132,7 +137,7 @@ def download_archive(type)
       proxy, _error = http_proxy
       args = [
         download_url,
-        { :ssl_ca_cert => CA_CERT_PATH,
+        { :ssl_ca_cert => ca_cert_path,
           :proxy => proxy }
       ]
       if URI.respond_to?(:open) # rubocop:disable Style/GuardClause
