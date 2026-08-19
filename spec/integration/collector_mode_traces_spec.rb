@@ -45,6 +45,10 @@ if DependencyHelper.opentelemetry_present?
       expect(attribute_value(sql, "db.query.text")).to eq("SELECT * FROM users")
       expect(attribute_value(sql, "db.system.name")).to eq("other_sql")
 
+      # A query is an outgoing call to a datastore, so its span is a client
+      # span. The runner does not pass a span kind, so this is the default.
+      expect(sql.kind).to eq(:SPAN_KIND_CLIENT)
+
       # Allocation counts: the transaction total on the root span and a per-event
       # count on each event span. The values are real allocations, so assert the
       # wiring (present and non-negative) rather than exact counts. The monitored
