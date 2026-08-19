@@ -16,4 +16,4 @@ the proxy.
 The bundled CA certificate is still used when `APPSIGNAL_CA_FILE_PATH` is not
 set.
 
-Thanks @Cosmo for your contribution!
+Thanks [@Cosmo](https://github.com/Cosmo) for your contribution!
