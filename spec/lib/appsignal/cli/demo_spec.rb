@@ -42,5 +42,19 @@ describe Appsignal::CLI::Demo do
       run
       expect(output).to include("Demonstration sample data sent!")
     end
+
+    context "when Rails is present" do
+      before do
+        allow(described_class).to receive(:rails_present?).and_return(true)
+      end
+
+      it "loads the Rails application before transmitting" do
+        expect(described_class).to receive(:load_rails_app)
+          .with("development").ordered
+        expect(Appsignal::Demo).to receive(:transmit).ordered.and_return(true)
+
+        run
+      end
+    end
   end
 end
