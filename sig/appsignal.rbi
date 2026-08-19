@@ -1062,6 +1062,8 @@ module Appsignal
   # 
   # _@param_ `body` — SQL query that's being executed.
   # 
+  # _@param_ `opentelemetry_kind` — In collector mode, the OpenTelemetry span kind for the event's span. Defaults to `:client`, because a query is an outgoing call to a datastore. Pass `:internal` for a query that is not an outgoing call.
+  # 
   # _@param_ `opentelemetry_scope` — In collector mode, the OpenTelemetry instrumentation scope to record the event's span under, given as a `[name, version]` pair. Defaults to the AppSignal scope.
   # 
   # _@return_ — Returns the block's return value.
@@ -1092,11 +1094,12 @@ module Appsignal
       name: String,
       title: T.nilable(String),
       body: T.nilable(String),
+      opentelemetry_kind: Symbol,
       opentelemetry_scope: T.nilable([String, String]),
       block: T.untyped
     ).returns(Object)
   end
-  def self.instrument_sql(name, title = nil, body = nil, opentelemetry_scope: nil, &block); end
+  def self.instrument_sql(name, title = nil, body = nil, opentelemetry_kind: :client, opentelemetry_scope: nil, &block); end
 
   # Convenience method for ignoring instrumentation events in a block of
   # code.
@@ -2970,6 +2973,8 @@ module Appsignal
       # 
       # _@param_ `body` — SQL query that's being executed.
       # 
+      # _@param_ `opentelemetry_kind` — In collector mode, the OpenTelemetry span kind for the event's span. Defaults to `:client`, because a query is an outgoing call to a datastore. Pass `:internal` for a query that is not an outgoing call.
+      # 
       # _@param_ `opentelemetry_scope` — In collector mode, the OpenTelemetry instrumentation scope to record the event's span under, given as a `[name, version]` pair. Defaults to the AppSignal scope.
       # 
       # _@return_ — Returns the block's return value.
@@ -3000,11 +3005,12 @@ module Appsignal
           name: String,
           title: T.nilable(String),
           body: T.nilable(String),
+          opentelemetry_kind: Symbol,
           opentelemetry_scope: T.nilable([String, String]),
           block: T.untyped
         ).returns(Object)
       end
-      def instrument_sql(name, title = nil, body = nil, opentelemetry_scope: nil, &block); end
+      def instrument_sql(name, title = nil, body = nil, opentelemetry_kind: :client, opentelemetry_scope: nil, &block); end
 
       # Convenience method for ignoring instrumentation events in a block of
       # code.

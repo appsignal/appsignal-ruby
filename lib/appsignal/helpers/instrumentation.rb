@@ -1027,6 +1027,10 @@ module Appsignal
       #   naming guide listed under "See also".
       # @param title [String, nil] Human readable name of the event.
       # @param body [String, nil] SQL query that's being executed.
+      # @param opentelemetry_kind [Symbol] In collector mode, the OpenTelemetry
+      #   span kind for the event's span. Defaults to `:client`, because a query
+      #   is an outgoing call to a datastore. Pass `:internal` for a query that
+      #   is not an outgoing call.
       # @param opentelemetry_scope [Array(String, String)] In collector mode, the
       #   OpenTelemetry instrumentation scope to record the event's span under,
       #   given as a `[name, version]` pair. Defaults to the AppSignal scope.
@@ -1039,12 +1043,20 @@ module Appsignal
       #   AppSignal custom instrumentation guide
       # @see https://docs.appsignal.com/api/event-names.html
       #   AppSignal event naming guide
-      def instrument_sql(name, title = nil, body = nil, opentelemetry_scope: nil, &block)
+      def instrument_sql(
+        name,
+        title = nil,
+        body = nil,
+        opentelemetry_kind: :client,
+        opentelemetry_scope: nil,
+        &block
+      )
         instrument(
           name,
           title,
           body,
           Appsignal::EventFormatter::SQL_BODY_FORMAT,
+          :opentelemetry_kind => opentelemetry_kind,
           :opentelemetry_scope => opentelemetry_scope,
           &block
         )

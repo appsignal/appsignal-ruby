@@ -3442,6 +3442,49 @@ describe Appsignal do
         expect(span.attributes).not_to have_key("appsignal.body")
       end
     end
+
+    describe "the OpenTelemetry span kind" do
+      it "is client when no kind is given", :collector_mode do
+        start_collector_agent
+        set_current_transaction(transaction)
+
+        Appsignal.instrument_sql("name", "title", "body") { :do_nothing }
+        Appsignal::Transaction.complete_current!
+
+        expect(event_spans.size).to eq(1)
+        expect(event_spans.first.kind).to eq(:client)
+      end
+
+      it "is the given kind when one is given", :collector_mode do
+        start_collector_agent
+        set_current_transaction(transaction)
+
+        Appsignal.instrument_sql(
+          "name", "title", "body",
+          :opentelemetry_kind => :internal
+        ) { :do_nothing }
+        Appsignal::Transaction.complete_current!
+
+        expect(event_spans.size).to eq(1)
+        expect(event_spans.first.kind).to eq(:internal)
+      end
+
+      it "is internal when the kind is explicitly nil", :collector_mode do
+        start_collector_agent
+        set_current_transaction(transaction)
+
+        Appsignal.instrument_sql(
+          "name", "title", "body",
+          :opentelemetry_kind => nil
+        ) { :do_nothing }
+        Appsignal::Transaction.complete_current!
+
+        # The default only applies when the argument is omitted. An explicit
+        # `nil` means "unspecified", which uses the OpenTelemetry default.
+        expect(event_spans.size).to eq(1)
+        expect(event_spans.first.kind).to eq(:internal)
+      end
+    end
   end
 
   describe ".ignore_instrumentation_events" do
