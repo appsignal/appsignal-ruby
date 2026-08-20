@@ -60,7 +60,9 @@ describe Appsignal::Hooks::DataMapperLogListener do
         expect(span.parent_span_id).to eq(root_span.span_id)
         attrs = span.attributes
         expect(attrs["db.query.text"]).to eq("SELECT * from users")
-        expect(attrs["db.system.name"]).to eq("other_sql")
+        # The connection class names the engine, rather than the SQL sentinel
+        # every unrecognized SQL_CLASSES entry would fall back to.
+        expect(attrs["db.system.name"]).to eq("sqlite")
         expect(event_category(span)).to eq("query.data_mapper")
         expect(scope_of(span)).to eq(["appsignal-ruby/data_mapper", Appsignal::VERSION])
         expect(attrs).not_to have_key("appsignal.body")
