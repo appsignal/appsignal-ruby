@@ -45,6 +45,31 @@ shared_examples "activesupport instrument override" do
     end
   end
 
+  describe "an ActiveRecord SQL query event with a connection" do
+    let(:connection) { double(:adapter_name => "PostgreSQL") }
+
+    def perform
+      as.instrument("sql.active_record", :sql => "SQL", :connection => connection) { "value" }
+    end
+
+    it "in collector mode", :collector_mode do
+      start_collector_agent
+      transaction = http_request_transaction
+      set_current_transaction(transaction)
+      as.notifier = notifier
+
+      expect(perform).to eq "value"
+      Appsignal::Transaction.complete_current!
+
+      expect(event_spans.size).to eq(1)
+      span = event_spans.find { |s| s.name == "sql.active_record" }
+      expect(span).not_to be_nil
+      # The connection's own adapter name names the engine, rather than the
+      # SQL sentinel every other unrecognized adapter falls back to.
+      expect(span.attributes["db.system.name"]).to eq("postgresql")
+    end
+  end
+
   describe "a Sequel query event (emitted by sequel-rails)" do
     def perform
       as.instrument(

@@ -29,6 +29,18 @@ module Appsignal
         def format(payload)
           ["query.rom", payload[:query], SQL_BODY_FORMAT]
         end
+
+        # The payload's `name` is Sequel's `database_type` symbol for the
+        # database ROM is talking to, so this uses Sequel's own lookup
+        # rather than a coincidentally similar one. A symbol the mapping does
+        # not recognise is left to the SQL sentinel, same as an engine this
+        # gem has never heard of.
+        def opentelemetry_attributes(payload)
+          name = Appsignal::OpenTelemetry::SqlDbSystem.name_for_sequel(payload[:name])
+          return unless name
+
+          { "db.system.name" => name }
+        end
       end
     end
   end
