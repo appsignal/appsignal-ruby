@@ -1,5 +1,28 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.10.1
+
+_Published on 2026-08-20._
+
+### Fixed
+
+- Use the CA certificate configured in `APPSIGNAL_CA_FILE_PATH` to download the
+  AppSignal agent when installing this gem.
+
+  The gem downloads the agent from our servers over HTTPS during installation. It
+  always used the CA certificate bundled with the gem to verify that connection,
+  whatever the value of the `ca_file_path` configuration option. This meant the
+  installation failed behind a proxy that intercepts TLS connections, such as
+  Zscaler, even when `APPSIGNAL_CA_FILE_PATH` pointed to a CA bundle that trusts
+  the proxy.
+
+  The bundled CA certificate is still used when `APPSIGNAL_CA_FILE_PATH` is not
+  set.
+
+  Thanks [@Cosmo](https://github.com/Cosmo) for your contribution!
+
+  (patch [5a126864](https://github.com/appsignal/appsignal-ruby/commit/5a126864314b0c4f244dab653c9548f48f7fd413), [0c49fc51](https://github.com/appsignal/appsignal-ruby/commit/0c49fc51a385d8e70a324792dc7dace3109b8424))
+
 ## 4.10.0
 
 _Published on 2026-08-10._
