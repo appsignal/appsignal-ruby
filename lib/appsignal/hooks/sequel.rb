@@ -14,6 +14,9 @@ module Appsignal
           :opentelemetry_kind => :client,
           :opentelemetry_scope => ["appsignal-ruby/sequel", Appsignal::VERSION]
         ) do
+          Appsignal::Transaction.current.add_opentelemetry_attributes(
+            Appsignal::Hooks::SequelHook.sequel_db_attributes(self)
+          )
           super
         end
       end
@@ -31,6 +34,9 @@ module Appsignal
           :opentelemetry_kind => :client,
           :opentelemetry_scope => ["appsignal-ruby/sequel", Appsignal::VERSION]
         ) do
+          Appsignal::Transaction.current.add_opentelemetry_attributes(
+            Appsignal::Hooks::SequelHook.sequel_db_attributes(self)
+          )
           super
         end
       end
@@ -38,6 +44,26 @@ module Appsignal
 
     class SequelHook < Appsignal::Hooks::Hook
       register :sequel
+
+      # The query's `Sequel::Database` names both the engine it talks to and
+      # the database it is connected to, neither of which the sql.sequel
+      # formatter can see -- it only gets the query text. Shared by both
+      # extensions above, whichever one a given Sequel version registers.
+      #
+      # @!visibility private
+      def self.sequel_db_attributes(database)
+        attributes = {}
+
+        name = Appsignal::OpenTelemetry::SqlDbSystem.name_for_sequel(database.database_type)
+        attributes["db.system.name"] = name if name
+
+        # `opts[:database]` is Sequel's own option key for the database to
+        # connect to, so it doubles as the database's name.
+        namespace = database.opts[:database].to_s
+        attributes["db.namespace"] = namespace unless namespace.empty?
+
+        attributes
+      end
 
       def dependencies_present?
         defined?(::Sequel::Database) &&

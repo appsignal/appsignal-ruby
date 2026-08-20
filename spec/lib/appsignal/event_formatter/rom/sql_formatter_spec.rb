@@ -40,4 +40,24 @@ describe Appsignal::EventFormatter::Rom::SqlFormatter do
       it { is_expected.to eq ["query.rom", "SELECT * FROM users", 1] }
     end
   end
+
+  describe "#opentelemetry_attributes" do
+    subject { formatter.opentelemetry_attributes(payload) }
+
+    context "with a database type the mapping recognises" do
+      let(:payload) { { :name => :postgres, :query => "SELECT * FROM users" } }
+
+      it "names the engine" do
+        is_expected.to eq("db.system.name" => "postgresql")
+      end
+    end
+
+    context "with a database type the mapping does not recognise" do
+      let(:payload) { { :name => :db2, :query => "SELECT * FROM users" } }
+
+      it "names nothing, leaving the SQL sentinel to apply" do
+        is_expected.to be_nil
+      end
+    end
+  end
 end

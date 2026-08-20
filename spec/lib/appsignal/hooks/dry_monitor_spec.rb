@@ -77,7 +77,10 @@ if DependencyHelper.dry_monitor_present?
         expect(span.kind).to eq(:client)
         attrs = span.attributes
         expect(attrs["db.query.text"]).to eq("SELECT * FROM users")
-        expect(attrs["db.system.name"]).to eq("other_sql")
+        # The payload's `name` is Sequel's database_type symbol for the
+        # database ROM is talking to, which the formatter maps to the real
+        # engine name rather than leaving it at the SQL sentinel.
+        expect(attrs["db.system.name"]).to eq("postgresql")
         expect(event_category(span)).to eq("query.rom")
         # ROM emits this event, so it is attributed to ROM rather than to the
         # bus it arrived over.
