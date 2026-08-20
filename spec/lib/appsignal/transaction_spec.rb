@@ -4955,7 +4955,8 @@ describe Appsignal::Transaction do
         1,
         1000,
         :opentelemetry_kind => nil,
-        :opentelemetry_scope => nil
+        :opentelemetry_scope => nil,
+        :opentelemetry_attributes => nil
       ).and_call_original
 
       transaction.record_event(
@@ -4975,7 +4976,8 @@ describe Appsignal::Transaction do
         1,
         1000,
         :opentelemetry_kind => nil,
-        :opentelemetry_scope => ["appsignal-ruby/data_mapper", "1.0"]
+        :opentelemetry_scope => ["appsignal-ruby/data_mapper", "1.0"],
+        :opentelemetry_attributes => nil
       ).and_call_original
 
       transaction.record_event(
@@ -4988,6 +4990,28 @@ describe Appsignal::Transaction do
       )
     end
 
+    it "passes the opentelemetry_attributes to the backend" do
+      expect(transaction.backend).to receive(:record_event).with(
+        "name",
+        "title",
+        "body",
+        1,
+        1000,
+        :opentelemetry_kind => nil,
+        :opentelemetry_scope => nil,
+        :opentelemetry_attributes => { "db.system.name" => "postgresql" }
+      ).and_call_original
+
+      transaction.record_event(
+        "name",
+        "title",
+        "body",
+        1000,
+        1,
+        :opentelemetry_attributes => { "db.system.name" => "postgresql" }
+      )
+    end
+
     it "should finish the event in the extension with nil arguments" do
       expect(transaction.backend).to receive(:record_event).with(
         "name",
@@ -4996,7 +5020,8 @@ describe Appsignal::Transaction do
         0,
         1000,
         :opentelemetry_kind => nil,
-        :opentelemetry_scope => nil
+        :opentelemetry_scope => nil,
+        :opentelemetry_attributes => nil
       ).and_call_original
 
       transaction.record_event(

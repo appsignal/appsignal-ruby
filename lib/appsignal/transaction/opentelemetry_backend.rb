@@ -172,7 +172,7 @@ module Appsignal
       # mirroring `start_event`. `nil` leaves the SDK default (INTERNAL).
       def record_event( # rubocop:disable Metrics/ParameterLists
         name, title, body, body_format, duration,
-        opentelemetry_kind: nil, opentelemetry_scope: nil
+        opentelemetry_kind: nil, opentelemetry_scope: nil, opentelemetry_attributes: nil
       )
         start_time = Time.now - (duration / 1_000_000_000.0)
         span = tracer_for(opentelemetry_scope).start_span(
@@ -181,10 +181,16 @@ module Appsignal
           :kind => opentelemetry_kind
         )
         write_event_span_name(span, name, title)
-        # A recorded event never opens an event frame, so there is nothing to
-        # track a mid-event `db.system.name` on; the sentinel is always the
-        # fallback here.
-        write_event_body_attributes(span, body, body_format, false)
+        # A recorded event has no window between start and finish, so this is
+        # its only chance to attach attributes -- there is no event frame for
+        # a later `set_attributes` call to note a `db.system.name` on.
+        formatted_attributes = Appsignal::OpenTelemetry::Attributes.format(
+          opentelemetry_attributes || {}
+        )
+        span.add_attributes(formatted_attributes) unless formatted_attributes.empty?
+        write_event_body_attributes(
+          span, body, body_format, named_db_system?(formatted_attributes)
+        )
         # A recorded event has no start hook, so we never measured its
         # allocations. We deliberately set no allocation attribute rather than a
         # misleading zero. Its allocations instead fall into the enclosing
