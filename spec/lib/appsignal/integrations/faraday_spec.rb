@@ -12,29 +12,44 @@ if DependencyHelper.faraday_present?
 
     describe "claiming the request.faraday event" do
       # The event formatter registry is shared by the whole test suite, so put
-      # back whatever this example changes.
+      # back whatever this example changes. Reloading the hook file below also
+      # re-registers it in the hooks registry, so put that back too.
       around do |example|
         formatters = Appsignal::EventFormatter.formatters.dup
         formatter_classes = Appsignal::EventFormatter.formatter_classes.dup
+        hooks = Appsignal::Hooks.hooks.dup
         example.run
       ensure
         Appsignal::EventFormatter.formatters.replace(formatters)
         Appsignal::EventFormatter.formatter_classes.replace(formatter_classes)
+        Appsignal::Hooks.hooks.replace(hooks)
       end
 
       # This integration records the request itself, so Faraday's own
-      # notification must not record it a second time. Installing is what
-      # claims it, and this hook only installs when Faraday instrumentation is
-      # enabled. With it disabled nothing records the request twice, so the
-      # notification is left to be recorded like any other.
-      it "is claimed on install" do
+      # notification must not record it a second time. The hook file claims
+      # the event as soon as it is required, rather than when `install`
+      # runs, so the claim holds even when Faraday instrumentation ends up
+      # disabled and `install` never runs. A customer who turns the
+      # instrumentation off should not see the native notification reported
+      # instead.
+      #
+      # The outer `before` above already installed the hook once, and the
+      # hook file has already been required, so `require` will not run its
+      # body again. Force the event back to unclaimed, then load the file
+      # with `load` instead of `require` so its body runs again. That
+      # proves the claim comes from loading the file, not from `install`,
+      # which this example does not call again.
+      it "stays claimed when Faraday instrumentation is disabled" do
+        configure(:options => { :instrument_faraday => false })
+        expect(Appsignal::Hooks::FaradayHook.new.dependencies_present?).to be(false)
+
         Appsignal::EventFormatter.unregister(
           "request.faraday",
           Appsignal::EventFormatter::RecordedElsewhere
         )
         expect(Appsignal::EventFormatter.record?("request.faraday")).to be(true)
 
-        Appsignal::Hooks::FaradayHook.new.install
+        load "appsignal/hooks/faraday.rb"
 
         expect(Appsignal::EventFormatter.record?("request.faraday")).to be(false)
       end
