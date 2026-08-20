@@ -6,6 +6,22 @@ module Appsignal
     class ActiveJobHook < Appsignal::Hooks::Hook
       register :active_job
 
+      # This integration records the enqueue itself, as a producer event that
+      # also injects trace context, and Active Job's own `enqueue.active_job`
+      # notification fires nested inside it. Claim the event so that the
+      # generic notification paths leave it alone.
+      #
+      # Claimed here, when this file is required, rather than in `install`.
+      # `install` only runs when Active Job instrumentation is turned on, but
+      # a customer who turns it off does not want to see the native
+      # notification reported instead. This call does not touch any
+      # `ActiveJob` constant, so it is safe to run even when the library is
+      # not present.
+      Appsignal::EventFormatter.register(
+        "enqueue.active_job",
+        Appsignal::EventFormatter::RecordedElsewhere
+      )
+
       def self.version_7_1_or_higher?
         @version_7_1_or_higher ||=
           if dependencies_present?
@@ -27,20 +43,6 @@ module Appsignal
       end
 
       def install
-        # This integration records the enqueue itself, as a producer event that
-        # also injects trace context, and Active Job's own
-        # `enqueue.active_job` notification fires nested inside it. Claim the
-        # event so that the generic notification paths leave it alone.
-        #
-        # Claimed on install, so that the event is only claimed while this
-        # integration is recording it. With Active Job instrumentation turned
-        # off there is nothing for the notification to duplicate, so it is left
-        # to be recorded like any other.
-        Appsignal::EventFormatter.register(
-          "enqueue.active_job",
-          Appsignal::EventFormatter::RecordedElsewhere
-        )
-
         ActiveSupport.on_load(:active_job) do
           ::ActiveJob::Base
             .extend ::Appsignal::Hooks::ActiveJobHook::ActiveJobClassInstrumentation
