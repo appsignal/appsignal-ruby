@@ -922,7 +922,8 @@ module Appsignal
       duration,
       body_format = Appsignal::EventFormatter::DEFAULT,
       opentelemetry_kind: nil,
-      opentelemetry_scope: nil
+      opentelemetry_scope: nil,
+      opentelemetry_attributes: nil
     )
       return if paused?
 
@@ -933,7 +934,8 @@ module Appsignal
         body_format || Appsignal::EventFormatter::DEFAULT,
         duration,
         :opentelemetry_kind => opentelemetry_kind,
-        :opentelemetry_scope => opentelemetry_scope
+        :opentelemetry_scope => opentelemetry_scope,
+        :opentelemetry_attributes => opentelemetry_attributes
       )
     end
 

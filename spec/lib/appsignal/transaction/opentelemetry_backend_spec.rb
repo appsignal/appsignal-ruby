@@ -1481,6 +1481,42 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
           Appsignal::EventFormatter::DEFAULT, 1_000)
         expect(backend.instance_variable_get(:@event_stack)).to be_empty
       end
+
+      it "puts opentelemetry_attributes on the finished span" do
+        backend = create_backend
+        backend.record_event("custom.event", "T", "B",
+          Appsignal::EventFormatter::DEFAULT, 1_000,
+          :opentelemetry_attributes => { "db.system.name" => "postgresql" })
+
+        span = span_exporter.finished_spans.find { |s| s.name == "custom.event (T)" }
+        expect(span.attributes["db.system.name"]).to eq("postgresql")
+      end
+
+      it "lets its own db.system.name win over the SQL sentinel" do
+        backend = create_backend
+        backend.record_event("sql.query", "Q", "SELECT 1",
+          Appsignal::EventFormatter::SQL_BODY_FORMAT, 1_000,
+          :opentelemetry_attributes => { "db.system.name" => "postgresql" })
+
+        span = span_exporter.finished_spans.find { |s| s.name == "sql.query (Q)" }
+        expect(span.attributes["db.system.name"]).to eq("postgresql")
+        expect(span.attributes["db.query.text"]).to eq("SELECT 1")
+      end
+
+      # A caller passing an explicit nil (e.g. a lookup that came back empty)
+      # must not block the sentinel. Attributes.format coerces nil to "", so
+      # the key is present either way; only a non-blank value should count as
+      # naming a real engine. A span left with "" would skip the collector's
+      # sanitizer entirely, unlike other_sql, which the sanitizer recognizes.
+      it "falls back to the SQL sentinel when the engine name is explicitly blank" do
+        backend = create_backend
+        backend.record_event("sql.query", "Q", "SELECT 1",
+          Appsignal::EventFormatter::SQL_BODY_FORMAT, 1_000,
+          :opentelemetry_attributes => { "db.system.name" => nil })
+
+        span = span_exporter.finished_spans.find { |s| s.name == "sql.query (Q)" }
+        expect(span.attributes["db.system.name"]).to eq("other_sql")
+      end
     end
 
     describe "nested events" do

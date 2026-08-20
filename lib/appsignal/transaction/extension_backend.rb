@@ -55,7 +55,7 @@ module Appsignal
 
       # Agent mode has no span kind or instrumentation scope;
       # `opentelemetry_kind` and `opentelemetry_scope` are ignored here.
-      def record_event(name, title, body, body_format, duration, opentelemetry_kind: nil, opentelemetry_scope: nil) # rubocop:disable Lint/UnusedMethodArgument, Metrics/ParameterLists, Layout/LineLength
+      def record_event(name, title, body, body_format, duration, opentelemetry_kind: nil, opentelemetry_scope: nil, opentelemetry_attributes: nil) # rubocop:disable Lint/UnusedMethodArgument, Metrics/ParameterLists, Layout/LineLength
         @handle.record_event(name, title, body, body_format, duration, 0)
       end
 
