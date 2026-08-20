@@ -98,7 +98,13 @@ module Appsignal
       # (nil when allocation tracking is off), and `child_allocation_count`
       # accumulates the full allocation counts of the event's finished children,
       # so the event's own allocations are `full - child_allocation_count`.
-      EventFrame = Struct.new(:span, :token, :allocation_start, :child_allocation_count)
+      # `db_system_name_set` tracks whether the event itself already set
+      # `db.system.name` (through `set_attributes`) before it finishes, so the
+      # SQL sentinel written at finish only fills in a value that is missing.
+      EventFrame = Struct.new(
+        :span, :token, :allocation_start, :child_allocation_count,
+        :db_system_name_set
+      )
 
       def initialize( # rubocop:disable Metrics/ParameterLists
         transaction_id,
@@ -156,7 +162,7 @@ module Appsignal
 
         frame = @event_stack.pop
         write_event_span_name(frame.span, name, title)
-        write_event_body_attributes(frame.span, body, body_format)
+        write_event_body_attributes(frame.span, body, body_format, frame.db_system_name_set)
         write_event_allocation_count(frame)
         ::OpenTelemetry::Context.detach(frame.token)
         frame.span.finish
@@ -175,7 +181,10 @@ module Appsignal
           :kind => opentelemetry_kind
         )
         write_event_span_name(span, name, title)
-        write_event_body_attributes(span, body, body_format)
+        # A recorded event never opens an event frame, so there is nothing to
+        # track a mid-event `db.system.name` on; the sentinel is always the
+        # fallback here.
+        write_event_body_attributes(span, body, body_format, false)
         # A recorded event has no start hook, so we never measured its
         # allocations. We deliberately set no allocation attribute rather than a
         # misleading zero. Its allocations instead fall into the enclosing
@@ -235,9 +244,15 @@ module Appsignal
       # Never the OTel current span, which may belong to another
       # instrumentation. Values are coerced to the primitives OTLP accepts.
       def set_attributes(attributes)
-        current_span.add_attributes(
-          Appsignal::OpenTelemetry::Attributes.format(attributes)
-        )
+        formatted = Appsignal::OpenTelemetry::Attributes.format(attributes)
+        # Note on the open event frame, if there is one, that this event
+        # already named a real `db.system.name`, so `write_event_body_attributes`
+        # knows not to overwrite it with the SQL sentinel when the event
+        # finishes.
+        if named_db_system?(formatted) && (frame = @event_stack.last)
+          frame.db_system_name_set = true
+        end
+        current_span.add_attributes(formatted)
       end
 
       # The collector keeps the request payload, the function parameters and the
@@ -743,18 +758,32 @@ module Appsignal
         span.name = has_title ? "#{name} (#{title})" : name
       end
 
-      def write_event_body_attributes(span, body, body_format)
+      def write_event_body_attributes(span, body, body_format, db_system_name_set)
         has_body = !body.to_s.empty?
 
         if body_format == Appsignal::EventFormatter::SQL_BODY_FORMAT
           # Name the datastore whether or not there is a query to record with it.
           # The semantic conventions require the attribute on every database
           # span, and a SQL event with nothing in its body is still a SQL event.
-          span.set_attribute("db.system.name", SQL_DB_SYSTEM)
+          # Only fall back to the sentinel when nothing set a real engine name
+          # earlier in the event, so an integration's own `db.system.name`
+          # always wins over it.
+          span.set_attribute("db.system.name", SQL_DB_SYSTEM) unless db_system_name_set
           span.set_attribute("db.query.text", body) if has_body
         elsif has_body
           span.set_attribute("appsignal.body", body)
         end
+      end
+
+      # Whether a formatted attributes hash names a real `db.system.name`,
+      # as opposed to merely having the key. `Attributes.format` coerces an
+      # explicit `nil` (or any other non-primitive) to `""`, so the key can
+      # be present with a blank value. A blank value must not count as set:
+      # it would block the SQL sentinel the same way a real value should,
+      # but leave the span with nothing the collector's sanitizer
+      # recognizes, instead of the sentinel that keeps sanitization on.
+      def named_db_system?(formatted_attributes)
+        !formatted_attributes["db.system.name"].to_s.empty?
       end
     end
   end

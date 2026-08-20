@@ -1522,6 +1522,40 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
         expect(attrs).not_to have_key("appsignal.body")
       end
 
+      # This is the bug the fallback guards against: an integration names the
+      # real engine mid-event through `set_attributes` (as
+      # `add_opentelemetry_attributes` does), and the SQL sentinel written at
+      # `finish_event` must not clobber it on the finished span.
+      it "keeps an engine name set mid-event over the SQL sentinel" do
+        backend = create_backend
+        backend.start_event
+        backend.set_attributes("db.system.name" => "postgresql")
+        backend.finish_event("sql.query", "Q", "SELECT 1",
+          Appsignal::EventFormatter::SQL_BODY_FORMAT)
+
+        attrs = span_exporter.finished_spans
+          .find { |s| s.name == "sql.query (Q)" }.attributes
+        expect(attrs["db.system.name"]).to eq("postgresql")
+        expect(attrs["db.query.text"]).to eq("SELECT 1")
+      end
+
+      # Attributes.format coerces an explicit nil to "", so the key is
+      # present on the formatted hash either way. Only a non-blank value
+      # should count as naming a real engine; a blank one must still fall
+      # back to the sentinel; otherwise the span would skip the collector's
+      # sanitizer entirely, unlike other_sql, which the sanitizer recognizes.
+      it "falls back to the SQL sentinel when set_attributes names a blank engine" do
+        backend = create_backend
+        backend.start_event
+        backend.set_attributes("db.system.name" => nil)
+        backend.finish_event("sql.query", "Q", "SELECT 1",
+          Appsignal::EventFormatter::SQL_BODY_FORMAT)
+
+        attrs = span_exporter.finished_spans
+          .find { |s| s.name == "sql.query (Q)" }.attributes
+        expect(attrs["db.system.name"]).to eq("other_sql")
+      end
+
       it "writes appsignal.body for default bodies (no db.* attributes)" do
         backend = create_backend
         backend.start_event
