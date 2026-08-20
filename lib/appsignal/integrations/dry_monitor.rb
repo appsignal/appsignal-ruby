@@ -29,6 +29,11 @@ module Appsignal
           super
         ensure
           event_name, body, body_format = Appsignal::EventFormatter.format(name, payload)
+          # Set while the event's span is still open, so the attributes land
+          # on the event rather than on the transaction.
+          Appsignal::Transaction.current.add_opentelemetry_attributes(
+            Appsignal::EventFormatter.opentelemetry_attributes(name, payload)
+          )
 
           # dry-monitor reports an event under an id, such as `sql`, rather than
           # a name. A formatter names the event it knows about, and an event

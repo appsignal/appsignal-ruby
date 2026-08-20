@@ -86,6 +86,48 @@ if DependencyHelper.dry_monitor_present?
       end
     end
 
+    describe "an event whose formatter declares attributes" do
+      let(:event_id) { :attributed }
+      let(:payload) { { :name => "attributed" } }
+
+      # A minimal stand-in for a formatter that both formats an event's body
+      # and names OpenTelemetry attributes for it, such as ROM's SQL
+      # formatter does once it names a real `db.system.name`. This proves
+      # `instrument` calls through to `opentelemetry_attributes`, not only
+      # to `format`.
+      let(:formatter_class) do
+        Class.new(Appsignal::EventFormatter) do
+          def format(_payload)
+            ["attributed.dry", "body", Appsignal::EventFormatter::DEFAULT]
+          end
+
+          def opentelemetry_attributes(_payload)
+            { "db.system.name" => "postgresql" }
+          end
+        end
+      end
+
+      before { Appsignal::EventFormatter.register("attributed.dry", formatter_class) }
+
+      after { Appsignal::EventFormatter.unregister("attributed.dry", formatter_class) }
+
+      def perform
+        notifications.instrument(event_id, payload)
+      end
+
+      it "puts the formatter's attributes on the event's own span", :collector_mode do
+        start_collector_agent
+        transaction = http_request_transaction
+        set_current_transaction(transaction)
+        perform
+        Appsignal::Transaction.complete_current!
+
+        expect(event_spans.size).to eq(1)
+        span = event_spans.first
+        expect(span.attributes["db.system.name"]).to eq("postgresql")
+      end
+    end
+
     describe "an event that another integration records" do
       let(:event_id) { :claimed }
       let(:payload) { { :name => "claimed" } }
