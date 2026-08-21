@@ -2,7 +2,7 @@ github:
   name: Ruby gem CI
   "on":
     push:
-      branches: ["main", "develop"]
+      branches: ["main", "develop", "*-stable"]
     pull_request:
       types: [opened, reopened, synchronize]
     schedule:
