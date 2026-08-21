@@ -215,7 +215,7 @@ module Appsignal
       # are omitted so the collector applies its own defaults.
       def build_resource(config)
         revision = config[:revision].to_s.empty? ? "unknown" : config[:revision]
-        service_name = config[:service_name].to_s.empty? ? "unknown" : config[:service_name]
+        service_name = config[:service_name].to_s.empty? ? "app" : config[:service_name]
         host_name = config[:hostname].to_s.empty? ? "unknown" : config[:hostname]
 
         attrs = {
