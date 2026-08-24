@@ -47,6 +47,13 @@ module Appsignal
         false
       end
 
+      # The Rails gem being loadable says nothing about the directory the
+      # command runs in, so check for the app itself as well.
+      def rails_app_present?
+        rails_present? &&
+          File.exist?(Appsignal::Utils::RailsHelper.environment_config_path)
+      end
+
       def load_rails_app(environment)
         # Pass the environment given as a command line option to the app, so
         # that the AppSignal config file uses it when the app loads it.
@@ -63,7 +70,7 @@ module Appsignal
       # Yields the error when the app fails to load, so that a command can
       # report it in its own way.
       def require_rails_app_if_present(environment)
-        return unless rails_present?
+        return unless rails_app_present?
 
         load_rails_app(environment)
       rescue LoadError, StandardError => error

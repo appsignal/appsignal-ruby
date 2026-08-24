@@ -63,6 +63,38 @@ describe Appsignal::CLI::Helpers do
     end
   end
 
+  describe ".rails_app_present?" do
+    let(:root_path) { File.join(tmp_dir, SecureRandom.uuid) }
+    before do
+      allow(Appsignal::Utils::RailsHelper).to receive(:environment_config_path)
+        .and_return(File.join(root_path, "config/environment.rb"))
+    end
+    after { FileUtils.rm_rf(root_path) }
+
+    context "when the Rails gem is not present" do
+      before { allow(cli).to receive(:rails_present?).and_return(false) }
+
+      it "returns false" do
+        expect(cli.send(:rails_app_present?)).to be(false)
+      end
+    end
+
+    context "when the Rails gem is present" do
+      before { allow(cli).to receive(:rails_present?).and_return(true) }
+
+      it "returns true when the directory holds a Rails app" do
+        FileUtils.mkdir_p(File.join(root_path, "config"))
+        FileUtils.touch(File.join(root_path, "config/environment.rb"))
+
+        expect(cli.send(:rails_app_present?)).to be(true)
+      end
+
+      it "returns false when the directory holds no Rails app" do
+        expect(cli.send(:rails_app_present?)).to be(false)
+      end
+    end
+  end
+
   describe ".load_rails_app" do
     let(:environment_path) { File.join(tmp_dir, "config/environment.rb") }
     before do
@@ -92,8 +124,8 @@ describe Appsignal::CLI::Helpers do
   end
 
   describe ".require_rails_app_if_present" do
-    context "when the Rails gem is not present" do
-      before { allow(cli).to receive(:rails_present?).and_return(false) }
+    context "when there is no Rails app" do
+      before { allow(cli).to receive(:rails_app_present?).and_return(false) }
 
       it "does not load the app" do
         expect(cli).to_not receive(:load_rails_app)
@@ -102,8 +134,8 @@ describe Appsignal::CLI::Helpers do
       end
     end
 
-    context "when the Rails gem is present" do
-      before { allow(cli).to receive(:rails_present?).and_return(true) }
+    context "when there is a Rails app" do
+      before { allow(cli).to receive(:rails_app_present?).and_return(true) }
 
       it "loads the app with the given environment" do
         expect(cli).to receive(:load_rails_app).with("staging")
