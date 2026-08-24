@@ -40,6 +40,8 @@ module Appsignal
     # @see https://docs.appsignal.com/support/debugging.html
     #   Debugging AppSignal guide
     class Demo
+      extend CLI::Helpers
+
       class << self
         # @param options [Hash]
         # @option options :environment [String] environment to load
@@ -47,6 +49,9 @@ module Appsignal
         # @return [void]
         def run(options = {})
           ENV["APPSIGNAL_APP_ENV"] = options[:environment] if options[:environment]
+          # Load the host Rails app, if any, so that the AppSignal config file
+          # can use the application when it is read.
+          require_rails_app_if_present(options[:environment])
 
           puts "Sending demonstration sample data..."
           if Appsignal::Demo.transmit

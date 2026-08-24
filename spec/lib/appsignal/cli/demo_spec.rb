@@ -43,4 +43,29 @@ describe Appsignal::CLI::Demo do
       expect(output).to include("Demonstration sample data sent!")
     end
   end
+
+  if DependencyHelper.rails_present?
+    context "with a Rails app" do
+      let(:root_path) { File.join(tmp_dir, "demo_test_app_#{SecureRandom.uuid}") }
+      before { FileUtils.cp_r(rails_project_with_config_rb_fixture_path, root_path) }
+      after { FileUtils.rm_rf(root_path) }
+
+      # Run the command in a process of its own. This test suite loads Rails
+      # itself, so a `config/appsignal.rb` file that uses Rails would work here
+      # even when the command does not load the app. Booting a Rails app in
+      # this process also disturbs the specs that run after it.
+      def run_demo_command
+        binary = File.join(DirectoryHelper.project_dir, "bin/appsignal")
+        env = { "BUNDLE_GEMFILE" => Bundler.default_gemfile.to_s }
+        options = { :chdir => root_path, :err => [:child, :out] }
+        Bundler.with_unbundled_env do
+          IO.popen([env, "bundle", "exec", binary, "demo", "--environment=test", options], &:read)
+        end
+      end
+
+      it "loads the app, so its config file can use the application" do
+        expect(run_demo_command).to include("Demonstration sample data sent!")
+      end
+    end
+  end
 end
