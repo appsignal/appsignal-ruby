@@ -36,6 +36,44 @@ module Appsignal
         "\e[#{color_code}m#{text}\e[#{reset_color_code}m"
       end
 
+      def print_empty_line
+        puts "\n"
+      end
+
+      def rails_present?
+        require "rails"
+        true
+      rescue LoadError
+        false
+      end
+
+      def load_rails_app(environment)
+        # Pass the environment given as a command line option to the app, so
+        # that the AppSignal config file uses it when the app loads it.
+        ENV["_APPSIGNAL_CONFIG_FILE_ENV"] = environment
+        # Require the railtie manually. It was not loaded when AppSignal
+        # loaded, because the `Rails` constant was not present at that point.
+        require "appsignal/integrations/railtie"
+        # Start the Rails app, including its railties and initializers.
+        require Appsignal::Utils::RailsHelper.environment_config_path
+      ensure
+        ENV.delete("_APPSIGNAL_CONFIG_FILE_ENV")
+      end
+
+      # Yields the error when the app fails to load, so that a command can
+      # report it in its own way.
+      def require_rails_app_if_present(environment)
+        return unless rails_present?
+
+        load_rails_app(environment)
+      rescue LoadError, StandardError => error
+        print_empty_line
+        puts "ERROR: Error encountered while loading the Rails app"
+        puts "#{error.class}: #{error.message}"
+        puts error.backtrace
+        yield error if block_given?
+      end
+
       def periods
         3.times do
           print "."

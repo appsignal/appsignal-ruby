@@ -189,10 +189,15 @@ module Appsignal
 
         def configure_appsignal(options)
           env_option = options.fetch(:environment, nil)
+          # Mark app as Rails app
+          data[:app][:rails] = true if rails_present?
           # Try and load the Rails app, if any.
           # This will configure AppSignal through the config file or an
           # initializer.
-          require_rails_app_if_present(env_option)
+          require_rails_app_if_present(env_option) do |error|
+            data[:app][:load_error] =
+              "#{error.class}: #{error.message}\n#{error.backtrace.join("\n")}"
+          end
 
           # No config loaded yet, try loading as normal
           Appsignal._load_config!(env_option) unless Appsignal.config
@@ -626,43 +631,6 @@ module Appsignal
 
           puts "    Read error: #{path[:read_error]}"
           print_empty_line
-        end
-
-        def print_empty_line
-          puts "\n"
-        end
-
-        def require_rails_app_if_present(env_option)
-          return unless rails_present?
-
-          # Set the environment given as an option to the diagnose CLI so the
-          # Rails app uses it when loaded.
-          ENV["_APPSIGNAL_CONFIG_FILE_ENV"] = env_option
-          # Mark app as Rails app
-          data[:app][:rails] = true
-          # Manually require the railtie, because it wasn't loaded when the CLI
-          # started and AppSignal loaded, because the `Rails` constant wasn't
-          # present.
-          require "appsignal/integrations/railtie"
-          # Start the Rails app, including railties and initializers.
-          require Appsignal::Utils::RailsHelper.environment_config_path
-        rescue LoadError, StandardError => error
-          print_empty_line
-          puts "ERROR: Error encountered while loading the Rails app"
-          puts "#{error.class}: #{error.message}"
-          puts error.backtrace
-          data[:app][:load_error] =
-            "#{error.class}: #{error.message}\n#{error.backtrace.join("\n")}"
-        ensure
-          ENV.delete("_APPSIGNAL_CONFIG_FILE_ENV")
-        end
-
-        def rails_present?
-          # Try and load the Rails gem
-          require "rails"
-          true
-        rescue LoadError
-          false
         end
       end
     end
