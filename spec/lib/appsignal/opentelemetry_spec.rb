@@ -364,7 +364,7 @@ if DependencyHelper.opentelemetry_present?
           .to eq(["IgnoredController#action"])
       end
 
-      it "falls back to 'unknown' for empty revision, service_name, and hostname" do
+      it "falls back to defaults for empty revision, service_name, and hostname" do
         # Other specs in the suite set `ENV["APP_REVISION"]` without clearing
         # it (the spec_helper before-block only resets APPSIGNAL_* and
         # _APPSIGNAL_* prefixed vars). Clear it locally so this test is
@@ -385,7 +385,7 @@ if DependencyHelper.opentelemetry_present?
         attrs = resource_attrs(resource)
 
         expect(attrs["appsignal.config.revision"]).to eq("unknown")
-        expect(attrs["service.name"]).to eq("unknown")
+        expect(attrs["service.name"]).to eq("app")
         expect(attrs["host.name"]).to eq("unknown")
       end
 
