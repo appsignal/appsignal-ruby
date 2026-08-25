@@ -340,6 +340,7 @@ if DependencyHelper.opentelemetry_present?
       it "maps AppSignal config attributes onto the resource" do
         resource = described_class.build_resource(
           build_config(
+            :root_path => "/path/to/app",
             :options => {
               :name => "my-app",
               :push_api_key => "abc",
@@ -356,6 +357,7 @@ if DependencyHelper.opentelemetry_present?
         expect(attrs["appsignal.config.name"]).to eq("my-app")
         expect(attrs["appsignal.config.push_api_key"]).to eq("abc")
         expect(attrs["appsignal.config.revision"]).to eq("deadbeef")
+        expect(attrs["appsignal.config.app_path"]).to eq("/path/to/app")
         expect(attrs["appsignal.config.language_integration"]).to eq("ruby")
         expect(attrs["service.name"]).to eq("my-service")
         expect(attrs["host.name"]).to eq("host-1")
@@ -387,6 +389,22 @@ if DependencyHelper.opentelemetry_present?
         expect(attrs["appsignal.config.revision"]).to eq("unknown")
         expect(attrs["service.name"]).to eq("app")
         expect(attrs["host.name"]).to eq("unknown")
+      end
+
+      [nil, ""].each do |root_path|
+        it "omits the app path when the root path is #{root_path.inspect}" do
+          resource = described_class.build_resource(
+            build_config(
+              :root_path => root_path,
+              :options => {
+                :name => "my-app",
+                :push_api_key => "abc"
+              }
+            )
+          )
+
+          expect(resource_attrs(resource)).not_to have_key("appsignal.config.app_path")
+        end
       end
 
       it "omits attributes whose underlying option is nil or empty" do

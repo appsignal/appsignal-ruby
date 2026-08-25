@@ -225,6 +225,7 @@ module Appsignal
           "appsignal.config.environment" => config.env,
           "appsignal.config.push_api_key" => config[:push_api_key],
           "appsignal.config.revision" => revision,
+          "appsignal.config.app_path" => config.root_path&.to_s,
           "appsignal.config.language_integration" => "ruby",
           "service.name" => service_name,
           "host.name" => host_name,
