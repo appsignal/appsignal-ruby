@@ -727,7 +727,24 @@ module Appsignal
         # environment variable the deployment platform sets.
         revision = detect_revision_from_file || detect_revision_from_platform
         hash[:revision] = revision if revision
+
+        hostname = detect_hostname
+        hash[:hostname] = hostname if hostname
       end
+    end
+
+    # Detect the hostname the way the agent does: the Heroku dyno name first,
+    # then the name the host reports for itself. The agent only detects it for
+    # the data it reports itself, so the gem has to do it for collector mode.
+    def detect_hostname
+      dyno = ENV.fetch("DYNO", nil)
+      return dyno unless dyno.to_s.empty?
+
+      hostname = Socket.gethostname
+      hostname unless hostname.to_s.empty?
+    rescue SystemCallError => e
+      logger.debug "Unable to detect the hostname: #{e.class}: #{e.message}"
+      nil
     end
 
     def detect_revision_from_platform

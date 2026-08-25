@@ -537,6 +537,52 @@ describe Appsignal::Config do
     end
   end
 
+  describe "system detected hostname" do
+    let(:config) { silence { build_config(:env => :none) } }
+
+    # Cleared rather than only restored, so that a dyno name set where the
+    # specs run does not change what the config detects.
+    before { ENV.delete("DYNO") }
+    after { ENV.delete("DYNO") }
+
+    it "sets the hostname to the name the host reports for itself" do
+      expect(config[:hostname]).to eq(Socket.gethostname)
+    end
+
+    it "sets the hostname as loaded through the system" do
+      expect(config.system_config).to include(:hostname => Socket.gethostname)
+    end
+
+    it "prefers the Heroku dyno name" do
+      ENV["DYNO"] = "web.1"
+
+      expect(config[:hostname]).to eq("web.1")
+    end
+
+    it "ignores the dyno name when it is set to an empty string" do
+      ENV["DYNO"] = ""
+
+      expect(config[:hostname]).to eq(Socket.gethostname)
+    end
+
+    context "when the hostname cannot be detected" do
+      before do
+        allow(Socket).to receive(:gethostname)
+          .and_raise(SystemCallError.new("Hostname error"))
+      end
+
+      it "does not set the hostname" do
+        expect(config.system_config).to_not have_key(:hostname)
+      end
+
+      it "logs the error" do
+        logs = capture_logs { build_config(:env => :none) }
+
+        expect(logs).to contains_log(:debug, "Unable to detect the hostname: SystemCallError:")
+      end
+    end
+  end
+
   describe "loader default config" do
     let(:config) { described_class.new("some-path", "production") }
     before do
@@ -1031,6 +1077,7 @@ describe Appsignal::Config do
         :filter_request_payload         => [],
         :filter_request_query_parameters => [],
         :filter_session_data            => [],
+        :hostname                       => detected_hostname,
         :ignore_actions                 => [],
         :ignore_errors                  => [],
         :ignore_logs                    => [],
@@ -1261,7 +1308,7 @@ describe Appsignal::Config do
       expect(ENV.fetch("_APPSIGNAL_IGNORE_NAMESPACES", nil)).to eq "admin,private_namespace"
       expect(ENV.fetch("_APPSIGNAL_RUNNING_IN_CONTAINER", nil)).to eq "false"
       expect(ENV.fetch("_APPSIGNAL_ENABLE_HOST_METRICS", nil)).to eq "true"
-      expect(ENV.fetch("_APPSIGNAL_HOSTNAME", nil)).to eq ""
+      expect(ENV.fetch("_APPSIGNAL_HOSTNAME", nil)).to eq detected_hostname
       expect(ENV.fetch("_APPSIGNAL_HOST_ROLE", nil)).to eq ""
       expect(ENV.fetch("_APPSIGNAL_PROCESS_NAME", nil)).to include "rspec"
       expect(ENV.fetch("_APPSIGNAL_CA_FILE_PATH", nil))

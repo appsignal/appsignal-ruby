@@ -28,6 +28,9 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
     let(:app_name) { "TestApp" }
     let(:push_api_key) { "abc" }
     let(:environment) { "production" }
+    # The hostname the CLI will detect while the example runs. Requests to
+    # AppSignal carry it, so the stubs have to expect the same value.
+    let(:hostname) { detected_hostname }
     let(:config) do
       {
         :root_path => root_path,
@@ -35,7 +38,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         :name => app_name,
         :endpoint => Appsignal::Config::DEFAULT_CONFIG[:endpoint],
         :push_api_key => push_api_key,
-        :hostname => nil
+        :hostname => hostname
       }
     end
     let(:cli_class) { described_class }
@@ -715,6 +718,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
         end
 
         context "when on Heroku" do
+          let(:hostname) { "dyno1" }
           before { recognize_as_heroku { run } }
 
           it "outputs Heroku detection" do
@@ -801,9 +805,13 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
 
         it "transmits validation in report" do
           default_config = hash_with_string_keys(Appsignal::Config::DEFAULT_CONFIG)
-          options = default_config.merge("env" => "", "send_session_data" => true)
+          options = default_config.merge(
+            "env" => "",
+            "send_session_data" => true,
+            "hostname" => hostname
+          )
 
-          system_options = {}
+          system_options = { "hostname" => hostname }
           if Appsignal::Extension.running_in_container?
             options["enable_at_exit_hook"] = "always"
             system_options["enable_at_exit_hook"] = "always"
@@ -1109,7 +1117,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           final_config = Appsignal.config.config_hash
             .merge(:env => "production")
 
-          system_options = {}
+          system_options = { "hostname" => hostname }
           if Appsignal::Extension.running_in_container?
             final_config["enable_at_exit_hook"] = "always"
             system_options["enable_at_exit_hook"] = "always"
@@ -1154,7 +1162,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           if Appsignal::Extension.running_in_container?
             options = options.merge("enable_at_exit_hook" => "always")
           end
-          system_options = {}
+          system_options = { "hostname" => hostname }
           if Appsignal::Extension.running_in_container?
             system_options["enable_at_exit_hook"] = "always"
           end
