@@ -583,6 +583,53 @@ describe Appsignal::Config do
     end
   end
 
+  describe "system detected platform" do
+    let(:config) { silence { build_config(:env => :none) } }
+
+    # Cleared rather than only restored, so that a platform recognized where
+    # the specs run does not change what the config detects.
+    before do
+      ENV.delete("DOKKU_ROOT")
+      ENV.delete("DYNO")
+    end
+
+    after do
+      ENV.delete("DOKKU_ROOT")
+      ENV.delete("DYNO")
+    end
+
+    it "does not set the platform when it recognizes none" do
+      expect(config.system_config).to_not have_key(:platform)
+    end
+
+    it "recognizes Dokku by its root directory" do
+      ENV["DOKKU_ROOT"] = "~dokku"
+
+      expect(config[:platform]).to eq("dokku")
+      expect(config.system_config).to include(:platform => "dokku")
+    end
+
+    it "recognizes Heroku by the dyno name" do
+      ENV["DYNO"] = "web.1"
+
+      expect(config[:platform]).to eq("heroku")
+    end
+
+    it "recognizes Dokku when the dyno name is set as well" do
+      ENV["DOKKU_ROOT"] = "~dokku"
+      ENV["DYNO"] = "web.1"
+
+      expect(config[:platform]).to eq("dokku")
+    end
+
+    it "ignores variables that are set to an empty string" do
+      ENV["DOKKU_ROOT"] = ""
+      ENV["DYNO"] = ""
+
+      expect(config.system_config).to_not have_key(:platform)
+    end
+  end
+
   describe "loader default config" do
     let(:config) { described_class.new("some-path", "production") }
     before do
@@ -1310,6 +1357,7 @@ describe Appsignal::Config do
       expect(ENV.fetch("_APPSIGNAL_ENABLE_HOST_METRICS", nil)).to eq "true"
       expect(ENV.fetch("_APPSIGNAL_HOSTNAME", nil)).to eq detected_hostname
       expect(ENV.fetch("_APPSIGNAL_HOST_ROLE", nil)).to eq ""
+      expect(ENV.fetch("_APPSIGNAL_PLATFORM", nil)).to eq ""
       expect(ENV.fetch("_APPSIGNAL_PROCESS_NAME", nil)).to include "rspec"
       expect(ENV.fetch("_APPSIGNAL_CA_FILE_PATH", nil))
         .to eq File.join(resources_dir, "cacert.pem")

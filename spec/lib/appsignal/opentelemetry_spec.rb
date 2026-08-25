@@ -349,7 +349,8 @@ if DependencyHelper.opentelemetry_present?
               :service_name => "my-service",
               :filter_attributes => ["password"],
               :ignore_actions => ["IgnoredController#action"],
-              :ignore_logs => ["^Started GET"]
+              :ignore_logs => ["^Started GET"],
+              :platform => "heroku"
             }
           )
         )
@@ -359,6 +360,7 @@ if DependencyHelper.opentelemetry_present?
         expect(attrs["appsignal.config.push_api_key"]).to eq("abc")
         expect(attrs["appsignal.config.revision"]).to eq("deadbeef")
         expect(attrs["appsignal.config.app_path"]).to eq("/path/to/app")
+        expect(attrs["appsignal.config.platform"]).to eq("heroku")
         expect(attrs["appsignal.config.language_integration"]).to eq("ruby")
         expect(attrs["service.name"]).to eq("my-service")
         expect(attrs["host.name"]).to eq("host-1")
@@ -427,6 +429,7 @@ if DependencyHelper.opentelemetry_present?
           appsignal.config.filter_request_query_parameters
           appsignal.config.ignore_errors
           appsignal.config.ignore_logs
+          appsignal.config.platform
           appsignal.config.response_headers
           appsignal.config.send_function_parameters
           appsignal.config.send_request_query_parameters
