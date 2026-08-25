@@ -466,6 +466,56 @@ describe Appsignal::Config do
         end
       end
 
+      context "when a deployment platform sets a revision environment variable" do
+        before { FileUtils.rm_f(revision_file_path) }
+
+        Appsignal::Config::PLATFORM_REVISION_ENV_VARS.each do |key|
+          it "sets the revision from #{key}" do
+            ENV[key] = "abc123"
+
+            expect(config[:revision]).to eq("abc123")
+          end
+        end
+
+        it "sets the revision as loaded through the system" do
+          ENV["RENDER_GIT_COMMIT"] = "abc123"
+
+          expect(config.system_config).to include(:revision => "abc123")
+        end
+
+        it "reads the variables in the order the agent reads them" do
+          ENV["RENDER_GIT_COMMIT"] = "from-render"
+          ENV["KAMAL_VERSION"] = "from-kamal"
+
+          expect(config[:revision]).to eq("from-render")
+        end
+
+        it "ignores a variable that is set to an empty string" do
+          ENV["HEROKU_SLUG_COMMIT"] = ""
+          ENV["RENDER_GIT_COMMIT"] = "from-render"
+
+          expect(config[:revision]).to eq("from-render")
+        end
+
+        it "logs which variable it read the revision from" do
+          ENV["RENDER_GIT_COMMIT"] = "abc123"
+          logs = capture_logs { build_config(:env => :none, :root_path => tmp_dir) }
+
+          expect(logs).to contains_log(:debug,
+            "Detected revision from the RENDER_GIT_COMMIT environment variable")
+        end
+
+        context "when the REVISION file is present as well" do
+          before { File.write(revision_file_path, "from-file") }
+
+          it "prefers the REVISION file" do
+            ENV["RENDER_GIT_COMMIT"] = "from-render"
+
+            expect(config[:revision]).to eq("from-file")
+          end
+        end
+      end
+
       context "when file reading raises an error" do
         before do
           File.write(revision_file_path, "abc123")

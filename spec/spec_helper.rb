@@ -148,6 +148,12 @@ RSpec.configure do |config|
     # keys.
     env_keys << "_APPSIGNAL_DIAGNOSE"
     env_keys << "_TEST_APPSIGNAL_EXTENSION_FAILURE"
+    # The config detects the revision from these variables. Clear them so a
+    # revision set where the specs run does not change what the config detects.
+    # DYNO and DOKKU_ROOT are left alone, because specs set those in `around`
+    # hooks, which run before this one.
+    env_keys << "APP_REVISION"
+    env_keys.concat(Appsignal::Config::PLATFORM_REVISION_ENV_VARS)
     env_keys.each do |key|
       # First set the ENV var to an empty string and then delete the key from
       # the env. We set the env var to an empty string first as JRuby doesn't

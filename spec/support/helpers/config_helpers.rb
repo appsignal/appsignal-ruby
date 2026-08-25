@@ -58,6 +58,12 @@ module ConfigHelpers
     Appsignal.internal_logger = internal_logger if internal_logger
   end
 
+  # The hostname the config detects, so specs can expect what AppSignal will
+  # report without depending on where they run.
+  def detected_hostname
+    ENV.fetch("DYNO", nil) || Socket.gethostname
+  end
+
   def clear_integration_env_vars!
     ENV.delete("RAILS_ENV")
     ENV.delete("RACK_ENV")
