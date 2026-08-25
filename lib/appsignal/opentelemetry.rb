@@ -237,6 +237,7 @@ module Appsignal
           "appsignal.config.filter_request_session_data" => config[:filter_session_data],
           "appsignal.config.ignore_actions" => config[:ignore_actions],
           "appsignal.config.ignore_errors" => config[:ignore_errors],
+          "appsignal.config.ignore_logs" => config[:ignore_logs],
           "appsignal.config.ignore_namespaces" => config[:ignore_namespaces],
           "appsignal.config.response_headers" => config[:response_headers],
           "appsignal.config.request_headers" => config[:request_headers],
