@@ -33,6 +33,23 @@ module Appsignal
           ::ActiveJob::Base
             .prepend ::Appsignal::Hooks::ActiveJobHook::ActiveJobEnqueueInstrumentation
 
+          # Active Job records a bulk enqueue through this method, which only
+          # exists from version 7.1 on. Checking for the method, rather than for
+          # the version, keeps us from defining one on a version that has no
+          # bulk enqueue path to instrument.
+          if ::ActiveJob.singleton_class.private_method_defined?(:instrument_enqueue_all)
+            ::ActiveJob.singleton_class
+              .prepend ::Appsignal::Hooks::ActiveJobHook::ActiveJobBulkEnqueueInstrumentation
+          else
+            # Without that method there is no way to record the batch ourselves,
+            # so let Rails' own notification through instead. Claiming the event
+            # and then not recording it would report nothing at all, which is
+            # worse than reporting the notification we were trying to improve on.
+            require "appsignal/integrations/active_support_notifications"
+            Appsignal::Integrations::ActiveSupportNotificationsIntegration
+              .unsuppress_event("enqueue_all.active_job")
+          end
+
           next unless Appsignal::Hooks::ActiveJobHook.version_7_1_or_higher?
 
           # Only works on Active Job 7.1 and newer
@@ -77,6 +94,67 @@ module Appsignal
               super
             end
           end
+        end
+      end
+
+      # Records an `enqueue_all.active_job` event when a batch of jobs is
+      # enqueued with `ActiveJob.perform_all_later`, so the batch shows up on the
+      # active transaction's timeline as one event.
+      #
+      # This wraps `instrument_enqueue_all` rather than `perform_all_later`, for
+      # two reasons. It is the method that records the batch, so it is called
+      # once for each queue adapter the batch spans, which is the same event
+      # count as the native notification it replaces. And it runs inside
+      # `perform_all_later`, after Active Job has split off the jobs it defers
+      # until the database transaction commits, so each of those halves is
+      # recorded when it is really enqueued.
+      #
+      # @!visibility private
+      module ActiveJobBulkEnqueueInstrumentation
+        private
+
+        def instrument_enqueue_all(_queue_adapter, jobs)
+          # Skip recording the event when enqueue events are suppressed, which is
+          # also the case when enqueue instrumentation is disabled. Same check as
+          # the single-job path above.
+          if Appsignal::Transaction.current? &&
+              Appsignal::Transaction.current.job_enqueue_events_suppressed?
+            return super
+          end
+
+          Appsignal.instrument("enqueue_all.active_job", bulk_enqueue_title(jobs)) do
+            # A bulk enqueue does not go through `ActiveJob::Base#enqueue`, so
+            # nothing has suppressed the adapter (Sidekiq, Resque, ...) yet, and
+            # its own enqueue instrumentation would record an event for every job
+            # in the batch. Suppress it so the batch is recorded once, as this
+            # event.
+            if Appsignal::Transaction.current?
+              Appsignal::Transaction.current.suppress_job_enqueue_events { super }
+            else
+              super
+            end
+          end
+        end
+
+        # The batch's job class, when every job in it has the same one. Active
+        # Job groups the jobs it enqueues by queue adapter rather than by class,
+        # so a batch can mix classes, and then there is no one class to name.
+        def bulk_enqueue_title(jobs)
+          job_class = shared_across(jobs) { |job| job.class.name }
+          return "bulk enqueue jobs" unless job_class
+
+          "bulk enqueue #{job_class} jobs"
+        end
+
+        # The one value every job in the batch shares, or nil when they differ
+        # or the batch is empty. Stops at the first job that disagrees, because
+        # a batch is as large as the caller made it and a single mismatch is
+        # enough to know.
+        def shared_across(jobs)
+          return if jobs.empty?
+
+          first = yield(jobs.first)
+          jobs.all? { |job| yield(job) == first } ? first : nil
         end
       end
 
