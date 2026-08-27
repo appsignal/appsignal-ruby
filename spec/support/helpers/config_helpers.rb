@@ -58,6 +58,17 @@ module ConfigHelpers
     Appsignal.internal_logger = internal_logger if internal_logger
   end
 
+  # The hostname the config detects, so specs can expect what AppSignal will
+  # report without depending on where they run. Mirrors
+  # `Appsignal::Config#detect_hostname`, minus its rescue: a spec whose
+  # hostname lookup fails has nothing to expect either way.
+  def detected_hostname
+    dyno = ENV.fetch("DYNO", nil)
+    return dyno unless dyno.to_s.empty?
+
+    Socket.gethostname
+  end
+
   def clear_integration_env_vars!
     ENV.delete("RAILS_ENV")
     ENV.delete("RACK_ENV")

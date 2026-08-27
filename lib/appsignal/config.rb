@@ -171,6 +171,18 @@ module Appsignal
       "trace" => ::Logger::DEBUG
     }.freeze
 
+    # Environment variables set by deployment platforms that name the
+    # revision that is being deployed, in the order the agent reads them.
+    # The agent detects the revision this way as well, but only for the data
+    # it sends itself, so the gem has to do it for collector mode.
+    # @!visibility private
+    PLATFORM_REVISION_ENV_VARS = [
+      "HEROKU_SLUG_COMMIT",
+      "RENDER_GIT_COMMIT",
+      "KAMAL_VERSION",
+      "CONTAINER_VERSION" # Scalingo
+    ].freeze
+
     # @!visibility private
     STRING_OPTIONS = {
       :activejob_report_errors => "APPSIGNAL_ACTIVEJOB_REPORT_ERRORS",
@@ -585,6 +597,7 @@ module Appsignal
       ENV["_APPSIGNAL_LOG_LEVEL"]                    = config_hash[:log_level]
       ENV["_APPSIGNAL_LOG_FILE_PATH"]                = log_file_path.to_s if log_file_path
       ENV["_APPSIGNAL_LOGGING_ENDPOINT"]             = config_hash[:logging_endpoint]
+      ENV["_APPSIGNAL_PLATFORM"]                     = config_hash[:platform].to_s
       ENV["_APPSIGNAL_PROCESS_NAME"]                 = $PROGRAM_NAME
       ENV["_APPSIGNAL_PUSH_API_ENDPOINT"]            = config_hash[:endpoint]
       ENV["_APPSIGNAL_PUSH_API_KEY"]                 = config_hash[:push_api_key]
@@ -710,11 +723,55 @@ module Appsignal
 
         hash[:enable_at_exit_hook] = "always" if Appsignal::Extension.running_in_container?
 
-        # Set revision from REVISION file if present in project root
-        # This helps with Capistrano and Hatchbox.io deployments
-        revision_from_file = detect_revision_from_file
-        hash[:revision] = revision_from_file if revision_from_file
+        # Set the revision from a REVISION file in the project root, which
+        # helps with Capistrano and Hatchbox.io deployments, or from the
+        # environment variable the deployment platform sets.
+        revision = detect_revision_from_file || detect_revision_from_platform
+        hash[:revision] = revision if revision
+
+        hostname = detect_hostname
+        hash[:hostname] = hostname if hostname
+
+        platform = detect_platform
+        hash[:platform] = platform if platform
       end
+    end
+
+    # Detect the platform the application is deployed on, the way the agent
+    # does. The agent only detects it for the data it reports itself, so the
+    # gem has to do it for collector mode. There is no config option for it,
+    # because these are the only two platforms that can be recognized.
+    def detect_platform
+      return "dokku" unless ENV.fetch("DOKKU_ROOT", nil).to_s.empty?
+      return "heroku" unless ENV.fetch("DYNO", nil).to_s.empty?
+
+      nil
+    end
+
+    # Detect the hostname the way the agent does: the Heroku dyno name first,
+    # then the name the host reports for itself. The agent only detects it for
+    # the data it reports itself, so the gem has to do it for collector mode.
+    def detect_hostname
+      dyno = ENV.fetch("DYNO", nil)
+      return dyno unless dyno.to_s.empty?
+
+      hostname = Socket.gethostname
+      hostname unless hostname.to_s.empty?
+    rescue SystemCallError => e
+      logger.debug "Unable to detect the hostname: #{e.class}: #{e.message}"
+      nil
+    end
+
+    def detect_revision_from_platform
+      PLATFORM_REVISION_ENV_VARS.each do |env_var|
+        revision = ENV.fetch(env_var, nil)
+        next if revision.to_s.empty?
+
+        logger.debug "Detected revision from the #{env_var} environment variable"
+        return revision
+      end
+
+      nil
     end
 
     def detect_revision_from_file

@@ -30,7 +30,11 @@ module ApiRequestHelper
     stub_request(:post, "#{endpoint}/1/#{path}").with(options)
   end
 
+  # A deploy marker is sent by an integration whose config detects the hostname.
+  # A config hash standing in for one does not, so fill in the same value a
+  # config would have detected.
   def stub_marker_request(config = {}, data = {})
+    config = { :hostname => detected_hostname }.merge(config) if config.is_a?(Hash)
     stub_api_request(config, "markers", data)
   end
 

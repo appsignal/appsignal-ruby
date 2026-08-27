@@ -466,6 +466,56 @@ describe Appsignal::Config do
         end
       end
 
+      context "when a deployment platform sets a revision environment variable" do
+        before { FileUtils.rm_f(revision_file_path) }
+
+        Appsignal::Config::PLATFORM_REVISION_ENV_VARS.each do |key|
+          it "sets the revision from #{key}" do
+            ENV[key] = "abc123"
+
+            expect(config[:revision]).to eq("abc123")
+          end
+        end
+
+        it "sets the revision as loaded through the system" do
+          ENV["RENDER_GIT_COMMIT"] = "abc123"
+
+          expect(config.system_config).to include(:revision => "abc123")
+        end
+
+        it "reads the variables in the order the agent reads them" do
+          ENV["RENDER_GIT_COMMIT"] = "from-render"
+          ENV["KAMAL_VERSION"] = "from-kamal"
+
+          expect(config[:revision]).to eq("from-render")
+        end
+
+        it "ignores a variable that is set to an empty string" do
+          ENV["HEROKU_SLUG_COMMIT"] = ""
+          ENV["RENDER_GIT_COMMIT"] = "from-render"
+
+          expect(config[:revision]).to eq("from-render")
+        end
+
+        it "logs which variable it read the revision from" do
+          ENV["RENDER_GIT_COMMIT"] = "abc123"
+          logs = capture_logs { build_config(:env => :none, :root_path => tmp_dir) }
+
+          expect(logs).to contains_log(:debug,
+            "Detected revision from the RENDER_GIT_COMMIT environment variable")
+        end
+
+        context "when the REVISION file is present as well" do
+          before { File.write(revision_file_path, "from-file") }
+
+          it "prefers the REVISION file" do
+            ENV["RENDER_GIT_COMMIT"] = "from-render"
+
+            expect(config[:revision]).to eq("from-file")
+          end
+        end
+      end
+
       context "when file reading raises an error" do
         before do
           File.write(revision_file_path, "abc123")
@@ -484,6 +534,99 @@ describe Appsignal::Config do
               "SystemCallError:")
         end
       end
+    end
+  end
+
+  describe "system detected hostname" do
+    let(:config) { silence { build_config(:env => :none) } }
+
+    # Cleared rather than only restored, so that a dyno name set where the
+    # specs run does not change what the config detects.
+    before { ENV.delete("DYNO") }
+    after { ENV.delete("DYNO") }
+
+    it "sets the hostname to the name the host reports for itself" do
+      expect(config[:hostname]).to eq(Socket.gethostname)
+    end
+
+    it "sets the hostname as loaded through the system" do
+      expect(config.system_config).to include(:hostname => Socket.gethostname)
+    end
+
+    it "prefers the Heroku dyno name" do
+      ENV["DYNO"] = "web.1"
+
+      expect(config[:hostname]).to eq("web.1")
+    end
+
+    it "ignores the dyno name when it is set to an empty string" do
+      ENV["DYNO"] = ""
+
+      expect(config[:hostname]).to eq(Socket.gethostname)
+    end
+
+    context "when the hostname cannot be detected" do
+      before do
+        allow(Socket).to receive(:gethostname)
+          .and_raise(SystemCallError.new("Hostname error"))
+      end
+
+      it "does not set the hostname" do
+        expect(config.system_config).to_not have_key(:hostname)
+      end
+
+      it "logs the error" do
+        logs = capture_logs { build_config(:env => :none) }
+
+        expect(logs).to contains_log(:debug, "Unable to detect the hostname: SystemCallError:")
+      end
+    end
+  end
+
+  describe "system detected platform" do
+    let(:config) { silence { build_config(:env => :none) } }
+
+    # Cleared rather than only restored, so that a platform recognized where
+    # the specs run does not change what the config detects.
+    before do
+      ENV.delete("DOKKU_ROOT")
+      ENV.delete("DYNO")
+    end
+
+    after do
+      ENV.delete("DOKKU_ROOT")
+      ENV.delete("DYNO")
+    end
+
+    it "does not set the platform when it recognizes none" do
+      expect(config.system_config).to_not have_key(:platform)
+    end
+
+    it "recognizes Dokku by its root directory" do
+      ENV["DOKKU_ROOT"] = "~dokku"
+
+      expect(config[:platform]).to eq("dokku")
+      expect(config.system_config).to include(:platform => "dokku")
+    end
+
+    it "recognizes Heroku by the dyno name" do
+      ENV["DYNO"] = "web.1"
+
+      expect(config[:platform]).to eq("heroku")
+    end
+
+    it "recognizes Dokku when the dyno name is set as well" do
+      ENV["DOKKU_ROOT"] = "~dokku"
+      ENV["DYNO"] = "web.1"
+
+      expect(config[:platform]).to eq("dokku")
+    end
+
+    it "ignores variables that are set to an empty string" do
+      ENV["DOKKU_ROOT"] = ""
+      ENV["DYNO"] = ""
+
+      expect(config.system_config).to_not have_key(:platform)
     end
   end
 
@@ -981,6 +1124,7 @@ describe Appsignal::Config do
         :filter_request_payload         => [],
         :filter_request_query_parameters => [],
         :filter_session_data            => [],
+        :hostname                       => detected_hostname,
         :ignore_actions                 => [],
         :ignore_errors                  => [],
         :ignore_logs                    => [],
@@ -1211,8 +1355,9 @@ describe Appsignal::Config do
       expect(ENV.fetch("_APPSIGNAL_IGNORE_NAMESPACES", nil)).to eq "admin,private_namespace"
       expect(ENV.fetch("_APPSIGNAL_RUNNING_IN_CONTAINER", nil)).to eq "false"
       expect(ENV.fetch("_APPSIGNAL_ENABLE_HOST_METRICS", nil)).to eq "true"
-      expect(ENV.fetch("_APPSIGNAL_HOSTNAME", nil)).to eq ""
+      expect(ENV.fetch("_APPSIGNAL_HOSTNAME", nil)).to eq detected_hostname
       expect(ENV.fetch("_APPSIGNAL_HOST_ROLE", nil)).to eq ""
+      expect(ENV.fetch("_APPSIGNAL_PLATFORM", nil)).to eq ""
       expect(ENV.fetch("_APPSIGNAL_PROCESS_NAME", nil)).to include "rspec"
       expect(ENV.fetch("_APPSIGNAL_CA_FILE_PATH", nil))
         .to eq File.join(resources_dir, "cacert.pem")
