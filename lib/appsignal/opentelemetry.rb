@@ -8,6 +8,7 @@ require "appsignal/opentelemetry/http_method"
 require "appsignal/opentelemetry/http_response"
 require "appsignal/opentelemetry/http_server_request"
 require "appsignal/opentelemetry/messaging"
+require "appsignal/opentelemetry/proxied_exporter"
 require "appsignal/opentelemetry/rendering"
 require "appsignal/opentelemetry/sql_db_system"
 
@@ -55,14 +56,16 @@ module Appsignal
         # resource for the tracer provider to keep all three in sync.
         resource = ::OpenTelemetry::SDK::Resources::Resource.default.merge(build_resource(config))
 
+        span_exporter = build_exporter(
+          ::OpenTelemetry::Exporter::OTLP::Exporter,
+          config,
+          :endpoint => "#{endpoint}/v1/traces"
+        )
+
         ::OpenTelemetry::SDK.configure do |c|
           c.resource = resource
           c.add_span_processor(
-            ::OpenTelemetry::SDK::Trace::Export::BatchSpanProcessor.new(
-              ::OpenTelemetry::Exporter::OTLP::Exporter.new(
-                :endpoint => "#{endpoint}/v1/traces"
-              )
-            )
+            ::OpenTelemetry::SDK::Trace::Export::BatchSpanProcessor.new(span_exporter)
           )
         end
 
@@ -72,22 +75,26 @@ module Appsignal
         # `force_flush` is a no-op.
         ::OpenTelemetry.meter_provider =
           ::OpenTelemetry::SDK::Metrics::MeterProvider.new(:resource => resource)
+        metrics_exporter = build_exporter(
+          ::OpenTelemetry::Exporter::OTLP::Metrics::MetricsExporter,
+          config,
+          :endpoint => "#{endpoint}/v1/metrics"
+        )
         ::OpenTelemetry.meter_provider.add_metric_reader(
           ::OpenTelemetry::SDK::Metrics::Export::PeriodicMetricReader.new(
-            :exporter => ::OpenTelemetry::Exporter::OTLP::Metrics::MetricsExporter.new(
-              :endpoint => "#{endpoint}/v1/metrics"
-            )
+            :exporter => metrics_exporter
           )
         )
 
+        logs_exporter = build_exporter(
+          ::OpenTelemetry::Exporter::OTLP::Logs::LogsExporter,
+          config,
+          :endpoint => "#{endpoint}/v1/logs"
+        )
         ::OpenTelemetry.logger_provider =
           ::OpenTelemetry::SDK::Logs::LoggerProvider.new(:resource => resource)
         ::OpenTelemetry.logger_provider.add_log_record_processor(
-          ::OpenTelemetry::SDK::Logs::Export::BatchLogRecordProcessor.new(
-            ::OpenTelemetry::Exporter::OTLP::Logs::LogsExporter.new(
-              :endpoint => "#{endpoint}/v1/logs"
-            )
-          )
+          ::OpenTelemetry::SDK::Logs::Export::BatchLogRecordProcessor.new(logs_exporter)
         )
 
         @started = true
@@ -253,6 +260,27 @@ module Appsignal
       end
 
       private
+
+      # Build one OTLP exporter, applying the `ca_file_path` and `http_proxy`
+      # options to the requests it sends. The certificate file is a keyword
+      # argument the exporters accept; the proxy is not, so an exporter that
+      # needs one is a subclass that applies it to its own connection.
+      def build_exporter(base, config, **kwargs)
+        certificate_file = config[:ca_file_path].to_s
+        kwargs[:certificate_file] = certificate_file unless certificate_file.empty?
+
+        http_proxy = config[:http_proxy].to_s
+        return base.new(**kwargs) if http_proxy.empty?
+
+        proxied_exporter_class(base).new(:appsignal_http_proxy => http_proxy, **kwargs)
+      end
+
+      # A subclass of an OTLP exporter that routes its requests through a
+      # proxy. Built here rather than declared, because the exporter gems are
+      # only loaded once collector mode is configured.
+      def proxied_exporter_class(base)
+        Class.new(base) { include ProxiedExporter }
+      end
 
       # Whether a `__otel_headers` value is the array-of-`[key, value]`-pairs
       # shape produced by ActiveJob's argument serializer, so it can be turned
