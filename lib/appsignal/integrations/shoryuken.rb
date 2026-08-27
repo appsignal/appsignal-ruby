@@ -84,7 +84,11 @@ module Appsignal
           :opentelemetry_context => context,
           :opentelemetry_scope => ["appsignal-ruby/shoryuken", Appsignal::VERSION],
           :opentelemetry_kind => :consumer,
-          :opentelemetry_relationship => :both
+          # A message batch is a batch on the receiving side, and carries no
+          # context to relate to at all, so the body it reads here is the single
+          # message's job data or nothing.
+          :opentelemetry_relationship =>
+            Appsignal::OpenTelemetry.active_job_relationship(batch ? nil : body)
         )
         # Describes this span as a job being performed. The messaging system is
         # what the trace timeline reads to recognize background job work.

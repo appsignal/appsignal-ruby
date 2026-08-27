@@ -247,6 +247,19 @@ module Appsignal
         headers[ACTIVE_JOB_BATCH_HEADER] == "1"
       end
 
+      # How a performed job should relate to the span that enqueued it.
+      #
+      # A job enqueued on its own is the only job its producer span produced, so
+      # it can be a child of that span as well as link to it. Every job in a
+      # batch shares one producer span, and a span can have only one parent, so
+      # parenting a batch would hang the whole batch off that single span. Only
+      # link those, which is what the OpenTelemetry messaging conventions ask
+      # for: they use links as the default, and allow the producer to be the
+      # parent only when it produced a single message.
+      def active_job_relationship(job_data)
+        active_job_batch?(job_data) ? :link : :both
+      end
+
       # The remote parent's SpanContext from an incoming OTel context, or `nil`
       # when there is no context or the span in it is invalid.
       #

@@ -815,6 +815,43 @@ if DependencyHelper.active_job_present? && DependencyHelper.rails_present?
         end
       end
 
+      # This is the standalone path, for a queue adapter with no AppSignal
+      # integration of its own to start the transaction.
+      describe "linking a bulk-enqueued job back to the enqueuer" do
+        # A job from a bulk enqueue carries a marker alongside its trace
+        # context, because every job in the batch shares one producer span.
+        def perform_with_batch_context
+          job_data = ActiveJobTestJob.new.serialize.merge(
+            "__otel_headers" => [
+              ["traceparent", traceparent],
+              [Appsignal::OpenTelemetry::ACTIVE_JOB_BATCH_HEADER, "1"]
+            ]
+          )
+          perform_active_job { ActiveJob::Base.execute(job_data) }
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform_with_batch_context
+
+          # Every job in the batch shares the one producer span, so the job only
+          # links back to it. It gets its own trace instead of hanging the whole
+          # batch off that span.
+          expect(root_span.kind).to eq(:consumer)
+          expect(root_span.parent_span_id).to eq(::OpenTelemetry::Trace::INVALID_SPAN_ID)
+          expect(root_span.hex_trace_id).to_not eq(trace_id_hex)
+          expect(root_span.links.size).to eq(1)
+          expect(root_span.links.first.span_context.hex_trace_id).to eq(trace_id_hex)
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform_with_batch_context
+
+          expect(last_transaction.to_h["metadata"].keys).to_not include("__otel_headers")
+        end
+      end
+
       context "when enqueue instrumentation is disabled" do
         let(:options) { { :enable_job_enqueue_instrumentation => false } }
         before { ActiveJob::Base.queue_adapter = :test }
