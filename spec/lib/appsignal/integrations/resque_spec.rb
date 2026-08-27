@@ -112,6 +112,149 @@ if DependencyHelper.resque_present?
         # The trace header doesn't leak into the trace as a tag.
         expect(root_span.attributes).to_not have_key("appsignal.tag.traceparent")
       end
+
+      # The Active Job adapter enqueues a wrapper class with the serialized job
+      # data as its only argument, so an Active Job job carries its context one
+      # level in, rather than on the Resque job itself.
+      context "with an Active Job job carrying the context in its job data" do
+        let(:wrapper) { Appsignal::Integrations::ResqueHelpers::ACTIVE_JOB_WRAPPER }
+        let(:job_data) do
+          {
+            "job_class" => "ResqueTestJob",
+            "arguments" => [],
+            "__otel_headers" => [["traceparent", traceparent]]
+          }
+        end
+
+        before do
+          stub_const(wrapper, Class.new do
+            def self.perform(*)
+            end
+          end)
+        end
+
+        def perform
+          perform_rescue_job(wrapper, "args" => [job_data])
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          expect(Appsignal).to receive(:stop)
+          perform
+
+          expect(last_transaction).to_not include_tags(
+            "traceparent" => traceparent
+          )
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          expect(Appsignal).to receive(:stop)
+          perform
+
+          expect(root_span.kind).to eq(:consumer)
+          expect(root_span.hex_trace_id).to eq(trace_id_hex)
+          expect(root_span.parent_span_id.unpack1("H*")).to eq(span_id_hex)
+          expect(root_span.links.size).to eq(1)
+        end
+      end
+
+      if DependencyHelper.active_job_present?
+        # A round trip through real Active Job and the real Resque adapter. The
+        # enqueue writes the trace context onto the job, Active Job serializes
+        # it, and the adapter wraps that as the payload's only argument. The
+        # payload is captured where Resque would hand it to Redis, so this uses
+        # the shape Active Job and Resque really produce, JSON round trip
+        # included, without needing a Redis to talk to.
+        context "with a job enqueued through real Active Job" do
+          before do
+            require "active_job"
+            ActiveJob::Base.queue_adapter = :resque
+            ActiveJob::Base.logger = nil
+
+            stub_const("ResqueRoundTripJob", Class.new(ActiveJob::Base) do
+              def perform(*)
+              end
+            end)
+          end
+
+          # Enqueue inside a transaction and perform outside it, because
+          # performing while the enqueuing transaction is still open would leave
+          # the job sharing it instead of creating its own.
+          def enqueue_then_perform
+            captured = nil
+            allow(::Resque.data_store).to receive(:push_to_queue) do |_queue, encoded|
+              captured = ::Resque.decode(encoded)
+            end
+
+            set_current_transaction(http_request_transaction)
+            ResqueRoundTripJob.perform_later("foo")
+            Appsignal::Transaction.complete_current!
+
+            keep_transactions { ::Resque::Job.new(queue, captured).perform }
+            captured
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            expect(Appsignal).to receive(:stop)
+
+            payload = enqueue_then_perform
+
+            producer = event_span_for("enqueue.active_job")
+
+            # The shape the integration reads, as Active Job and the Resque
+            # adapter really produce it: the adapter's wrapper class, and the
+            # serialized job data as its only argument with the trace context
+            # inside. The examples that construct this shape by hand to isolate
+            # one carrier are only valid as long as this holds.
+            expect(payload["class"])
+              .to eq(Appsignal::Integrations::ResqueHelpers::ACTIVE_JOB_WRAPPER)
+            expect(payload["args"].size).to eq(1)
+            expect(payload["args"].first["__otel_headers"]).to eq(
+              [["traceparent", "00-#{producer.hex_trace_id}-#{producer.hex_span_id}-01"]]
+            )
+
+            consumer = span_exporter.finished_spans.find do |span|
+              span.kind == :consumer
+            end
+            expect(consumer).to_not be_nil
+            expect(consumer.hex_trace_id).to eq(producer.hex_trace_id)
+            expect(consumer.parent_span_id).to eq(producer.span_id)
+          end
+        end
+      end
+
+      # A job enqueued by a service that instruments Resque but not Active Job
+      # has no Active Job carrier to read, so the Resque job's own header is what
+      # the trace has to be continued from.
+      context "with an Active Job job carrying only a Resque-level context" do
+        let(:wrapper) { Appsignal::Integrations::ResqueHelpers::ACTIVE_JOB_WRAPPER }
+
+        before do
+          stub_const(wrapper, Class.new do
+            def self.perform(*)
+            end
+          end)
+        end
+
+        def perform
+          perform_rescue_job(
+            wrapper,
+            "args" => [{ "job_class" => "ResqueTestJob", "arguments" => [] }],
+            "traceparent" => traceparent
+          )
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          expect(Appsignal).to receive(:stop)
+          perform
+
+          expect(root_span.hex_trace_id).to eq(trace_id_hex)
+          expect(root_span.parent_span_id.unpack1("H*")).to eq(span_id_hex)
+        end
+      end
     end
 
     describe "tracks the error on the transaction" do

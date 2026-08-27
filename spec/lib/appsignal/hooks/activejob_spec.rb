@@ -1,4 +1,7 @@
-if DependencyHelper.active_job_present?
+# This spec branches on the Rails version throughout, so it needs the whole
+# framework rather than Active Job on its own. Some gemfiles install Active
+# Job by itself, to cover the Active Job paths through a queue integration.
+if DependencyHelper.active_job_present? && DependencyHelper.rails_present?
   require "active_job"
   require "action_mailer"
 
