@@ -107,15 +107,41 @@ module Appsignal
       rescue Exception => error
         warn_unreadable_payload_once(error)
 
-        transaction = create_perform_transaction(job)
+        # No trace context: the payload the context would come from is the one
+        # that just failed to load.
+        transaction = create_perform_transaction(job, nil)
         transaction.set_action_if_nil(action_name_without_payload(job))
         transaction.set_error(error)
         add_job_metadata(transaction, job)
         Appsignal::Transaction.complete_current!
       end
 
+      # The trace context to continue. Delayed Job has no carrier of its own,
+      # because a job's handler is a YAML dump of the object to run with nowhere
+      # to put a header, so an Active Job job is the only kind that arrives with
+      # one.
+      def self.extract_context(job)
+        Appsignal::OpenTelemetry.extract_active_job_context(active_job_data(job))
+      end
+
+      # The serialized Active Job job data inside a Delayed Job job, or nil when
+      # this is not an Active Job job. The Active Job adapter wraps the job data
+      # in an object that exposes it as `job_data`.
+      #
+      # Reading it means deserializing the handler, which raises for a job whose
+      # class is gone, so a job that cannot be read gets no context. Delayed Job
+      # remembers a payload it read successfully, so doing this before the job
+      # runs costs no extra work later.
+      def self.active_job_data(job)
+        payload = job.payload_object
+        payload.job_data if payload.respond_to?(:job_data)
+      rescue => error
+        warn_unreadable_payload_once(error)
+        nil
+      end
+
       def self.invoke_with_instrumentation(job, block)
-        transaction = create_perform_transaction(job)
+        transaction = create_perform_transaction(job, extract_context(job))
 
         begin
           Appsignal.instrument(
@@ -161,10 +187,13 @@ module Appsignal
       end
 
       # The transaction a performed job is reported under. Shared by the two
-      # callbacks that can report a job, so both describe it the same way.
-      def self.create_perform_transaction(job)
+      # callbacks that can report a job, so both describe it the same way. The
+      # trace context is passed in rather than read here, because the payload it
+      # would be read from is the one a job that cannot be loaded failed on.
+      def self.create_perform_transaction(job, context)
         transaction = Appsignal::Transaction.create(
           Appsignal::Transaction::BACKGROUND_JOB,
+          :opentelemetry_context => context,
           :opentelemetry_scope => ["appsignal-ruby/delayed_job", Appsignal::VERSION],
           :opentelemetry_kind => :consumer,
           :opentelemetry_relationship => :both
