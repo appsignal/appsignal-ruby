@@ -237,6 +237,132 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
         expect(root_span.attributes).to_not have_key("appsignal.tag.traceparent")
       end
     end
+
+    # The Active Job adapter registers a worker that parses the message body as
+    # JSON, so an Active Job job's body arrives as its serialized job data, with
+    # the trace context inside it.
+    context "with an Active Job job carrying the context in its body" do
+      let(:sqs_msg) do
+        double(:message_id => "msg1", :attributes => {}, :message_attributes => {})
+      end
+      let(:body) do
+        {
+          "job_class" => "ShoryukenActiveJob",
+          "arguments" => [],
+          "__otel_headers" => [["traceparent", traceparent]]
+        }
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform_shoryuken_job
+
+        expect(last_transaction).to_not include_tags("traceparent" => traceparent)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform_shoryuken_job
+
+        expect(root_span.kind).to eq(:consumer)
+        expect(root_span.hex_trace_id).to eq(trace_id_hex)
+        expect(root_span.parent_span_id.unpack1("H*")).to eq(span_id_hex)
+        expect(root_span.links.size).to eq(1)
+      end
+    end
+
+    # Gated on Shoryuken itself as well as Active Job: the rest of this file
+    # works from doubles and so runs under every gemfile, but a round trip needs
+    # the real adapter, which only the Shoryuken gemfiles install.
+    if DependencyHelper.active_job_present? && DependencyHelper.shoryuken_present?
+      # A round trip through real Active Job and the real Shoryuken adapter. The
+      # enqueue writes the trace context onto the job and Active Job serializes
+      # it into the message body. The body is captured where the adapter would
+      # hand it to SQS, so this uses the shape Active Job and Shoryuken really
+      # produce without needing a queue to talk to.
+      context "with a job enqueued through real Active Job" do
+        before do
+          require "active_job"
+          # Shoryuken 7 ships its Active Job adapter and its job extensions as
+          # `active_job` files. Version 6 keeps both under
+          # `shoryuken/extensions`. The extensions are what give a job the
+          # `sqs_send_message_parameters` the adapter sends it with.
+          if Gem.loaded_specs["shoryuken"].version >= Gem::Version.new("7.0.0")
+            require "active_job/extensions"
+            require "active_job/queue_adapters/shoryuken_adapter"
+          else
+            require "shoryuken/extensions/active_job_extensions"
+            require "shoryuken/extensions/active_job_adapter"
+          end
+          ActiveJob::Base.queue_adapter = :shoryuken
+          ActiveJob::Base.logger = nil
+
+          stub_const("ShoryukenRoundTripJob", Class.new(ActiveJob::Base) do
+            def perform(*)
+            end
+          end)
+        end
+
+        # Enqueue inside a transaction and perform outside it, because performing
+        # while the enqueuing transaction is still open would leave the job
+        # sharing it instead of creating its own.
+        def enqueue_then_perform
+          sent = nil
+          sqs_queue = double(:fifo? => false)
+          allow(sqs_queue).to receive(:send_message) { |options| sent = options }
+          allow(::Shoryuken::Client).to receive(:queues).and_return(sqs_queue)
+
+          set_current_transaction(http_request_transaction)
+          ShoryukenRoundTripJob.perform_later("foo")
+          Appsignal::Transaction.complete_current!
+
+          described_class.new.call(
+            worker_instance, queue, sqs_msg, sent[:message_body]
+          ) { nil }
+          sent
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+
+          sent = enqueue_then_perform
+
+          producer = event_span_for("enqueue.active_job")
+
+          # The shape the integration reads, as Active Job and the Shoryuken
+          # adapter really produce it: the serialized job data as the message
+          # body, with the trace context inside. The examples that construct this
+          # shape by hand are only valid as long as this holds.
+          expect(sent[:message_body]["__otel_headers"]).to eq(
+            [["traceparent", "00-#{producer.hex_trace_id}-#{producer.hex_span_id}-01"]]
+          )
+
+          consumer = span_exporter.finished_spans.find do |span|
+            span.kind == :consumer
+          end
+          expect(consumer).to_not be_nil
+          expect(consumer.hex_trace_id).to eq(producer.hex_trace_id)
+          expect(consumer.parent_span_id).to eq(producer.span_id)
+        end
+      end
+    end
+
+    # A message sent by a service that instruments the AWS SDK but not Active
+    # Job has no Active Job carrier to read, so the message attributes are what
+    # the trace has to be continued from.
+    context "with an Active Job job carrying only a message attribute context" do
+      let(:body) do
+        { "job_class" => "ShoryukenActiveJob", "arguments" => [] }
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform_shoryuken_job
+
+        expect(root_span.hex_trace_id).to eq(trace_id_hex)
+        expect(root_span.parent_span_id.unpack1("H*")).to eq(span_id_hex)
+      end
+    end
   end
 
   context "with exception" do
