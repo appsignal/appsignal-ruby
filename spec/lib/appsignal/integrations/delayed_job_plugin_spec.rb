@@ -267,7 +267,7 @@ if DependencyHelper.delayed_job_present?
           )
         end
 
-        it "reports the job with its deserialization error" do
+        it "reports the job with its deserialization error", :agent_mode do
           start_agent
 
           keep_transactions do
@@ -288,6 +288,29 @@ if DependencyHelper.delayed_job_present?
           expect(transaction).to include_tags("attempts" => 0, "priority" => 0)
         end
 
+        it "records the error on the consumer span", :collector_mode do
+          start_collector_agent
+
+          expect { perform_job(job) }.to raise_error(
+            Delayed::DeserializationError, /TotallyMissingJobClass/
+          )
+
+          # No `complete_current!` call here, on purpose. A span only reaches the
+          # exporter once it has ended, so having a `root_span` at all is what
+          # proves the integration completed the transaction itself.
+          expect(root_span.kind).to eq(:consumer)
+          expect(root_span.attributes["appsignal.action_name"])
+            .to eq("TotallyMissingJobClass#perform")
+          expect(root_span.attributes).to_not have_key("appsignal.ignore_subtrace")
+          event = root_span.events.find { |e| e.name == "exception" }
+          expect(event.attributes["exception.type"])
+            .to eq("Delayed::DeserializationError")
+          expect(event.attributes["exception.message"])
+            .to match(/TotallyMissingJobClass/)
+        end
+
+        # Untagged: the warning is logged from the same code in both modes, so
+        # there is nothing mode-specific to assert about it.
         it "logs that the payload could not be read, once per process" do
           start_agent
           other_job = Delayed::Backend::Test::Job.create(:handler => job.handler)
@@ -314,7 +337,7 @@ if DependencyHelper.delayed_job_present?
         context "when the handler cannot be parsed for a class name either" do
           let(:job) { Delayed::Backend::Test::Job.create(:handler => "--- {\n") }
 
-          it "names the job after Delayed Job" do
+          it "names the job after Delayed Job", :agent_mode do
             start_agent
 
             keep_transactions do
@@ -329,6 +352,24 @@ if DependencyHelper.delayed_job_present?
             # name that can be found rather than under none.
             expect(transaction).to have_action("Delayed::Job#perform")
             expect(transaction).to include_tags("attempts" => 0, "priority" => 0)
+          end
+
+          it "names the consumer span after Delayed Job", :collector_mode do
+            start_collector_agent
+
+            expect { perform_job(job) }
+              .to raise_error(Delayed::DeserializationError)
+
+            expect(root_span.kind).to eq(:consumer)
+            expect(root_span.attributes["appsignal.action_name"])
+              .to eq("Delayed::Job#perform")
+            # An exported span is not necessarily a reported one: the collector
+            # drops a subtrace flagged with this attribute. Naming the span is
+            # what keeps the failure reported.
+            expect(root_span.attributes).to_not have_key("appsignal.ignore_subtrace")
+            event = root_span.events.find { |e| e.name == "exception" }
+            expect(event.attributes["exception.type"])
+              .to eq("Delayed::DeserializationError")
           end
         end
       end
