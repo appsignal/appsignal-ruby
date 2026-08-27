@@ -20,6 +20,10 @@ if DependencyHelper.delayed_job_present?
       Delayed::Worker.plugins << Appsignal::Integrations::DelayedJobPlugin
       Delayed::Worker.setup_lifecycle
 
+      # The unreadable-payload warning is emitted once per process, so it has to
+      # be reset or only the first example to reach it would see it.
+      Appsignal::Integrations::DelayedJobPlugin.reset_unreadable_payload_warning!
+
       stub_const("DelayedTestJob", Class.new do
         def perform
         end
@@ -249,6 +253,83 @@ if DependencyHelper.delayed_job_present?
           event = root_span.events.find { |e| e.name == "exception" }
           expect(event.attributes["exception.type"]).to eq("ExampleException")
           expect(event.attributes["exception.message"]).to eq("uh oh")
+        end
+      end
+
+      # What a deploy that removes a job class leaves behind: jobs whose stored
+      # handler names a class that is gone. Created straight through the backend,
+      # because `Delayed::Job.enqueue` stores the live object next to the handler
+      # and Delayed Job then never parses the handler at all.
+      context "with a job whose payload cannot be deserialized" do
+        let(:job) do
+          Delayed::Backend::Test::Job.create(
+            :handler => "--- !ruby/object:TotallyMissingJobClass {}\n"
+          )
+        end
+
+        it "reports the job with its deserialization error" do
+          start_agent
+
+          keep_transactions do
+            expect { perform_job(job) }.to raise_error(
+              Delayed::DeserializationError, /TotallyMissingJobClass/
+            )
+          end
+
+          transaction = last_transaction
+          expect(transaction).to be_completed
+          expect(transaction).to have_namespace("background_job")
+          expect(transaction).to have_error(
+            "Delayed::DeserializationError", /TotallyMissingJobClass/
+          )
+          # Delayed Job reads the class name out of the raw handler when the
+          # payload will not load, so the job is still named after its class.
+          expect(transaction).to have_action("TotallyMissingJobClass#perform")
+          expect(transaction).to include_tags("attempts" => 0, "priority" => 0)
+        end
+
+        it "logs that the payload could not be read, once per process" do
+          start_agent
+          other_job = Delayed::Backend::Test::Job.create(:handler => job.handler)
+
+          logs = capture_logs do
+            keep_transactions do
+              [job, other_job].each do |unreadable_job|
+                expect { perform_job(unreadable_job) }
+                  .to raise_error(Delayed::DeserializationError)
+              end
+            end
+          end
+
+          expect(logs).to contains_log(
+            :warn, "Unable to read a Delayed Job job's payload"
+          )
+          # Both jobs failed, but a deploy that removes a job class can leave
+          # very many of them, so the warning is only worth logging once.
+          expect(logs.scan("Unable to read a Delayed Job").count).to eq(1)
+        end
+
+        # A handler that defeats the class-name expression Delayed Job falls back
+        # to, so the job's own class cannot be named.
+        context "when the handler cannot be parsed for a class name either" do
+          let(:job) { Delayed::Backend::Test::Job.create(:handler => "--- {\n") }
+
+          it "names the job after Delayed Job" do
+            start_agent
+
+            keep_transactions do
+              expect { perform_job(job) }
+                .to raise_error(Delayed::DeserializationError)
+            end
+
+            transaction = last_transaction
+            expect(transaction).to be_completed
+            expect(transaction).to have_error("Delayed::DeserializationError", /./)
+            # Named after Delayed Job itself, so the failure is reported under a
+            # name that can be found rather than under none.
+            expect(transaction).to have_action("Delayed::Job#perform")
+            expect(transaction).to include_tags("attempts" => 0, "priority" => 0)
+          end
         end
       end
 
