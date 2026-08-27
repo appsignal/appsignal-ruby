@@ -1,5 +1,13 @@
 require_relative "active_support_notifications/instrument_shared_examples"
 
+# Some gemfiles install Active Support as a dependency of another gem and
+# never require this part of it, so ask for it rather than relying on
+# something else having loaded it.
+if DependencyHelper.active_support_present?
+  require "active_support"
+  require "active_support/notifications"
+end
+
 describe Appsignal::Hooks::ActiveSupportNotificationsHook do
   if active_support_present?
     let(:notifier) { ActiveSupport::Notifications::Fanout.new }
