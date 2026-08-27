@@ -5,4 +5,8 @@ gem "shoryuken", "~> 6.0"
 # installed separately.
 gem "aws-sdk-sqs"
 
+# The Active Job adapter for Shoryuken, so the Active Job paths through this
+# integration are covered.
+gem "activejob"
+
 gemspec :path => "../"

@@ -77,7 +77,7 @@ module Appsignal
         # links back to the enqueuer. A batch carries messages from multiple
         # traces with no single parent, so only single messages link back.
         # No-op outside collector mode.
-        context = ShoryukenTraceContext.extract(sqs_msg.message_attributes) unless batch
+        context = extract_context(sqs_msg, body) unless batch
 
         transaction = Appsignal::Transaction.create(
           Appsignal::Transaction::BACKGROUND_JOB,
@@ -126,6 +126,21 @@ module Appsignal
       end
 
       private
+
+      # The trace context to continue: the Active Job layer when this is an
+      # Active Job job, the message's own attributes otherwise. See `Appsignal::OpenTelemetry.extract_active_job_context`
+      # for why that layer wins.
+      # SQS allows ten message attributes per message, shared with whatever the
+      # user puts there.
+      #
+      # The Active Job adapter registers a worker that parses the message body as
+      # JSON, so an Active Job job's body arrives here as its serialized job
+      # data. Nothing checks that it is one: a body with no readable trace
+      # context in it reads as "nothing here" on its own.
+      def extract_context(sqs_msg, body)
+        Appsignal::OpenTelemetry.extract_active_job_context(body) ||
+          ShoryukenTraceContext.extract(sqs_msg.message_attributes)
+      end
 
       def fetch_attributes(batch, sqs_msg)
         if batch
