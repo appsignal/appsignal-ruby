@@ -581,6 +581,10 @@ module Appsignal
       ENV["_APPSIGNAL_ENABLE_HOST_METRICS"]          = config_hash[:enable_host_metrics].to_s
       ENV["_APPSIGNAL_ENABLE_STATSD"]                = config_hash[:enable_statsd].to_s
       ENV["_APPSIGNAL_ENABLE_NGINX_METRICS"]         = config_hash[:enable_nginx_metrics].to_s
+      # The gem never sends OpenTelemetry data to the agent, so it has no
+      # reason to listen for it. Written out rather than left to the agent's
+      # own default, so a value set in the environment cannot turn it on.
+      ENV["_APPSIGNAL_ENABLE_OPENTELEMETRY_HTTP"]    = "false"
       ENV["_APPSIGNAL_APP_ENV"]                      = env
       ENV["_APPSIGNAL_FILES_WORLD_ACCESSIBLE"]       = config_hash[:files_world_accessible].to_s
       ENV["_APPSIGNAL_FILTER_PARAMETERS"]            = config_hash[:filter_parameters].join(",")
