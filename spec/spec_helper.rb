@@ -99,15 +99,21 @@ RSpec.configure do |config|
   end
 
   config.before :suite do
-    # The OTLP mock server is only needed by collector-mode specs, which only
-    # run when the OpenTelemetry gems are installed. Always disable real network
-    # connections; when those specs run, relax the rule just enough to reach the
-    # mock server bound by `OTLPCollectorServer`.
+    # The mock servers are only needed by collector-mode specs, which only run
+    # when the OpenTelemetry gems are installed. Always disable real network
+    # connections; when those specs run, relax the rule just enough to reach
+    # the servers bound by `OTLPCollectorServer` and `HTTPProxyServer`.
     if DependencyHelper.opentelemetry_present?
-      # Boot first: the server binds an OS-assigned port, so its address is only
-      # known afterwards.
+      # Boot first: each server binds an OS-assigned port, so its address is
+      # only known afterwards.
       OTLPCollectorServer.boot!
-      WebMock.disable_net_connect!(:allow => "127.0.0.1:#{OTLPCollectorServer.port}")
+      HTTPProxyServer.boot!
+      WebMock.disable_net_connect!(
+        :allow => [
+          "127.0.0.1:#{OTLPCollectorServer.port}",
+          "127.0.0.1:#{HTTPProxyServer.port}"
+        ]
+      )
     else
       WebMock.disable_net_connect!
     end
@@ -115,6 +121,7 @@ RSpec.configure do |config|
 
   config.after do
     OTLPCollectorServer.clear if defined?(OTLPCollectorServer)
+    HTTPProxyServer.clear if defined?(HTTPProxyServer)
     Appsignal::OpenTelemetry.reset!
   end
 
