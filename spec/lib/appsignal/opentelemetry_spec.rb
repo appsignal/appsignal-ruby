@@ -340,6 +340,7 @@ if DependencyHelper.opentelemetry_present?
       it "maps AppSignal config attributes onto the resource" do
         resource = described_class.build_resource(
           build_config(
+            :root_path => "/path/to/app",
             :options => {
               :name => "my-app",
               :push_api_key => "abc",
@@ -347,7 +348,9 @@ if DependencyHelper.opentelemetry_present?
               :hostname => "host-1",
               :service_name => "my-service",
               :filter_attributes => ["password"],
-              :ignore_actions => ["IgnoredController#action"]
+              :ignore_actions => ["IgnoredController#action"],
+              :ignore_logs => ["^Started GET"],
+              :platform => "heroku"
             }
           )
         )
@@ -356,12 +359,15 @@ if DependencyHelper.opentelemetry_present?
         expect(attrs["appsignal.config.name"]).to eq("my-app")
         expect(attrs["appsignal.config.push_api_key"]).to eq("abc")
         expect(attrs["appsignal.config.revision"]).to eq("deadbeef")
+        expect(attrs["appsignal.config.app_path"]).to eq("/path/to/app")
+        expect(attrs["appsignal.config.platform"]).to eq("heroku")
         expect(attrs["appsignal.config.language_integration"]).to eq("ruby")
         expect(attrs["service.name"]).to eq("my-service")
         expect(attrs["host.name"]).to eq("host-1")
         expect(attrs["appsignal.config.filter_attributes"]).to eq(["password"])
         expect(attrs["appsignal.config.ignore_actions"])
           .to eq(["IgnoredController#action"])
+        expect(attrs["appsignal.config.ignore_logs"]).to eq(["^Started GET"])
       end
 
       it "falls back to defaults for empty revision, service_name, and hostname" do
@@ -389,6 +395,22 @@ if DependencyHelper.opentelemetry_present?
         expect(attrs["host.name"]).to eq("unknown")
       end
 
+      [nil, ""].each do |root_path|
+        it "omits the app path when the root path is #{root_path.inspect}" do
+          resource = described_class.build_resource(
+            build_config(
+              :root_path => root_path,
+              :options => {
+                :name => "my-app",
+                :push_api_key => "abc"
+              }
+            )
+          )
+
+          expect(resource_attrs(resource)).not_to have_key("appsignal.config.app_path")
+        end
+      end
+
       it "omits attributes whose underlying option is nil or empty" do
         resource = described_class.build_resource(
           build_config(
@@ -406,6 +428,8 @@ if DependencyHelper.opentelemetry_present?
           appsignal.config.filter_function_parameters
           appsignal.config.filter_request_query_parameters
           appsignal.config.ignore_errors
+          appsignal.config.ignore_logs
+          appsignal.config.platform
           appsignal.config.response_headers
           appsignal.config.send_function_parameters
           appsignal.config.send_request_query_parameters
