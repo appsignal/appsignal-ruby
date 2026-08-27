@@ -225,6 +225,50 @@ if DependencyHelper.resque_present?
         end
       end
 
+      # A job from an Active Job bulk enqueue carries a marker alongside its
+      # trace context, because every job in the batch shares one producer span.
+      context "with an Active Job job from a bulk enqueue" do
+        let(:wrapper) { Appsignal::Integrations::ResqueHelpers::ACTIVE_JOB_WRAPPER }
+
+        before do
+          stub_const(wrapper, Class.new do
+            def self.perform(*)
+            end
+          end)
+        end
+
+        def perform
+          perform_rescue_job(
+            wrapper,
+            "args" => [
+              {
+                "job_class" => "ResqueTestJob",
+                "arguments" => [],
+                "__otel_headers" => [
+                  ["traceparent", traceparent],
+                  [Appsignal::OpenTelemetry::ACTIVE_JOB_BATCH_HEADER, "1"]
+                ]
+              }
+            ]
+          )
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          expect(Appsignal).to receive(:stop)
+          perform
+
+          # Every job in the batch shares the one producer span, so the job
+          # only links back to it. It gets its own trace instead of hanging the
+          # whole batch off that span.
+          expect(root_span.kind).to eq(:consumer)
+          expect(root_span.parent_span_id).to eq(::OpenTelemetry::Trace::INVALID_SPAN_ID)
+          expect(root_span.hex_trace_id).to_not eq(trace_id_hex)
+          expect(root_span.links.size).to eq(1)
+          expect(root_span.links.first.span_context.hex_trace_id).to eq(trace_id_hex)
+        end
+      end
+
       # A job enqueued by a service that instruments Resque but not Active Job
       # has no Active Job carrier to read, so the Resque job's own header is what
       # the trace has to be continued from.
