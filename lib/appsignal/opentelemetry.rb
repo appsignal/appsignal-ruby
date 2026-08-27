@@ -159,9 +159,8 @@ module Appsignal
       def extract_job_context(item)
         if_started do
           carrier = item
-          nested = item["__otel_headers"]
-          nested = nested.to_h if otel_header_pairs?(nested)
-          carrier = item.merge(nested) if nested.is_a?(Hash)
+          nested = otel_headers_hash(item["__otel_headers"])
+          carrier = item.merge(nested) if nested
           # Extract onto an empty context rather than the default
           # `Context.current`, for the same reason as `extract_rack_context`:
           # a job with no injected trace context must not inherit an ambient
@@ -172,6 +171,62 @@ module Appsignal
             :context => ::OpenTelemetry::Context.empty
           )
         end
+      end
+
+      # Read the trace context off the serialized Active Job job data that a
+      # queue adapter's job wraps, so the transaction the adapter creates links
+      # back to the enqueuer.
+      #
+      # Every adapter wraps the job data as the single argument of its own job
+      # wrapper, but each keeps it somewhere different, so finding the job data
+      # is the adapter integration's business and reading a context out of it is
+      # this method's.
+      #
+      # This is the layer every integration prefers. Active Job owns the job
+      # whichever adapter carries it, its carrier survives an adapter that has
+      # nowhere of its own to put a header, and it does not compete with the
+      # user's own data for a carrier with a hard limit on what fits.
+      #
+      # Returns `nil` when the SDK has not booted, when this is not Active Job
+      # job data, and when the job data carries no usable context. A caller reads
+      # that `nil` as "nothing here" and falls back to its own native carrier.
+      # That fallback matters twice over: it is where a job enqueued by a service
+      # that instruments only the adapter carries its context, and it is the only
+      # carrier a job that is not an Active Job job has at all.
+      def extract_active_job_context(job_data)
+        return unless job_data.is_a?(Hash)
+
+        if_started do
+          headers = otel_headers_hash(job_data["__otel_headers"])
+          next unless headers
+
+          # Extract onto an empty context, for the same reason as
+          # `extract_job_context` above.
+          context = ::OpenTelemetry.propagation.extract(
+            headers,
+            :context => ::OpenTelemetry::Context.empty
+          )
+          context if remote_span_context(context)
+        end
+      end
+
+      # The remote parent's SpanContext from an incoming OTel context, or `nil`
+      # when there is no context or the span in it is invalid.
+      #
+      # `propagation.extract` returns a context whether or not the carrier held
+      # anything, so this is what tells "read a context" apart from "read
+      # nothing". A caller that can fall back to another carrier uses it to
+      # decide whether to, and a caller that parents or links a span uses it to
+      # decide between doing that and starting a plain root span.
+      #
+      # Only ever called with a context that came from the OpenTelemetry SDK, so
+      # it does not gate on the SDK having booted the way the extract methods do.
+      def remote_span_context(opentelemetry_context)
+        return unless opentelemetry_context
+
+        span_context =
+          ::OpenTelemetry::Trace.current_span(opentelemetry_context).context
+        span_context if span_context.valid?
       end
 
       # Run `block` only when the OpenTelemetry SDK has booted (collector mode),
@@ -254,10 +309,20 @@ module Appsignal
 
       private
 
+      # A `__otel_headers` value as a hash carrier, or `nil` when there is no
+      # usable one. Active Job puts the headers through its argument serializer,
+      # which turns the hash into an array of `[key, value]` pairs, so both
+      # shapes arrive. Anything else, including a malformed array, gives `nil`
+      # rather than raising on `to_h` inside a job perform.
+      def otel_headers_hash(value)
+        return value if value.is_a?(Hash)
+        return value.to_h if otel_header_pairs?(value)
+
+        nil
+      end
+
       # Whether a `__otel_headers` value is the array-of-`[key, value]`-pairs
-      # shape produced by ActiveJob's argument serializer, so it can be turned
-      # into a hash carrier. Anything else (including a malformed array) is left
-      # alone rather than raising on `to_h` inside a job perform.
+      # shape produced by ActiveJob's argument serializer.
       def otel_header_pairs?(value)
         value.is_a?(Array) && value.all? { |pair| pair.is_a?(Array) && pair.size == 2 }
       end
