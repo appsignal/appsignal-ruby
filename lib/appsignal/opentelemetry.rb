@@ -14,6 +14,11 @@ require "appsignal/opentelemetry/sql_db_system"
 module Appsignal
   # @!visibility private
   module OpenTelemetry
+    # The carrier key that marks an Active Job job as one of a batch. Not a W3C
+    # trace context header, and deliberately not named like one, so no
+    # propagator reads it as one.
+    ACTIVE_JOB_BATCH_HEADER = "appsignal-batch"
+
     class << self
       # Configure the global OpenTelemetry SDK to export OTLP/HTTP protobuf to
       # the collector endpoint in `config[:collector_endpoint]`.
@@ -208,6 +213,38 @@ module Appsignal
           )
           context if remote_span_context(context)
         end
+      end
+
+      # Marks an outgoing Active Job carrier as belonging to a batch, so the
+      # integration that later performs the job can tell the two enqueue paths
+      # apart. Every job in a batch shares the one producer span, and a span can
+      # have only one parent, so a batch has to link back rather than parent
+      # under it -- and only the enqueue side knows it was a batch.
+      #
+      # The marker rides in the same carrier as the trace context.
+      # `propagation.extract` ignores a key it does not recognise, so it is
+      # invisible to every other reader of that carrier, including
+      # OpenTelemetry's own Active Job instrumentation.
+      #
+      # Does nothing to a carrier nothing was injected into. Without a context
+      # there is no producer span to link back to, so the marker would have
+      # nothing to say.
+      def mark_active_job_batch(headers)
+        return if headers.empty?
+
+        headers[ACTIVE_JOB_BATCH_HEADER] = "1"
+      end
+
+      # Whether Active Job job data says the job was enqueued as part of a batch.
+      # An integration reads this to choose between linking the performed job
+      # back to the enqueuer and also parenting it under them.
+      def active_job_batch?(job_data)
+        return false unless job_data.is_a?(Hash)
+
+        headers = otel_headers_hash(job_data["__otel_headers"])
+        return false unless headers
+
+        headers[ACTIVE_JOB_BATCH_HEADER] == "1"
       end
 
       # The remote parent's SpanContext from an incoming OTel context, or `nil`

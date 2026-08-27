@@ -924,6 +924,61 @@ if DependencyHelper.active_job_present? && DependencyHelper.rails_present?
           end
         end
 
+        describe "writes the producer span's context onto every job" do
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            bulk_enqueue_within_transaction
+            Appsignal::Transaction.complete_current!
+
+            producer = event_span_for("enqueue_all.active_job")
+            expected_traceparent =
+              "00-#{producer.hex_trace_id}-#{producer.hex_span_id}-01"
+
+            enqueued = ActiveJob::Base.queue_adapter.enqueued_jobs
+            expect(enqueued.size).to eq(3)
+            # Every job in the batch carries the one producer span's context,
+            # plus the marker that says it came from a batch. That marker is what
+            # tells the performing job to link back rather than parent under a
+            # span it shares with every other job in the batch.
+            enqueued.each do |job|
+              expect(job["__otel_headers"]).to eq(
+                [
+                  ["traceparent", expected_traceparent],
+                  [Appsignal::OpenTelemetry::ACTIVE_JOB_BATCH_HEADER, "1"]
+                ]
+              )
+            end
+          end
+
+          it "writes nothing onto the jobs in agent mode", :agent_mode do
+            start_agent(**start_agent_args)
+            bulk_enqueue_within_transaction
+
+            ActiveJob::Base.queue_adapter.enqueued_jobs.each do |job|
+              expect(job).to_not have_key("__otel_headers")
+            end
+          end
+        end
+
+        context "when enqueue instrumentation is disabled for the batch" do
+          let(:options) { { :enable_job_enqueue_instrumentation => false } }
+
+          # Without an enqueue event there is no producer span, so the context
+          # that would be written is whatever span is current, such as the
+          # surrounding web request. The jobs would then link back to a span that
+          # is not a producer, so nothing is written at all.
+          it "writes no trace context onto the jobs", :collector_mode do
+            start_collector_agent
+            bulk_enqueue_within_transaction
+            Appsignal::Transaction.complete_current!
+
+            expect(event_spans_for("enqueue_all.active_job")).to be_empty
+            ActiveJob::Base.queue_adapter.enqueued_jobs.each do |job|
+              expect(job).to_not have_key("__otel_headers")
+            end
+          end
+        end
+
         # Active Job groups the jobs it enqueues by queue adapter rather than by
         # class or by queue, so one batch can cover several of each, and then
         # there is no one class to name it after and no one queue to report.

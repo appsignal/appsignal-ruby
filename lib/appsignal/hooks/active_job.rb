@@ -132,6 +132,7 @@ module Appsignal
                 :batch_size => jobs.size
               )
             )
+            inject_context_into(jobs)
             # A bulk enqueue does not go through `ActiveJob::Base#enqueue`, so
             # nothing has suppressed the adapter (Sidekiq, Resque, ...) yet, and
             # its own enqueue instrumentation would record an event for every job
@@ -142,6 +143,21 @@ module Appsignal
             else
               super
             end
+          end
+        end
+
+        # Writes this producer span's context onto every job in the batch, and
+        # marks each one as part of a batch, so the jobs that perform later link
+        # back to this span. A bulk enqueue never goes through
+        # `ActiveJob::Base#enqueue`, so the injection the single-job path does
+        # never runs for these jobs. The adapter serializes each job after this,
+        # and the `serialize` patch carries the headers to the wire from there.
+        # A no-op outside collector mode.
+        def inject_context_into(jobs)
+          jobs.each do |job|
+            headers = job.__otel_headers
+            Appsignal::OpenTelemetry.inject_context(headers)
+            Appsignal::OpenTelemetry.mark_active_job_batch(headers)
           end
         end
 
