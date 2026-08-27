@@ -672,6 +672,26 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
       backend.complete
     end
 
+    # A transaction reported under the unnamed action marker tags by the marker.
+    # The action is settled before the metrics are emitted, so the tag carries it
+    # rather than the nil the transaction had until then.
+    it "emits the allocation count metric under the unnamed action marker" do
+      @allocations = 100
+      backend = create_backend
+      @allocations = 300
+
+      expect(metrics).to receive(:increment_counter).with(
+        "transaction_allocation_count", 200, :namespace => "web"
+      )
+      expect(metrics).to receive(:increment_counter).with(
+        "transaction_allocation_count", 200,
+        :namespace => "web", :action => "[unnamed action]"
+      )
+
+      backend.set_error("ExampleException", "uh oh", ["line 1"], [], false)
+      backend.complete
+    end
+
     it "does not emit the allocation count metric when no action was set" do
       @allocations = 100
       backend = create_backend
@@ -1283,6 +1303,64 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
         finished = finished_span(span)
         expect(finished.attributes["appsignal.action_name"]).to eq("PagesController#show")
         expect(finished.attributes).to_not have_key("appsignal.ignore_subtrace")
+      end
+    end
+
+    # The agent drops a transaction only when it has neither an action nor an
+    # error, so a failure is reported even when we cannot say what failed.
+    # Collector mode has to draw the line in the same place.
+    context "when an error was set but no action" do
+      it "names it after the unnamed action marker" do
+        backend = create_backend
+        backend.set_error("ExampleException", "uh oh", ["line 1"], [], false)
+        span = backend.instance_variable_get(:@span)
+        backend.complete
+
+        finished = finished_span(span)
+        expect(finished.attributes).to_not have_key("appsignal.ignore_subtrace")
+        expect(finished.attributes["appsignal.action_name"]).to eq("[unnamed action]")
+        # The collector reads an empty action from the span name, so the marker
+        # has to reach the name too. Otherwise the placeholder the span opened
+        # with would be reported as the action.
+        expect(finished.name).to eq("[unnamed action]")
+        event = finished.events.find { |e| e.name == "exception" }
+        expect(event.attributes["exception.type"]).to eq("ExampleException")
+      end
+
+      # The transaction is reported, so it aggregates like any other reported
+      # one. The metrics gate on an action being set, and the marker is one.
+      it "emits the aggregate metrics under the marker" do
+        backend = create_backend("background_job")
+        start_time = backend.instance_variable_get(:@start_time)
+
+        expect(Appsignal::Metrics::OpenTelemetryBackend)
+          .to receive(:add_distribution_value).with(
+            "transaction_queue_duration", be_within(1_000).of(5_000),
+            :namespace => "background"
+          )
+        expect(Appsignal::Metrics::OpenTelemetryBackend)
+          .to receive(:add_distribution_value).with(
+            "transaction_queue_duration", be_within(1_000).of(5_000),
+            :namespace => "background", :hostname => an_instance_of(String)
+          )
+
+        backend.set_queue_start(((start_time.to_f * 1000) - 5_000).round)
+        backend.set_error("ExampleException", "uh oh", ["line 1"], [], false)
+        backend.complete
+      end
+    end
+
+    # A transaction with neither an action nor an error is noise, such as serving
+    # assets in development, and stays dropped.
+    context "when neither an action nor an error was set" do
+      it "flags the subtrace as ignored" do
+        backend = create_backend
+        span = backend.instance_variable_get(:@span)
+        backend.complete
+
+        finished = finished_span(span)
+        expect(finished.attributes["appsignal.ignore_subtrace"]).to be(true)
+        expect(finished.attributes).to_not have_key("appsignal.action_name")
       end
     end
   end

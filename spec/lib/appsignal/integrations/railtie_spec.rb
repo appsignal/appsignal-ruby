@@ -422,7 +422,9 @@ if DependencyHelper.rails_present?
               expect(root_span.kind).to eq(:server)
               expect(root_span.attributes["appsignal.namespace"])
                 .to eq("web")
-              expect(root_span.attributes).to_not have_key("appsignal.action_name")
+              # Reported without an action, so it is named after the marker.
+              expect(root_span.attributes["appsignal.action_name"])
+                .to eq("[unnamed action]")
               event = root_span.events.find { |e| e.name == "exception" }
               expect(event).not_to be_nil
               expect(event.attributes["exception.type"]).to eq("ExampleStandardError")
@@ -788,7 +790,9 @@ if DependencyHelper.rails_present?
 
               expect(root_span.kind).to eq(:server)
               expect(root_span.attributes["appsignal.namespace"]).to eq("runner")
-              expect(root_span.attributes).to_not have_key("appsignal.action_name")
+              # Reported without an action, so it is named after the marker.
+              expect(root_span.attributes["appsignal.action_name"])
+                .to eq("[unnamed action]")
               event = root_span.events.find { |e| e.name == "exception" }
               expect(event).not_to be_nil
               expect(event.attributes["exception.type"]).to eq("ExampleStandardError")

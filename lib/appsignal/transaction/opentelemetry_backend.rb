@@ -14,6 +14,12 @@ module Appsignal
     class OpenTelemetryBackend < BaseBackend
       TRACER_NAME = "appsignal-ruby"
 
+      # The action name given to a transaction that recorded an error without
+      # ever setting one. Bracketed so it reads as a marker rather than as a
+      # class the application defines, and so it sorts apart from real action
+      # names.
+      UNNAMED_ACTION = "[unnamed action]"
+
       # Guards the process-wide warn-once state, which transactions touch
       # concurrently on threaded servers. A constant so it is created once at
       # load time rather than lazily (which would race).
@@ -125,6 +131,7 @@ module Appsignal
         @start_time = Time.now
         @action_set = false
         @action = nil
+        @error_set = false
         @allocation_start = current_allocation_count
         @root_child_allocation_count = 0
 
@@ -317,6 +324,7 @@ module Appsignal
       # become their own incident. Each cause carries only the part of its
       # backtrace that is not shared (see `trim_shared_tail`).
       def set_error(class_name, message, backtrace, causes, _root_cause_missing)
+        @error_set = true
         span = current_span
         error_lines = Array(backtrace)
 
@@ -392,12 +400,12 @@ module Appsignal
         # `teardown` sets `@completed`, so this guard also makes the body
         # idempotent across a double `complete`, and skips it on `discard`.
         unless @completed
-          # Aggregate metrics are only emitted for a transaction that set an
-          # action to group by. An actionless transaction is never reported in
-          # agent mode, so it must contribute to no aggregate here either.
-          emit_queue_duration_metric if @action_set
+          # Settle the action first, because the allocation count metric below
+          # tags by `@action`, and this is what fills it in for a transaction
+          # the application never named.
+          resolve_missing_action
+          emit_queue_duration_metric if should_report?
           report_allocation_count
-          ignore_subtrace_without_action
         end
         teardown
       end
@@ -450,15 +458,38 @@ module Appsignal
         @span&.finish
       end
 
-      # A transaction that never set an action has nothing to group by, and agent
-      # mode does not report one at all. Collector mode cannot represent "no
-      # action", so the subtrace is flagged for the collector to drop instead,
-      # the same way `discard` does. The flag has to be set before `teardown`
-      # finishes the span, because attributes set on an ended span are dropped.
-      def ignore_subtrace_without_action
+      # Whether this transaction is reported at all. One that set an action is
+      # reported so it can be grouped under it. One that recorded an error is
+      # reported even without an action, because the failure is worth reporting
+      # even when we cannot say what failed. The agent draws the line in the
+      # same place: it drops a transaction only when it has neither.
+      def should_report?
+        @action_set || @error_set
+      end
+
+      # Decides what to do about a transaction that never set an action, which
+      # has nothing to group by. Collector mode cannot represent "no action", so
+      # it needs a name for the ones it reports and a way to drop the rest.
+      #
+      # A reported one is named after the marker. Leaving the action unset would
+      # not report nothing: the collector fills an empty action in from the span
+      # name, which here is the placeholder this backend opened the span with,
+      # and that reads as though it were the application's own action.
+      #
+      # The rest are noise, such as serving assets in development, so their
+      # subtrace is flagged for the collector to drop, the same way `discard`
+      # does.
+      #
+      # Both branches have to run before `teardown` finishes the span, because
+      # attributes set on an ended span are dropped.
+      def resolve_missing_action
         return if @action_set
 
-        @span&.set_attribute("appsignal.ignore_subtrace", true)
+        if should_report?
+          set_action(UNNAMED_ACTION)
+        else
+          @span&.set_attribute("appsignal.ignore_subtrace", true)
+        end
       end
 
       # Emits the queue duration as a distribution metric in both the
@@ -505,7 +536,7 @@ module Appsignal
           count - @root_child_allocation_count
         )
 
-        return unless @action_set && count.positive?
+        return unless should_report? && count.positive?
 
         namespace = display_namespace(@namespace)
         Appsignal::Metrics::OpenTelemetryBackend.increment_counter(

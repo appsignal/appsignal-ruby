@@ -2327,7 +2327,10 @@ describe Appsignal do
           expect(root_span.kind).to eq(:server)
           expect(root_span.attributes["appsignal.namespace"])
             .to eq("web")
-          expect(root_span.attributes).not_to have_key("appsignal.action_name")
+          # `send_error` never sets an action, so the transaction is named after
+          # the marker rather than reported under the span's placeholder name.
+          expect(root_span.attributes["appsignal.action_name"])
+            .to eq("[unnamed action]")
 
           event = root_span.events.find { |e| e.name == "exception" }
           expect(event).not_to be_nil
