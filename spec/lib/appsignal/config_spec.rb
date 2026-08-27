@@ -1355,6 +1355,7 @@ describe Appsignal::Config do
       expect(ENV.fetch("_APPSIGNAL_IGNORE_NAMESPACES", nil)).to eq "admin,private_namespace"
       expect(ENV.fetch("_APPSIGNAL_RUNNING_IN_CONTAINER", nil)).to eq "false"
       expect(ENV.fetch("_APPSIGNAL_ENABLE_HOST_METRICS", nil)).to eq "true"
+      expect(ENV.fetch("_APPSIGNAL_ENABLE_OPENTELEMETRY_HTTP", nil)).to eq "false"
       expect(ENV.fetch("_APPSIGNAL_HOSTNAME", nil)).to eq detected_hostname
       expect(ENV.fetch("_APPSIGNAL_HOST_ROLE", nil)).to eq ""
       expect(ENV.fetch("_APPSIGNAL_PLATFORM", nil)).to eq ""
