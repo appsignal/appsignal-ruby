@@ -49,6 +49,134 @@ describe Appsignal::CLI::Helpers do
     end
   end
 
+  describe ".rails_present?" do
+    it "returns true when the Rails gem can be loaded" do
+      expect(cli).to receive(:require).with("rails")
+
+      expect(cli.send(:rails_present?)).to be(true)
+    end
+
+    it "returns false when the Rails gem cannot be loaded" do
+      expect(cli).to receive(:require).with("rails").and_raise(LoadError)
+
+      expect(cli.send(:rails_present?)).to be(false)
+    end
+  end
+
+  describe ".rails_app_present?" do
+    let(:root_path) { File.join(tmp_dir, SecureRandom.uuid) }
+    before do
+      allow(Appsignal::Utils::RailsHelper).to receive(:environment_config_path)
+        .and_return(File.join(root_path, "config/environment.rb"))
+    end
+    after { FileUtils.rm_rf(root_path) }
+
+    context "when the Rails gem is not present" do
+      before { allow(cli).to receive(:rails_present?).and_return(false) }
+
+      it "returns false" do
+        expect(cli.send(:rails_app_present?)).to be(false)
+      end
+    end
+
+    context "when the Rails gem is present" do
+      before { allow(cli).to receive(:rails_present?).and_return(true) }
+
+      it "returns true when the directory holds a Rails app" do
+        FileUtils.mkdir_p(File.join(root_path, "config"))
+        FileUtils.touch(File.join(root_path, "config/environment.rb"))
+
+        expect(cli.send(:rails_app_present?)).to be(true)
+      end
+
+      it "returns false when the directory holds no Rails app" do
+        expect(cli.send(:rails_app_present?)).to be(false)
+      end
+    end
+  end
+
+  describe ".load_rails_app" do
+    let(:environment_path) { File.join(tmp_dir, "config/environment.rb") }
+    before do
+      allow(Appsignal::Utils::RailsHelper).to receive(:environment_config_path)
+        .and_return(environment_path)
+    end
+
+    it "loads the railtie and the app with the given environment" do
+      expect(cli).to receive(:require)
+        .with("appsignal/integrations/railtie").ordered
+      expect(cli).to receive(:require).with(environment_path).ordered do
+        expect(ENV.fetch("_APPSIGNAL_CONFIG_FILE_ENV", nil)).to eq("staging")
+      end
+
+      cli.send(:load_rails_app, "staging")
+
+      expect(ENV).to_not have_key("_APPSIGNAL_CONFIG_FILE_ENV")
+    end
+
+    it "clears the given environment when the app fails to load" do
+      allow(cli).to receive(:require).and_raise(LoadError)
+
+      expect { cli.send(:load_rails_app, "staging") }.to raise_error(LoadError)
+
+      expect(ENV).to_not have_key("_APPSIGNAL_CONFIG_FILE_ENV")
+    end
+  end
+
+  describe ".require_rails_app_if_present" do
+    context "when there is no Rails app" do
+      before { allow(cli).to receive(:rails_app_present?).and_return(false) }
+
+      it "does not load the app" do
+        expect(cli).to_not receive(:load_rails_app)
+
+        cli.send(:require_rails_app_if_present, "staging")
+      end
+    end
+
+    context "when there is a Rails app" do
+      before { allow(cli).to receive(:rails_app_present?).and_return(true) }
+
+      it "loads the app with the given environment" do
+        expect(cli).to receive(:load_rails_app).with("staging")
+
+        cli.send(:require_rails_app_if_present, "staging")
+      end
+
+      context "when the app fails to load" do
+        let(:error) do
+          ExampleStandardError.new("error message").tap do |raised_error|
+            raised_error.set_backtrace(["line 1", "line 2"])
+          end
+        end
+        before { allow(cli).to receive(:load_rails_app).and_raise(error) }
+
+        it "prints the error" do
+          capture_stdout(out_stream) do
+            cli.send(:require_rails_app_if_present, "staging")
+          end
+
+          expect(output).to include(
+            "ERROR: Error encountered while loading the Rails app\n" \
+              "ExampleStandardError: error message\n" \
+              "line 1\nline 2\n"
+          )
+        end
+
+        it "yields the error" do
+          yielded_error = nil
+          capture_stdout(out_stream) do
+            cli.send(:require_rails_app_if_present, "staging") do |raised_error|
+              yielded_error = raised_error
+            end
+          end
+
+          expect(yielded_error).to be(error)
+        end
+      end
+    end
+  end
+
   describe ".periods" do
     it "prints three periods" do
       capture_stdout(out_stream) { cli.send :periods }
