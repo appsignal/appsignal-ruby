@@ -20,6 +20,8 @@ VERSION_MANAGERS = {
   }
 }.freeze
 
+SPEC_COVERAGE_AUDIT_JOB_NAME = "Spec coverage audit"
+
 def build_job(ruby_version, ruby_gem: nil, runs_on: DEFAULT_RUNS_ON)
   name = "Ruby #{ruby_version}"
   name = "#{name} - #{ruby_gem}" if ruby_gem
@@ -72,6 +74,71 @@ def example_list_upload_step(key)
       "if-no-files-found" => "error",
       "retention-days" => 1
     }
+  }
+end
+
+# Compares the examples defined in the source against the union of every job's
+# example list.
+#
+# It cannot wait for the test jobs through `needs`. Naming all 426 of them puts
+# the workflow over a limit on how many dependency edges GitHub accepts, and
+# GitHub then refuses to create the run without reporting anything: no run
+# appears, the pull request shows no checks, and the runs API stays empty.
+# Grouping the dependencies behind intermediate jobs does not help, because the
+# same number of edges still has to exist. So this job starts with the others
+# and waits by polling the run it belongs to.
+def spec_coverage_audit_job
+  {
+    "name" => SPEC_COVERAGE_AUDIT_JOB_NAME,
+    "needs" => "validation",
+    "runs-on" => DEFAULT_RUNS_ON,
+    # Reports without failing the build. The examples it currently finds are
+    # covered by separate work; removing this line is what makes it enforcing.
+    "continue-on-error" => true,
+    # Long enough for the whole matrix, and short enough that a stuck job does
+    # not hold a runner for the six hours GitHub would otherwise allow.
+    "timeout-minutes" => 180,
+    "permissions" => {
+      "actions" => "read",
+      "contents" => "read"
+    },
+    "steps" => [
+      {
+        "name" => "Check out repository",
+        "uses" => "actions/checkout@v4"
+      },
+      {
+        "name" => "Install Ruby",
+        "uses" => "ruby/setup-ruby@v1",
+        "with" => { "ruby-version" => "3.4" }
+      },
+      {
+        "name" => "Wait for the test jobs to upload their example lists",
+        "env" => { "GH_TOKEN" => "${{ secrets.GITHUB_TOKEN }}" },
+        "run" => <<~SHELL
+          jobs="repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs"
+          filter='.jobs[]
+            | select(.name != "#{SPEC_COVERAGE_AUDIT_JOB_NAME}")
+            | select(.status != "completed")
+            | .name'
+          while :; do
+            pending=$(gh api --paginate "$jobs?per_page=100" --jq "$filter" | wc -l)
+            if [ "$pending" -eq 0 ]; then break; fi
+            echo "Waiting for $pending jobs."
+            sleep 60
+          done
+        SHELL
+      },
+      {
+        "name" => "Download example lists",
+        "uses" => "actions/download-artifact@v4",
+        "with" => { "path" => "artifacts" }
+      },
+      {
+        "name" => "Audit spec coverage",
+        "run" => "ruby script/audit_spec_coverage.rb artifacts"
+      }
+    ]
   }
 end
 
@@ -214,6 +281,8 @@ namespace :build_matrix do
         job["steps"] << example_list_upload_step(macos_key)
         builds[macos_key] = job
       end
+
+      builds["spec_coverage_audit"] = spec_coverage_audit_job
 
       github["jobs"] = github["jobs"].merge(builds)
 
