@@ -57,6 +57,24 @@ def build_job(ruby_version, ruby_gem: nil, runs_on: DEFAULT_RUNS_ON)
   }
 end
 
+# Every test job uploads the example list its run wrote, named after the job so
+# the audit can say which combination is missing one. Uploaded even when the run
+# fails, because the list is written either way and the audit needs to tell a
+# crashed job apart from a combination that legitimately runs nothing.
+def example_list_upload_step(key)
+  {
+    "name" => "Upload example list",
+    "if" => "always()",
+    "uses" => "actions/upload-artifact@v4",
+    "with" => {
+      "name" => key,
+      "path" => "tmp/examples-*.json",
+      "if-no-files-found" => "error",
+      "retention-days" => 1
+    }
+  }
+end
+
 def build_matrix_key(ruby_version, ruby_gem: nil, runs_on: DEFAULT_RUNS_ON)
   base = "ruby_#{ruby_version}"
   base = "#{base}__#{ruby_gem}" if ruby_gem
@@ -150,11 +168,14 @@ namespace :build_matrix do
               "name" => "Run tests without extension",
               "run" => "./script/bundler_wrapper exec rake test:failure"
             }
+            job["steps"] << example_list_upload_step(build_matrix_key(ruby["ruby"]))
             builds[build_matrix_key(ruby["ruby"])] = job
           else
             job["needs"] = build_matrix_key(ruby["ruby"])
             job["steps"] << test_step
-            builds[build_matrix_key(ruby["ruby"], :ruby_gem => ruby_gem["gem"])] = job
+            gem_key = build_matrix_key(ruby["ruby"], :ruby_gem => ruby_gem["gem"])
+            job["steps"] << example_list_upload_step(gem_key)
+            builds[gem_key] = job
           end
 
           # On collector-capable Rubies, additionally run the gem's
@@ -169,8 +190,9 @@ namespace :build_matrix do
             .merge("BUNDLE_GEMFILE" => "gemfiles/#{collector_gem}.gemfile")
           collector_job["needs"] = build_matrix_key(ruby["ruby"])
           collector_job["steps"] << test_step
-          builds[build_matrix_key(ruby["ruby"], :ruby_gem => collector_gem)] =
-            collector_job
+          collector_key = build_matrix_key(ruby["ruby"], :ruby_gem => collector_gem)
+          collector_job["steps"] << example_list_upload_step(collector_key)
+          builds[collector_key] = collector_job
         end
 
         # Add build for macOS
@@ -188,7 +210,9 @@ namespace :build_matrix do
           "name" => "Run tests without extension",
           "run" => "./script/bundler_wrapper exec rake test:failure"
         }
-        builds[build_matrix_key(ruby["ruby"], :runs_on => runs_on)] = job
+        macos_key = build_matrix_key(ruby["ruby"], :runs_on => runs_on)
+        job["steps"] << example_list_upload_step(macos_key)
+        builds[macos_key] = job
       end
 
       github["jobs"] = github["jobs"].merge(builds)
