@@ -9,7 +9,7 @@ module Appsignal
         # enqueuer. No-op outside collector mode.
         transaction = Appsignal::Transaction.create(
           Appsignal::Transaction::BACKGROUND_JOB,
-          :opentelemetry_context => Appsignal::OpenTelemetry.extract_job_context(payload),
+          :opentelemetry_context => ResqueHelpers.extract_context(payload),
           :opentelemetry_scope => ["appsignal-ruby/resque", Appsignal::VERSION],
           :opentelemetry_kind => :consumer,
           :opentelemetry_relationship => :both
@@ -93,13 +93,34 @@ module Appsignal
 
     # @!visibility private
     class ResqueHelpers
+      # The class the Active Job adapter enqueues, with the serialized job data
+      # as its only argument.
+      ACTIVE_JOB_WRAPPER = "ActiveJob::QueueAdapters::ResqueAdapter::JobWrapper"
+
       def self.arguments(payload)
         case payload["class"]
-        when "ActiveJob::QueueAdapters::ResqueAdapter::JobWrapper"
+        when ACTIVE_JOB_WRAPPER
           nil # Set in the ActiveJob integration
         else
           payload["args"]
         end
+      end
+
+      # The serialized Active Job job data inside a Resque job, or nil when this
+      # is not an Active Job job.
+      def self.active_job_data(payload)
+        return unless payload["class"] == ACTIVE_JOB_WRAPPER
+
+        job_data = payload["args"]&.first
+        job_data if job_data.is_a?(Hash)
+      end
+
+      # The trace context to continue: the Active Job layer when this is an
+      # Active Job job, the Resque job itself otherwise. See `Appsignal::OpenTelemetry.extract_active_job_context`
+      # for why that layer wins.
+      def self.extract_context(payload)
+        Appsignal::OpenTelemetry.extract_active_job_context(active_job_data(payload)) ||
+          Appsignal::OpenTelemetry.extract_job_context(payload)
       end
     end
   end

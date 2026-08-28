@@ -124,7 +124,7 @@ if DependencyHelper.delayed_job_present?
         end
       end
 
-      if DependencyHelper.active_job_present?
+      if DependencyHelper.active_job_delayed_job_adapter_present?
         context "when wrapped by Active Job" do
           # Active Job records its own `enqueue.active_job` event and suppresses
           # the backend's, so no duplicate is recorded here.
@@ -253,6 +253,103 @@ if DependencyHelper.delayed_job_present?
           event = root_span.events.find { |e| e.name == "exception" }
           expect(event.attributes["exception.type"]).to eq("ExampleException")
           expect(event.attributes["exception.message"]).to eq("uh oh")
+        end
+      end
+
+      if DependencyHelper.active_job_delayed_job_adapter_present?
+        # A full round trip through real Active Job and the real Delayed Job
+        # adapter. The enqueue writes the trace context onto the job, Active Job
+        # serializes it, Delayed Job stores that in the handler, and the perform
+        # reads it back. No part of the job's shape is written by hand here, so
+        # this fails if any assumption about that shape is wrong.
+        context "with a job enqueued through real Active Job" do
+          before do
+            require "active_job"
+            ActiveJob::Base.queue_adapter = :delayed_job
+            ActiveJob::Base.logger = nil
+
+            stub_const("DelayedRoundTripJob", Class.new(ActiveJob::Base) do
+              def perform(*)
+              end
+            end)
+          end
+
+          # Enqueue inside a transaction and perform outside it, because
+          # performing while the enqueuing transaction is still open would leave
+          # the job sharing it instead of creating its own.
+          def enqueue_then_perform
+            set_current_transaction(http_request_transaction)
+            DelayedRoundTripJob.perform_later("foo")
+            Appsignal::Transaction.complete_current!
+
+            perform_job(Delayed::Backend::Test::Job.all.last)
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+
+            enqueue_then_perform
+
+            producer = event_span_for("enqueue.active_job")
+            consumer = span_exporter.finished_spans.find do |span|
+              span.kind == :consumer
+            end
+            expect(consumer).to_not be_nil
+            expect(consumer.attributes["appsignal.action_name"])
+              .to eq("DelayedRoundTripJob#perform")
+            # The job continues the enqueuer's trace as a child of the producer
+            # span, and links back to it.
+            expect(consumer.hex_trace_id).to eq(producer.hex_trace_id)
+            expect(consumer.parent_span_id).to eq(producer.span_id)
+            expect(consumer.links.map { |link| link.span_context.hex_span_id })
+              .to eq([producer.hex_span_id])
+          end
+        end
+      end
+
+      # Delayed Job has no carrier of its own, so an Active Job job is the only
+      # kind whose trace can be continued here. The adapter wraps the serialized
+      # job data in an object that exposes it as `job_data`.
+      context "with an Active Job job carrying incoming trace context" do
+        let(:trace_id_hex) { "0af7651916cd43dd8448eb211c80319c" }
+        let(:span_id_hex) { "b7ad6b7169203331" }
+        let(:traceparent) { "00-#{trace_id_hex}-#{span_id_hex}-01" }
+        let(:job_data) do
+          {
+            "job_class" => "DelayedActiveJob",
+            "arguments" => [],
+            "__otel_headers" => [["traceparent", traceparent]]
+          }
+        end
+        let(:job) do
+          wrapper = Struct.new(:job_data) do
+            def perform
+            end
+          end
+          Delayed::Job.enqueue(wrapper.new(job_data))
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent
+
+          keep_transactions { perform_job(job) }
+
+          transaction = last_transaction
+          expect(transaction).to be_completed
+          expect(transaction).to have_action("DelayedActiveJob#perform")
+          # The trace header doesn't leak into the transaction as a tag.
+          expect(transaction).to_not include_tags("traceparent" => traceparent)
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+
+          perform_job(job)
+
+          expect(root_span.kind).to eq(:consumer)
+          expect(root_span.hex_trace_id).to eq(trace_id_hex)
+          expect(root_span.parent_span_id.unpack1("H*")).to eq(span_id_hex)
+          expect(root_span.links.size).to eq(1)
         end
       end
 
@@ -396,7 +493,7 @@ if DependencyHelper.delayed_job_present?
         end
       end
 
-      if DependencyHelper.active_job_present?
+      if DependencyHelper.active_job_delayed_job_adapter_present?
         context "when wrapped by Active Job" do
           before do
             require "active_job"

@@ -3,4 +3,8 @@ source 'https://rubygems.org'
 gem 'resque', "~> 3.0"
 gem 'sinatra'
 
+# The Active Job adapter for Resque, so the Active Job paths through this
+# integration are covered.
+gem 'activejob'
+
 gemspec :path => '../'

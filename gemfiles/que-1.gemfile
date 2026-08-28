@@ -3,4 +3,8 @@ source "https://rubygems.org"
 gem "ostruct"
 gem "que", "~> 1.0"
 
+# The Active Job adapter for Que, so the Active Job paths through this
+# integration are covered.
+gem "activejob"
+
 gemspec :path => "../"

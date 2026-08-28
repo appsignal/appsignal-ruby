@@ -93,6 +93,36 @@ module Appsignal
         Array(tags).include?(BULK_TAG)
       end
 
+      # The class the Active Job adapter enqueues, with the serialized job data
+      # as its only argument. Que records the name in the job's `job_class`, and
+      # the name is fixed, because it is stored in every job record the adapter
+      # has ever written.
+      ACTIVE_JOB_WRAPPER = "ActiveJob::QueueAdapters::QueAdapter::JobWrapper"
+
+      # The trace context to continue: the Active Job layer when this is an
+      # Active Job job, the job's own tags otherwise. See `Appsignal::OpenTelemetry.extract_active_job_context`
+      # for why that layer wins.
+      # Que's tags are a carrier with a hard limit: five per job, shared with
+      # whatever the user puts there.
+      def extract_context(attrs, tags)
+        Appsignal::OpenTelemetry.extract_active_job_context(active_job_data(attrs)) ||
+          extract(tags)
+      end
+
+      # The serialized Active Job job data inside a Que job, or nil when this is
+      # not an Active Job job.
+      #
+      # Que reads a job's arguments out of JSONB with symbol keys and only turns
+      # them back into strings on the way into Active Job, so they are
+      # stringified here too. Only the outer keys need it: the headers below them
+      # are an array of pairs of strings, which Que leaves alone.
+      def active_job_data(attrs)
+        return unless attrs[:job_class] == ACTIVE_JOB_WRAPPER
+
+        job_data = Array(attrs[:args]).first
+        job_data.transform_keys(&:to_s) if job_data.is_a?(Hash)
+      end
+
       def within_limits?(tags)
         tags.length <= MAX_TAGS_COUNT && tags.all? { |tag| tag.length <= MAX_TAG_LENGTH }
       end
@@ -118,7 +148,7 @@ module Appsignal
         transaction =
           Appsignal::Transaction.create(
             Appsignal::Transaction::BACKGROUND_JOB,
-            :opentelemetry_context => QueTraceContext.extract(tags),
+            :opentelemetry_context => QueTraceContext.extract_context(local_attrs, tags),
             :opentelemetry_scope => ["appsignal-ruby/que", Appsignal::VERSION],
             :opentelemetry_kind => :consumer,
             :opentelemetry_relationship => relationship

@@ -318,6 +318,84 @@ if DependencyHelper.opentelemetry_present?
       end
     end
 
+    describe ".extract_active_job_context" do
+      let(:traceparent) do
+        "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+      end
+      let(:job_data) { { "__otel_headers" => { "traceparent" => traceparent } } }
+
+      it "returns nil when the SDK has not booted" do
+        expect(described_class.started?).to be(false)
+        expect(described_class.extract_active_job_context(job_data)).to be_nil
+      end
+
+      context "when the SDK has booted", :collector_mode do
+        before { start_collector_agent }
+
+        def extracted_trace_id(job_data)
+          context = described_class.extract_active_job_context(job_data)
+          return if context.nil?
+
+          ::OpenTelemetry::Trace.current_span(context).context.hex_trace_id
+        end
+
+        it "reads the context out of __otel_headers" do
+          expect(extracted_trace_id(job_data))
+            .to eq("0af7651916cd43dd8448eb211c80319c")
+        end
+
+        # Active Job puts the headers through its argument serializer, which
+        # turns the hash into an array of pairs. That is the shape a job that
+        # travelled over the wire arrives with.
+        it "reads the serialized array-of-pairs shape" do
+          serialized = { "__otel_headers" => [["traceparent", traceparent]] }
+
+          expect(extracted_trace_id(serialized))
+            .to eq("0af7651916cd43dd8448eb211c80319c")
+        end
+
+        # A nil return is how a caller learns to fall back to its own native
+        # carrier, so each of these has to give nil rather than a context with
+        # no usable span in it.
+        it "returns nil for job data with no headers" do
+          expect(described_class.extract_active_job_context({})).to be_nil
+        end
+
+        it "returns nil for headers that carry no trace context" do
+          expect(
+            described_class.extract_active_job_context("__otel_headers" => {})
+          ).to be_nil
+        end
+
+        it "returns nil for an invalid traceparent" do
+          expect(
+            described_class.extract_active_job_context(
+              "__otel_headers" => { "traceparent" => "nonsense" }
+            )
+          ).to be_nil
+        end
+
+        it "returns nil for a malformed headers value" do
+          expect(
+            described_class.extract_active_job_context("__otel_headers" => ["oops"])
+          ).to be_nil
+        end
+
+        it "returns nil for anything that is not job data" do
+          expect(described_class.extract_active_job_context(nil)).to be_nil
+          expect(described_class.extract_active_job_context("string")).to be_nil
+        end
+
+        # Same reason as the job and Rack carriers: a job with no context of its
+        # own must not pick up whatever span happens to be on the fiber.
+        it "does not inherit the ambient span" do
+          with_leaked_ambient_context do
+            expect(described_class.extract_active_job_context({})).to be_nil
+          end
+        end
+      end
+    end
+
     describe ".if_started" do
       it "does not run the block and returns nil when the SDK has not booted" do
         expect(described_class.started?).to be(false)

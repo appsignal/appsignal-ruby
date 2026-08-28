@@ -178,7 +178,7 @@ module Appsignal
         # enqueuer. No-op outside collector mode.
         transaction = Appsignal::Transaction.create(
           Appsignal::Transaction::BACKGROUND_JOB,
-          :opentelemetry_context => Appsignal::OpenTelemetry.extract_job_context(item),
+          :opentelemetry_context => extract_context(item),
           :opentelemetry_scope => ["appsignal-ruby/sidekiq", Appsignal::VERSION],
           :opentelemetry_kind => :consumer,
           :opentelemetry_relationship => :both
@@ -245,6 +245,25 @@ module Appsignal
       end
 
       private
+
+      # The trace context to continue: the Active Job layer when this is an
+      # Active Job job, the Sidekiq job itself otherwise. See `Appsignal::OpenTelemetry.extract_active_job_context`
+      # for why that layer wins.
+      def extract_context(item)
+        Appsignal::OpenTelemetry.extract_active_job_context(active_job_data(item)) ||
+          Appsignal::OpenTelemetry.extract_job_context(item)
+      end
+
+      # The serialized Active Job job data inside a Sidekiq job, or nil when this
+      # is not an Active Job job. Both Active Job adapters for Sidekiq, the one in
+      # Rails and the one in the Sidekiq gem, enqueue a wrapper class with the
+      # job data as its only argument and name the real job class in `wrapped`.
+      def active_job_data(item)
+        return unless item["wrapped"]
+
+        job_data = item["args"]&.first
+        job_data if job_data.is_a?(Hash)
+      end
 
       def increment_counter(key, value, tags = {})
         Appsignal.increment_counter "sidekiq_#{key}", value, tags

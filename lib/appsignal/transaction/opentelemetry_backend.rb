@@ -633,7 +633,7 @@ module Appsignal
       # to a plain root span, since there is nothing to parent or link to.
       def start_transaction_span(namespace, kind, relationship, opentelemetry_context)
         name = placeholder_span_name(namespace)
-        remote = remote_span_context(opentelemetry_context)
+        remote = Appsignal::OpenTelemetry.remote_span_context(opentelemetry_context)
         tracer = tracer_for(@scope)
 
         # With no incoming context (or an invalid remote span) there is nothing
@@ -680,16 +680,6 @@ module Appsignal
       def option_caller_location
         frames = caller
         frames.find { |frame| !frame.include?("/lib/appsignal/") } || frames.first
-      end
-
-      # The remote parent's SpanContext from an incoming OTel context, or nil
-      # when there is no context or the remote span is invalid -- in which case
-      # callers fall back to a plain root span.
-      def remote_span_context(opentelemetry_context)
-        return unless opentelemetry_context
-
-        context = ::OpenTelemetry::Trace.current_span(opentelemetry_context).context
-        context if context.valid?
       end
 
       def display_namespace(namespace)

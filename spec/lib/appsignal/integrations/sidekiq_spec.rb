@@ -666,6 +666,85 @@ if DependencyHelper.sidekiq_present?
           expect_parented_and_linked_to_remote
         end
       end
+
+      # The shape an Active Job job really arrives in. Both Active Job adapters
+      # for Sidekiq enqueue a wrapper class with the serialized job data as its
+      # only argument, so the headers are nested one level deeper than the
+      # context above, inside `args`.
+      context "with an Active Job job carrying the context in its job data" do
+        let(:item) do
+          super().merge(
+            "wrapped" => "ActiveJobTestJob",
+            "args" => [
+              {
+                "job_class" => "ActiveJobTestJob",
+                "arguments" => [],
+                "__otel_headers" => [["traceparent", traceparent]]
+              }
+            ]
+          )
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform_sidekiq_job
+
+          expect(transaction.to_h["metadata"].keys).to_not include("__otel_headers")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform_sidekiq_job
+
+          expect_parented_and_linked_to_remote
+        end
+      end
+
+      # A job enqueued by a service that instruments Sidekiq but not Active Job
+      # has no Active Job carrier to read, so the Sidekiq job's own header is
+      # what the trace has to be continued from.
+      context "with an Active Job job carrying only a Sidekiq-level context" do
+        let(:item) do
+          super().merge(
+            "traceparent" => traceparent,
+            "wrapped" => "ActiveJobTestJob",
+            "args" => [{ "job_class" => "ActiveJobTestJob", "arguments" => [] }]
+          )
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform_sidekiq_job
+
+          expect_parented_and_linked_to_remote
+        end
+      end
+
+      # Both carriers present is what a job enqueued by an older version of this
+      # gem looks like, and what a rolling deploy therefore produces. The two
+      # hold the same context, so either one continues the same trace.
+      context "with an Active Job job carrying both contexts" do
+        let(:item) do
+          super().merge(
+            "traceparent" => traceparent,
+            "wrapped" => "ActiveJobTestJob",
+            "args" => [
+              {
+                "job_class" => "ActiveJobTestJob",
+                "arguments" => [],
+                "__otel_headers" => [["traceparent", traceparent]]
+              }
+            ]
+          )
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform_sidekiq_job
+
+          expect_parented_and_linked_to_remote
+        end
+      end
     end
 
     context "with parameter filtering" do
@@ -1189,6 +1268,60 @@ if DependencyHelper.sidekiq_present?
         # We test somewhere else if the middleware is installed properly.
         Sidekiq::Testing.server_middleware do |chain|
           chain.add Appsignal::Integrations::SidekiqMiddleware
+        end
+      end
+
+      # A full round trip through real Active Job and the real Sidekiq adapter.
+      # The enqueue writes the trace context onto the job, Active Job serializes
+      # it into the job data, Sidekiq stores that as the wrapper's argument, and
+      # the perform reads it back. No part of the job's shape is written by hand
+      # here, so this fails if any assumption about that shape is wrong.
+      describe "carrying trace context from the enqueue to the perform" do
+        # Enqueue inside a transaction and perform outside it, because draining
+        # while the enqueuing transaction is still open would leave the job
+        # sharing it instead of creating its own. Yields the stored Sidekiq job
+        # between the enqueue and the perform.
+        def enqueue_then_perform
+          Sidekiq::Testing.fake! do
+            with_rails_error_reporter do
+              set_current_transaction(http_request_transaction)
+              ActiveJobSidekiqTestJob.perform_later("foo")
+              Appsignal::Transaction.complete_current!
+
+              yield Sidekiq::Queues["default"].first if block_given?
+
+              Timecop.freeze(time) { Sidekiq::Worker.drain_all }
+            end
+          end
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+
+          stored = nil
+          enqueue_then_perform { |item| stored = item }
+
+          producer = event_span_for("enqueue.active_job")
+
+          # The shape the integration reads, as Active Job and the Sidekiq
+          # adapter really produce it: the real job class in `wrapped`, and the
+          # serialized job data as the wrapper's only argument, with the trace
+          # context inside it. The examples that construct this shape by hand to
+          # isolate one carrier are only valid as long as this holds.
+          expect(stored["wrapped"]).to eq("ActiveJobSidekiqTestJob")
+          expect(stored["args"].size).to eq(1)
+          expect(stored["args"].first["__otel_headers"]).to eq(
+            [["traceparent", "00-#{producer.hex_trace_id}-#{producer.hex_span_id}-01"]]
+          )
+
+          consumer = span_exporter.finished_spans.find { |span| span.kind == :consumer }
+          expect(consumer).to_not be_nil
+          # The job continues the enqueuer's trace as a child of the producer
+          # span, and links back to it.
+          expect(consumer.hex_trace_id).to eq(producer.hex_trace_id)
+          expect(consumer.parent_span_id).to eq(producer.span_id)
+          expect(consumer.links.map { |link| link.span_context.hex_span_id })
+            .to eq([producer.hex_span_id])
         end
       end
 

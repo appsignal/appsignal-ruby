@@ -3,4 +3,8 @@ source "https://rubygems.org"
 gem "delayed_job"
 gem "ostruct"
 
+# The Active Job adapter for Delayed Job, so the Active Job paths through this
+# integration are covered.
+gem "activejob"
+
 gemspec :path => "../"
