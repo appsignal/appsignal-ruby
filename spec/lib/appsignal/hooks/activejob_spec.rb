@@ -41,6 +41,70 @@ if DependencyHelper.active_job_present? && DependencyHelper.rails_present?
       end
     end
 
+    describe "claiming the enqueue_all.active_job event" do
+      # The event formatter registry is shared by the whole test suite, so put
+      # back whatever these examples change. Loading the hook file below also
+      # re-registers it in the hooks registry, so put that back too.
+      around do |example|
+        formatters = Appsignal::EventFormatter.formatters.dup
+        formatter_classes = Appsignal::EventFormatter.formatter_classes.dup
+        hooks = Appsignal::Hooks.hooks.dup
+        example.run
+      ensure
+        Appsignal::EventFormatter.formatters.replace(formatters)
+        Appsignal::EventFormatter.formatter_classes.replace(formatter_classes)
+        Appsignal::Hooks.hooks.replace(hooks)
+      end
+
+      # The hook file claims the event as soon as it is required, before
+      # anything knows whether the batch can be recorded. On an Active Job
+      # older than 7.1 the install that ran when the suite booted has already
+      # given the claim back, so force the event to unclaimed and load the file
+      # again. That proves the claim comes from loading the file, on every
+      # version.
+      it "claims the event when the gem loads" do
+        Appsignal::EventFormatter.unregister(
+          "enqueue_all.active_job",
+          Appsignal::EventFormatter::RecordedElsewhere
+        )
+        expect(Appsignal::EventFormatter.record?("enqueue_all.active_job"))
+          .to be(true)
+
+        load "appsignal/hooks/active_job.rb"
+
+        expect(Appsignal::EventFormatter.record?("enqueue_all.active_job"))
+          .to be(false)
+      end
+
+      # Active Job records a bulk enqueue through a method that only exists from
+      # version 7.1 on, and this integration wraps that method to record the
+      # batch itself. Without it there is nothing to record the batch with, so
+      # Active Job's own notification has to be left alone.
+      it "gives the event back when the batch cannot be recorded" do
+        start_agent
+        # `install` does its work inside an `ActiveSupport.on_load(:active_job)`
+        # block, which only runs once `ActiveJob::Base` is loaded. Load it here
+        # so this example does not rely on an earlier one having loaded it.
+        _base = ::ActiveJob::Base
+
+        Appsignal::EventFormatter.register(
+          "enqueue_all.active_job",
+          Appsignal::EventFormatter::RecordedElsewhere
+        )
+        allow(::ActiveJob.singleton_class)
+          .to receive(:private_method_defined?).and_call_original
+        allow(::ActiveJob.singleton_class)
+          .to receive(:private_method_defined?)
+          .with(:instrument_enqueue_all)
+          .and_return(false)
+
+        described_class.new.install
+
+        expect(Appsignal::EventFormatter.record?("enqueue_all.active_job"))
+          .to be(true)
+      end
+    end
+
     describe "claiming the enqueue.active_job event" do
       # The event formatter registry is shared by the whole test suite, so
       # put back whatever this example changes. Reloading the hook file
@@ -751,6 +815,43 @@ if DependencyHelper.active_job_present? && DependencyHelper.rails_present?
         end
       end
 
+      # This is the standalone path, for a queue adapter with no AppSignal
+      # integration of its own to start the transaction.
+      describe "linking a bulk-enqueued job back to the enqueuer" do
+        # A job from a bulk enqueue carries a marker alongside its trace
+        # context, because every job in the batch shares one producer span.
+        def perform_with_batch_context
+          job_data = ActiveJobTestJob.new.serialize.merge(
+            "__otel_headers" => [
+              ["traceparent", traceparent],
+              [Appsignal::OpenTelemetry::ACTIVE_JOB_BATCH_HEADER, "1"]
+            ]
+          )
+          perform_active_job { ActiveJob::Base.execute(job_data) }
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform_with_batch_context
+
+          # Every job in the batch shares the one producer span, so the job only
+          # links back to it. It gets its own trace instead of hanging the whole
+          # batch off that span.
+          expect(root_span.kind).to eq(:consumer)
+          expect(root_span.parent_span_id).to eq(::OpenTelemetry::Trace::INVALID_SPAN_ID)
+          expect(root_span.hex_trace_id).to_not eq(trace_id_hex)
+          expect(root_span.links.size).to eq(1)
+          expect(root_span.links.first.span_context.hex_trace_id).to eq(trace_id_hex)
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform_with_batch_context
+
+          expect(last_transaction.to_h["metadata"].keys).to_not include("__otel_headers")
+        end
+      end
+
       context "when enqueue instrumentation is disabled" do
         let(:options) { { :enable_job_enqueue_instrumentation => false } }
         before { ActiveJob::Base.queue_adapter = :test }
@@ -796,6 +897,271 @@ if DependencyHelper.active_job_present? && DependencyHelper.rails_present?
           expect(event_spans_for("enqueue.active_job")).to be_empty
           expect(job.serialize).to_not have_key("__otel_headers")
           expect(ActiveJob::Base.queue_adapter.enqueued_jobs.count).to eq(1)
+        end
+      end
+    end
+
+    if DependencyHelper.rails7_1_present?
+      context "when enqueuing jobs in bulk" do
+        before { ActiveJob::Base.queue_adapter = :test }
+
+        let(:jobs) { Array.new(3) { ActiveJobTestJob.new } }
+
+        # Returns the enqueuing transaction so the example can read its events.
+        def bulk_enqueue_within_transaction
+          transaction = http_request_transaction
+          set_current_transaction(transaction)
+          ActiveJob.perform_all_later(jobs)
+          transaction
+        end
+
+        def bulk_enqueue_events(transaction)
+          transaction.to_h["events"]
+            .select { |event| event["name"] == "enqueue_all.active_job" }
+        end
+
+        describe "records the batch as one event" do
+          it "in agent mode", :agent_mode do
+            start_agent(**start_agent_args)
+            transaction = bulk_enqueue_within_transaction
+
+            # Exactly one event for the batch: ours. Active Job's native
+            # `enqueue_all.active_job` notification is claimed so it isn't
+            # recorded a second time.
+            events = bulk_enqueue_events(transaction)
+            expect(events.size).to eq(1)
+            expect(events.first["title"]).to eq("bulk enqueue ActiveJobTestJob jobs")
+            # And no per-job enqueue event alongside it.
+            event_names = transaction.to_h["events"].map { |event| event["name"] }
+            expect(event_names).to_not include("enqueue.active_job")
+            expect(ActiveJob::Base.queue_adapter.enqueued_jobs.count).to eq(3)
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            bulk_enqueue_within_transaction
+            Appsignal::Transaction.complete_current!
+
+            producer = event_span_for("enqueue_all.active_job")
+            expect(producer.name).to eq(
+              "enqueue_all.active_job (bulk enqueue ActiveJobTestJob jobs)"
+            )
+            expect(producer.kind).to eq(:producer)
+            expect(scope_of(producer))
+              .to eq(["appsignal-ruby/active_job", Appsignal::VERSION])
+            expect(producer.attributes["messaging.system"]).to eq("active_job")
+            expect(producer.attributes["messaging.operation.name"]).to eq("enqueue")
+            expect(producer.attributes["messaging.operation.type"]).to eq("send")
+            expect(producer.attributes["messaging.destination.name"]).to eq("default")
+            # The batch count is what marks this span as covering more than one
+            # message. A single enqueue must not carry it.
+            expect(producer.attributes["messaging.batch.message_count"]).to eq(3)
+            expect(producer.parent_span_id).to eq(root_span.span_id)
+            expect(event_spans_for("enqueue.active_job")).to be_empty
+          end
+        end
+
+        describe "writes the producer span's context onto every job" do
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            bulk_enqueue_within_transaction
+            Appsignal::Transaction.complete_current!
+
+            producer = event_span_for("enqueue_all.active_job")
+            expected_traceparent =
+              "00-#{producer.hex_trace_id}-#{producer.hex_span_id}-01"
+
+            enqueued = ActiveJob::Base.queue_adapter.enqueued_jobs
+            expect(enqueued.size).to eq(3)
+            # Every job in the batch carries the one producer span's context,
+            # plus the marker that says it came from a batch. That marker is what
+            # tells the performing job to link back rather than parent under a
+            # span it shares with every other job in the batch.
+            enqueued.each do |job|
+              expect(job["__otel_headers"]).to eq(
+                [
+                  ["traceparent", expected_traceparent],
+                  [Appsignal::OpenTelemetry::ACTIVE_JOB_BATCH_HEADER, "1"]
+                ]
+              )
+            end
+          end
+
+          it "writes nothing onto the jobs in agent mode", :agent_mode do
+            start_agent(**start_agent_args)
+            bulk_enqueue_within_transaction
+
+            ActiveJob::Base.queue_adapter.enqueued_jobs.each do |job|
+              expect(job).to_not have_key("__otel_headers")
+            end
+          end
+        end
+
+        context "when enqueue instrumentation is disabled for the batch" do
+          let(:options) { { :enable_job_enqueue_instrumentation => false } }
+
+          # Without an enqueue event there is no producer span, so the context
+          # that would be written is whatever span is current, such as the
+          # surrounding web request. The jobs would then link back to a span that
+          # is not a producer, so nothing is written at all.
+          it "writes no trace context onto the jobs", :collector_mode do
+            start_collector_agent
+            bulk_enqueue_within_transaction
+            Appsignal::Transaction.complete_current!
+
+            expect(event_spans_for("enqueue_all.active_job")).to be_empty
+            ActiveJob::Base.queue_adapter.enqueued_jobs.each do |job|
+              expect(job).to_not have_key("__otel_headers")
+            end
+          end
+        end
+
+        # Active Job groups the jobs it enqueues by queue adapter rather than by
+        # class or by queue, so one batch can cover several of each, and then
+        # there is no one class to name it after and no one queue to report.
+        context "with jobs of more than one class and queue" do
+          let(:jobs) { [ActiveJobTestJob.new, ActiveJobCustomQueueTestJob.new] }
+
+          describe "records the batch without naming a class or a queue" do
+            it "in agent mode", :agent_mode do
+              start_agent(**start_agent_args)
+              transaction = bulk_enqueue_within_transaction
+
+              events = bulk_enqueue_events(transaction)
+              expect(events.size).to eq(1)
+              expect(events.first["title"]).to eq("bulk enqueue jobs")
+            end
+
+            it "in collector mode", :collector_mode do
+              start_collector_agent
+              bulk_enqueue_within_transaction
+              Appsignal::Transaction.complete_current!
+
+              producer = event_span_for("enqueue_all.active_job")
+              expect(producer.name).to eq("enqueue_all.active_job (bulk enqueue jobs)")
+              expect(producer.attributes).to_not have_key("messaging.destination.name")
+              expect(producer.attributes["messaging.batch.message_count"]).to eq(2)
+            end
+          end
+        end
+
+        describe "suppresses nested adapter enqueue events while enqueuing" do
+          # The window in which a nested adapter integration (Sidekiq, Resque,
+          # ...) would record an event per job in the batch, which Active Job
+          # suppresses so the batch is recorded once.
+          def suppressed_during_enqueue
+            captured = []
+            adapter = ActiveJob::Base.queue_adapter
+            allow(adapter).to receive(:enqueue).and_wrap_original do |method, *args|
+              captured << Appsignal::Transaction.current.job_enqueue_events_suppressed?
+              method.call(*args)
+            end
+            bulk_enqueue_within_transaction
+            captured
+          end
+
+          it "in agent mode", :agent_mode do
+            start_agent(**start_agent_args)
+
+            expect(suppressed_during_enqueue).to eq([true, true, true])
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+
+            expect(suppressed_during_enqueue).to eq([true, true, true])
+          end
+        end
+
+        # The `:test` adapter has no `enqueue_all`, so a bulk enqueue through it
+        # falls back to enqueuing each job on its own. Sidekiq's adapter does
+        # have one, and that is the path the duplicated events were reported on,
+        # so it needs covering too.
+        context "with an adapter that enqueues the batch itself" do
+          before do
+            stub_const(
+              "ActiveJobBulkTestAdapter",
+              Class.new(ActiveJob::QueueAdapters::TestAdapter) do
+                attr_reader :enqueue_all_calls, :suppressed_during_enqueue_all
+
+                def enqueue_all(jobs)
+                  @enqueue_all_calls = (@enqueue_all_calls || 0) + 1
+                  @suppressed_during_enqueue_all =
+                    Appsignal::Transaction.current.job_enqueue_events_suppressed?
+                  jobs.each { |job| enqueue(job) }
+                  jobs.size
+                end
+              end
+            )
+            ActiveJob::Base.queue_adapter = ActiveJobBulkTestAdapter.new
+          end
+
+          describe "records one event and suppresses the adapter's own" do
+            it "in agent mode", :agent_mode do
+              start_agent(**start_agent_args)
+              transaction = bulk_enqueue_within_transaction
+
+              adapter = ActiveJob::Base.queue_adapter
+              expect(adapter.enqueue_all_calls).to eq(1)
+              expect(adapter.suppressed_during_enqueue_all).to be(true)
+              expect(bulk_enqueue_events(transaction).size).to eq(1)
+            end
+
+            it "in collector mode", :collector_mode do
+              start_collector_agent
+              bulk_enqueue_within_transaction
+              Appsignal::Transaction.complete_current!
+
+              adapter = ActiveJob::Base.queue_adapter
+              expect(adapter.enqueue_all_calls).to eq(1)
+              expect(adapter.suppressed_during_enqueue_all).to be(true)
+              expect(event_spans_for("enqueue_all.active_job").size).to eq(1)
+            end
+          end
+        end
+
+        describe "is a transparent pass-through without an active transaction" do
+          it "in agent mode", :agent_mode do
+            start_agent(**start_agent_args)
+
+            expect do
+              ActiveJob.perform_all_later(jobs)
+            end.to_not(change { created_transactions.count })
+
+            expect(ActiveJob::Base.queue_adapter.enqueued_jobs.count).to eq(3)
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+
+            ActiveJob.perform_all_later(jobs)
+
+            expect(event_spans_for("enqueue_all.active_job")).to be_empty
+            expect(ActiveJob::Base.queue_adapter.enqueued_jobs.count).to eq(3)
+          end
+        end
+
+        context "when enqueue instrumentation is disabled" do
+          let(:options) { { :enable_job_enqueue_instrumentation => false } }
+
+          describe "records no event but still enqueues the jobs" do
+            it "in agent mode", :agent_mode do
+              start_agent(**start_agent_args)
+              transaction = bulk_enqueue_within_transaction
+
+              expect(bulk_enqueue_events(transaction)).to be_empty
+              expect(ActiveJob::Base.queue_adapter.enqueued_jobs.count).to eq(3)
+            end
+
+            it "in collector mode", :collector_mode do
+              start_collector_agent
+              bulk_enqueue_within_transaction
+              Appsignal::Transaction.complete_current!
+
+              expect(event_spans_for("enqueue_all.active_job")).to be_empty
+              expect(ActiveJob::Base.queue_adapter.enqueued_jobs.count).to eq(3)
+            end
+          end
         end
       end
     end

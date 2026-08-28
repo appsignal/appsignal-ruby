@@ -396,6 +396,49 @@ if DependencyHelper.opentelemetry_present?
       end
     end
 
+    describe ".mark_active_job_batch and .active_job_batch?" do
+      let(:header) { Appsignal::OpenTelemetry::ACTIVE_JOB_BATCH_HEADER }
+
+      it "marks a carrier that something was injected into" do
+        headers = { "traceparent" => "00-x-y-01" }
+        described_class.mark_active_job_batch(headers)
+
+        expect(headers[header]).to eq("1")
+      end
+
+      # No context means no producer span to link back to, so the marker would
+      # have nothing to say.
+      it "leaves an empty carrier alone" do
+        headers = {}
+        described_class.mark_active_job_batch(headers)
+
+        expect(headers).to be_empty
+      end
+
+      it "reads the marker back off job data" do
+        expect(
+          described_class.active_job_batch?("__otel_headers" => { header => "1" })
+        ).to be(true)
+      end
+
+      # The serialized array-of-pairs shape a job arrives in over the wire.
+      it "reads the marker off the serialized shape" do
+        expect(
+          described_class.active_job_batch?("__otel_headers" => [[header, "1"]])
+        ).to be(true)
+      end
+
+      it "is false for a job that was not part of a batch" do
+        expect(
+          described_class.active_job_batch?(
+            "__otel_headers" => [["traceparent", "00-x-y-01"]]
+          )
+        ).to be(false)
+        expect(described_class.active_job_batch?({})).to be(false)
+        expect(described_class.active_job_batch?(nil)).to be(false)
+      end
+    end
+
     describe ".if_started" do
       it "does not run the block and returns nil when the SDK has not booted" do
         expect(described_class.started?).to be(false)

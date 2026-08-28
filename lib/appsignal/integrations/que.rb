@@ -104,9 +104,8 @@ module Appsignal
       # for why that layer wins.
       # Que's tags are a carrier with a hard limit: five per job, shared with
       # whatever the user puts there.
-      def extract_context(attrs, tags)
-        Appsignal::OpenTelemetry.extract_active_job_context(active_job_data(attrs)) ||
-          extract(tags)
+      def extract_context(job_data, tags)
+        Appsignal::OpenTelemetry.extract_active_job_context(job_data) || extract(tags)
       end
 
       # The serialized Active Job job data inside a Que job, or nil when this is
@@ -134,21 +133,24 @@ module Appsignal
         local_attrs = respond_to?(:que_attrs) ? que_attrs : attrs
         tags = local_attrs.dig(:data, :tags)
 
-        # A job enqueued on its own is the only job its producer span produced, so
-        # it can be a child of that span as well as link to it. Every job in a
-        # batch shares one producer span, and a span can only have one parent, so
-        # parenting a batch would hang the whole batch off that single span. Only
-        # link those, which is what the OpenTelemetry messaging conventions ask
-        # for: they use links as the default, and allow the producer to be the
-        # parent only when it produced a single message.
-        relationship = QueTraceContext.bulk?(tags) ? :link : :both
+        job_data = QueTraceContext.active_job_data(local_attrs)
+        # A Que batch says so with a tag, and an Active Job batch says so in the
+        # job data, so both have to be asked. See
+        # `Appsignal::OpenTelemetry.active_job_relationship` for why a batch
+        # links back rather than parenting under the span that enqueued it.
+        relationship =
+          if QueTraceContext.bulk?(tags)
+            :link
+          else
+            Appsignal::OpenTelemetry.active_job_relationship(job_data)
+          end
 
         # Read the incoming trace context off the job's tags so the transaction
         # links back to the enqueuer. No-op outside collector mode.
         transaction =
           Appsignal::Transaction.create(
             Appsignal::Transaction::BACKGROUND_JOB,
-            :opentelemetry_context => QueTraceContext.extract_context(local_attrs, tags),
+            :opentelemetry_context => QueTraceContext.extract_context(job_data, tags),
             :opentelemetry_scope => ["appsignal-ruby/que", Appsignal::VERSION],
             :opentelemetry_kind => :consumer,
             :opentelemetry_relationship => relationship

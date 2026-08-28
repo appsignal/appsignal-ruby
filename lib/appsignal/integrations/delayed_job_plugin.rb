@@ -75,17 +75,13 @@ module Appsignal
         job.name
       end
 
-      # The trace context to continue. Delayed Job has no carrier of its own,
-      # because a job's handler is a YAML dump of the object to run with nowhere
-      # to put a header, so an Active Job job is the only kind that arrives with
-      # one.
-      def self.extract_context(job)
-        Appsignal::OpenTelemetry.extract_active_job_context(active_job_data(job))
-      end
-
       # The serialized Active Job job data inside a Delayed Job job, or nil when
       # this is not an Active Job job. The Active Job adapter wraps the job data
       # in an object that exposes it as `job_data`.
+      #
+      # Delayed Job has no carrier of its own, because a job's handler is a YAML
+      # dump of the object to run with nowhere to put a header, so an Active Job
+      # job is the only kind that arrives with a trace context at all.
       #
       # Reading it means deserializing the handler, which raises for a job whose
       # class is gone, so a job that cannot be read gets no context. Delayed Job
@@ -100,13 +96,16 @@ module Appsignal
       end
 
       def self.invoke_with_instrumentation(job, block)
+        job_data = active_job_data(job)
         transaction =
           Appsignal::Transaction.create(
             Appsignal::Transaction::BACKGROUND_JOB,
-            :opentelemetry_context => extract_context(job),
+            :opentelemetry_context =>
+              Appsignal::OpenTelemetry.extract_active_job_context(job_data),
             :opentelemetry_scope => ["appsignal-ruby/delayed_job", Appsignal::VERSION],
             :opentelemetry_kind => :consumer,
-            :opentelemetry_relationship => :both
+            :opentelemetry_relationship =>
+              Appsignal::OpenTelemetry.active_job_relationship(job_data)
           )
         transaction.add_opentelemetry_attributes(
           Appsignal::OpenTelemetry::Messaging

@@ -176,12 +176,14 @@ module Appsignal
         action_name = formatted_action_name(item)
         # Read trace context off the job so the transaction links back to the
         # enqueuer. No-op outside collector mode.
+        job_data = active_job_data(item)
         transaction = Appsignal::Transaction.create(
           Appsignal::Transaction::BACKGROUND_JOB,
-          :opentelemetry_context => extract_context(item),
+          :opentelemetry_context => extract_context(item, job_data),
           :opentelemetry_scope => ["appsignal-ruby/sidekiq", Appsignal::VERSION],
           :opentelemetry_kind => :consumer,
-          :opentelemetry_relationship => :both
+          :opentelemetry_relationship =>
+            Appsignal::OpenTelemetry.active_job_relationship(job_data)
         )
         transaction.add_opentelemetry_attributes(
           Appsignal::OpenTelemetry::Messaging
@@ -249,8 +251,8 @@ module Appsignal
       # The trace context to continue: the Active Job layer when this is an
       # Active Job job, the Sidekiq job itself otherwise. See `Appsignal::OpenTelemetry.extract_active_job_context`
       # for why that layer wins.
-      def extract_context(item)
-        Appsignal::OpenTelemetry.extract_active_job_context(active_job_data(item)) ||
+      def extract_context(item, job_data)
+        Appsignal::OpenTelemetry.extract_active_job_context(job_data) ||
           Appsignal::OpenTelemetry.extract_job_context(item)
       end
 
