@@ -448,14 +448,25 @@ begin
   excludes << "spec/lib/appsignal/extension/jruby_spec.rb" unless is_jruby
   exclude_pattern = "--exclude-pattern=#{excludes.join(",")}" if excludes.any?
 
+  # Written alongside the human-readable output so the coverage audit can tell
+  # which examples this Ruby and gemfile combination actually ran. Every CI job
+  # uploads its list. Nothing else reveals that a dependency guard is false in
+  # every combination, because a guarded example is then never defined at all.
+  def example_list_opts(name)
+    "--format json --out tmp/examples-#{name}.json"
+  end
+
   desc "Run the AppSignal gem test suite."
   RSpec::Core::RakeTask.new :test do |t|
-    t.rspec_opts = "#{exclude_pattern} --format documentation"
+    t.rspec_opts = "#{exclude_pattern} --format documentation " \
+      "#{example_list_opts("test")}"
   end
 
   namespace :test do
     RSpec::Core::RakeTask.new :rspec_failure do |t|
-      t.rspec_opts = "#{exclude_pattern} --tag extension_installation_failure"
+      t.rspec_opts = "#{exclude_pattern} --format documentation " \
+        "--tag extension_installation_failure " \
+        "#{example_list_opts("failure")}"
     end
 
     desc "Intentionally fail the extension installation"
