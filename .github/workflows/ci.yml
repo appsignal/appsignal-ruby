@@ -2,7 +2,7 @@
 # This is a generated file by the `rake build_matrix:github:generate` task.
 # See `build_matrix.yml` for the build matrix.
 # Generate this file with `rake build_matrix:github:generate`.
-# Generated job count: 432
+# Generated job count: 433
 ---
 name: Ruby gem CI
 'on':
@@ -15046,3 +15046,40 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/no_dependencies.gemfile
+  spec_coverage_audit:
+    name: Spec coverage audit
+    needs: validation
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    timeout-minutes: 180
+    permissions:
+      actions: read
+      contents: read
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+    - name: Install Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.4'
+    - name: Wait for the test jobs to upload their example lists
+      env:
+        GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      run: |
+        jobs="repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs"
+        filter='.jobs[]
+          | select(.name != "Spec coverage audit")
+          | select(.status != "completed")
+          | .name'
+        while :; do
+          pending=$(gh api --paginate "$jobs?per_page=100" --jq "$filter" | wc -l)
+          if [ "$pending" -eq 0 ]; then break; fi
+          echo "Waiting for $pending jobs."
+          sleep 60
+        done
+    - name: Download example lists
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+    - name: Audit spec coverage
+      run: ruby script/audit_spec_coverage.rb artifacts
