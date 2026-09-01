@@ -10,6 +10,7 @@ name: Ruby gem CI
     branches:
     - main
     - develop
+    - "*-stable"
   pull_request:
     types:
     - opened
