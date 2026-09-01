@@ -20,6 +20,8 @@ VERSION_MANAGERS = {
   }
 }.freeze
 
+SPEC_COVERAGE_AUDIT_JOB_NAME = "Spec coverage audit"
+
 def build_job(ruby_version, ruby_gem: nil, runs_on: DEFAULT_RUNS_ON)
   name = "Ruby #{ruby_version}"
   name = "#{name} - #{ruby_gem}" if ruby_gem
@@ -52,6 +54,89 @@ def build_job(ruby_version, ruby_gem: nil, runs_on: DEFAULT_RUNS_ON)
       {
         "name" => "Print Makefile log file",
         "run" => "[ -f ext/mkmf.log ] && cat ext/mkmf.log || echo 'No ext/mkmf.log file found'"
+      }
+    ]
+  }
+end
+
+# Every test job uploads the example list its run wrote, named after the job so
+# the audit can say which combination is missing one. Uploaded even when the run
+# fails, because the list is written either way and the audit needs to tell a
+# crashed job apart from a combination that legitimately runs nothing.
+def example_list_upload_step(key)
+  {
+    "name" => "Upload example list",
+    "if" => "always()",
+    "uses" => "actions/upload-artifact@v4",
+    "with" => {
+      "name" => key,
+      "path" => "tmp/examples-*.json",
+      "if-no-files-found" => "error",
+      "retention-days" => 1
+    }
+  }
+end
+
+# Compares the examples defined in the source against the union of every job's
+# example list.
+#
+# It cannot wait for the test jobs through `needs`. Naming all 426 of them puts
+# the workflow over a limit on how many dependency edges GitHub accepts, and
+# GitHub then refuses to create the run without reporting anything: no run
+# appears, the pull request shows no checks, and the runs API stays empty.
+# Grouping the dependencies behind intermediate jobs does not help, because the
+# same number of edges still has to exist. So this job starts with the others
+# and waits by polling the run it belongs to.
+def spec_coverage_audit_job
+  {
+    "name" => SPEC_COVERAGE_AUDIT_JOB_NAME,
+    "needs" => "validation",
+    "runs-on" => DEFAULT_RUNS_ON,
+    # Reports without failing the build. The examples it currently finds are
+    # covered by separate work; removing this line is what makes it enforcing.
+    "continue-on-error" => true,
+    # Long enough for the whole matrix, and short enough that a stuck job does
+    # not hold a runner for the six hours GitHub would otherwise allow.
+    "timeout-minutes" => 180,
+    "permissions" => {
+      "actions" => "read",
+      "contents" => "read"
+    },
+    "steps" => [
+      {
+        "name" => "Check out repository",
+        "uses" => "actions/checkout@v4"
+      },
+      {
+        "name" => "Install Ruby",
+        "uses" => "ruby/setup-ruby@v1",
+        "with" => { "ruby-version" => "3.4" }
+      },
+      {
+        "name" => "Wait for the test jobs to upload their example lists",
+        "env" => { "GH_TOKEN" => "${{ secrets.GITHUB_TOKEN }}" },
+        "run" => <<~SHELL
+          jobs="repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs"
+          filter='.jobs[]
+            | select(.name != "#{SPEC_COVERAGE_AUDIT_JOB_NAME}")
+            | select(.status != "completed")
+            | .name'
+          while :; do
+            pending=$(gh api --paginate "$jobs?per_page=100" --jq "$filter" | wc -l)
+            if [ "$pending" -eq 0 ]; then break; fi
+            echo "Waiting for $pending jobs."
+            sleep 60
+          done
+        SHELL
+      },
+      {
+        "name" => "Download example lists",
+        "uses" => "actions/download-artifact@v4",
+        "with" => { "path" => "artifacts" }
+      },
+      {
+        "name" => "Audit spec coverage",
+        "run" => "ruby script/audit_spec_coverage.rb artifacts"
       }
     ]
   }
@@ -150,11 +235,14 @@ namespace :build_matrix do
               "name" => "Run tests without extension",
               "run" => "./script/bundler_wrapper exec rake test:failure"
             }
+            job["steps"] << example_list_upload_step(build_matrix_key(ruby["ruby"]))
             builds[build_matrix_key(ruby["ruby"])] = job
           else
             job["needs"] = build_matrix_key(ruby["ruby"])
             job["steps"] << test_step
-            builds[build_matrix_key(ruby["ruby"], :ruby_gem => ruby_gem["gem"])] = job
+            gem_key = build_matrix_key(ruby["ruby"], :ruby_gem => ruby_gem["gem"])
+            job["steps"] << example_list_upload_step(gem_key)
+            builds[gem_key] = job
           end
 
           # On collector-capable Rubies, additionally run the gem's
@@ -169,8 +257,9 @@ namespace :build_matrix do
             .merge("BUNDLE_GEMFILE" => "gemfiles/#{collector_gem}.gemfile")
           collector_job["needs"] = build_matrix_key(ruby["ruby"])
           collector_job["steps"] << test_step
-          builds[build_matrix_key(ruby["ruby"], :ruby_gem => collector_gem)] =
-            collector_job
+          collector_key = build_matrix_key(ruby["ruby"], :ruby_gem => collector_gem)
+          collector_job["steps"] << example_list_upload_step(collector_key)
+          builds[collector_key] = collector_job
         end
 
         # Add build for macOS
@@ -188,8 +277,12 @@ namespace :build_matrix do
           "name" => "Run tests without extension",
           "run" => "./script/bundler_wrapper exec rake test:failure"
         }
-        builds[build_matrix_key(ruby["ruby"], :runs_on => runs_on)] = job
+        macos_key = build_matrix_key(ruby["ruby"], :runs_on => runs_on)
+        job["steps"] << example_list_upload_step(macos_key)
+        builds[macos_key] = job
       end
+
+      builds["spec_coverage_audit"] = spec_coverage_audit_job
 
       github["jobs"] = github["jobs"].merge(builds)
 
@@ -448,14 +541,25 @@ begin
   excludes << "spec/lib/appsignal/extension/jruby_spec.rb" unless is_jruby
   exclude_pattern = "--exclude-pattern=#{excludes.join(",")}" if excludes.any?
 
+  # Written alongside the human-readable output so the coverage audit can tell
+  # which examples this Ruby and gemfile combination actually ran. Every CI job
+  # uploads its list. Nothing else reveals that a dependency guard is false in
+  # every combination, because a guarded example is then never defined at all.
+  def example_list_opts(name)
+    "--format json --out tmp/examples-#{name}.json"
+  end
+
   desc "Run the AppSignal gem test suite."
   RSpec::Core::RakeTask.new :test do |t|
-    t.rspec_opts = "#{exclude_pattern} --format documentation"
+    t.rspec_opts = "#{exclude_pattern} --format documentation " \
+      "#{example_list_opts("test")}"
   end
 
   namespace :test do
     RSpec::Core::RakeTask.new :rspec_failure do |t|
-      t.rspec_opts = "#{exclude_pattern} --tag extension_installation_failure"
+      t.rspec_opts = "#{exclude_pattern} --format documentation " \
+        "--tag extension_installation_failure " \
+        "#{example_list_opts("failure")}"
     end
 
     desc "Intentionally fail the extension installation"
