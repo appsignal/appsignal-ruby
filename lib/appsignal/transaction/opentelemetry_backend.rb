@@ -98,6 +98,16 @@ module Appsignal
       # queue duration when `queue_start_ms > 946_681_200_000`.
       QUEUE_START_MIN = 946_681_200_000
 
+      # The only two request headers Rack passes without the `HTTP_` prefix,
+      # because CGI reserves the prefixed spelling of them.
+      UNPREFIXED_HEADER_KEYS = %w[CONTENT_LENGTH CONTENT_TYPE].freeze
+
+      # `HTTP_VERSION` is a CGI variable holding the same value as
+      # `SERVER_PROTOCOL`, not a header. A client that sends a `Version` header
+      # arrives under the same key, so this drops that header too. That is the
+      # better trade, because `Version` is not a registered HTTP header.
+      NON_HEADER_KEYS = %w[HTTP_VERSION].freeze
+
       # One open event on the event stack. Holds the OpenTelemetry span and the
       # context token attached for it, plus the allocation bookkeeping for the
       # event. `allocation_start` is the allocation counter when the event began
@@ -741,9 +751,11 @@ module Appsignal
       end
 
       def otel_header_name(env_key)
+        return if NON_HEADER_KEYS.include?(env_key)
+
         if env_key.start_with?("HTTP_")
           env_key.delete_prefix("HTTP_").downcase.tr("_", "-")
-        elsif env_key.start_with?("CONTENT_")
+        elsif UNPREFIXED_HEADER_KEYS.include?(env_key)
           env_key.downcase.tr("_", "-")
         end
       end

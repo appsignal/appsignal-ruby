@@ -2370,6 +2370,67 @@ describe Appsignal::Transaction do
         end
       end
     end
+
+    context "with request_headers options allowing keys that are not headers" do
+      let(:options) do
+        { :request_headers => %w[CONTENT_LENGTH CONTENT_TYPE CONTENT_FOO HTTP_VERSION] }
+      end
+
+      describe "only sending the two headers Rack passes without the HTTP_ prefix" do
+        def perform
+          transaction.add_headers(
+            "CONTENT_LENGTH" => "12",
+            "CONTENT_TYPE" => "application/json",
+            "CONTENT_FOO" => "bar"
+          )
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+          transaction._sample
+
+          expect(transaction).to include_environment(
+            "CONTENT_LENGTH" => "12",
+            "CONTENT_TYPE" => "application/json",
+            "CONTENT_FOO" => "bar"
+          )
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(root_span.attributes["http.request.header.content-length"]).to eq("12")
+          expect(root_span.attributes["http.request.header.content-type"])
+            .to eq("application/json")
+          expect(root_span.attributes).to_not have_key("http.request.header.content-foo")
+        end
+      end
+
+      describe "not sending HTTP_VERSION, which is a CGI variable and not a header" do
+        def perform
+          transaction.add_headers("HTTP_VERSION" => "HTTP/1.1")
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+          transaction._sample
+
+          expect(transaction).to include_environment("HTTP_VERSION" => "HTTP/1.1")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(root_span.attributes).to_not have_key("http.request.header.version")
+        end
+      end
+    end
   end
 
   describe "#add_headers_if_nil" do
