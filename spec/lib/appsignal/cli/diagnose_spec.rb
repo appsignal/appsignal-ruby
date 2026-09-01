@@ -466,6 +466,15 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
       end
 
       context "when the extension returns invalid JSON" do
+        # The JSON gem reworded this error in version 2.10. Accept the wording
+        # from before that release and the wording from after it.
+        let(:parse_error) do
+          Regexp.union(
+            "unexpected token at 'invalid agent\njson'",
+            "unexpected character: 'invalid' at line 1 column 1"
+          )
+        end
+
         before do
           expect(Appsignal::Extension).to receive(:diagnose).and_return("invalid agent\njson")
           run
@@ -476,12 +485,11 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
             "Agent diagnostics",
             "  Error while parsing agent diagnostics report:",
             "    Output: invalid agent\njson"
-          expect(output).to match(/Error:( \d+:)? unexpected token at 'invalid agent\njson'/)
+          expect(output).to match(/Error:( \d+:)? #{parse_error}/)
         end
 
         it "adds the output to the report" do
-          expect(received_report["agent"]["error"])
-            .to match(/unexpected token at 'invalid agent\njson'/)
+          expect(received_report["agent"]["error"]).to match(parse_error)
           expect(received_report["agent"]["output"]).to eq(["invalid agent", "json"])
         end
       end
