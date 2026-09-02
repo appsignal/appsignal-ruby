@@ -9,10 +9,36 @@ module Appsignal
 
         # Events a dedicated AppSignal integration already records, so the
         # generic notifications path must not record them a second time. The
-        # ActiveJob hook owns `enqueue.active_job` (it wraps the enqueue in its
-        # own event, with Rails' native notification nested inside), and the
+        # ActiveJob hook owns `enqueue.active_job` and `enqueue_all.active_job`.
+        # It records its own event for a single enqueue, and one event for a
+        # whole batch, with Rails' native notification nested inside. The
         # Faraday integration owns `request.faraday`.
-        SUPPRESSED_EVENT_NAMES = ["enqueue.active_job", "request.faraday"].freeze
+        SUPPRESSED_EVENT_NAMES = [
+          "enqueue.active_job",
+          "enqueue_all.active_job",
+          "request.faraday"
+        ].freeze
+
+        # The events suppressed right now. Starts from the list above, which is
+        # what an integration claims when it loads, and an integration that
+        # turns out to be unable to record one of them for itself takes it back
+        # off, so Rails' own notification is recorded rather than nothing at all.
+        def suppressed_event_names
+          @suppressed_event_names ||= SUPPRESSED_EVENT_NAMES.dup
+        end
+
+        # Stop suppressing an event, because the integration that claimed it
+        # cannot record it after all.
+        def unsuppress_event(name)
+          suppressed_event_names.delete(name.to_s)
+        end
+
+        # @!visibility private
+        #
+        # Restores the claimed events. Only used to keep test runs isolated.
+        def reset_suppressed_events!
+          @suppressed_event_names = nil
+        end
 
         def start_event(name)
           return unless record_event?(name)
@@ -37,7 +63,7 @@ module Appsignal
         # and `finish_event` gate on this so the event stack stays balanced.
         def record_event?(name)
           name = name.to_s
-          name[0] != BANG && !SUPPRESSED_EVENT_NAMES.include?(name)
+          name[0] != BANG && !suppressed_event_names.include?(name)
         end
       end
 

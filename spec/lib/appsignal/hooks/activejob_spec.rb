@@ -37,6 +37,43 @@ if DependencyHelper.active_job_present?
         expect(path).to end_with("/lib/appsignal/hooks/active_job.rb")
       end
     end
+
+    describe "claiming the bulk enqueue notification" do
+      let(:integration) do
+        Appsignal::Integrations::ActiveSupportNotificationsIntegration
+      end
+
+      after { integration.reset_suppressed_events! }
+
+      # The claim is made when the file is required, before anything knows
+      # whether the batch can be recorded. Reset first, because a run on an
+      # Active Job older than 7.1 will already have given it back.
+      it "claims the notification when the gem loads" do
+        integration.reset_suppressed_events!
+
+        expect(integration.record_event?("enqueue_all.active_job")).to be(false)
+      end
+
+      # Active Job records a bulk enqueue through a method that only exists from
+      # version 7.1 on, and this integration wraps that method to record the
+      # batch itself. Without it there is nothing to record the batch with, so
+      # Rails' own notification has to be left alone. Claiming it and then
+      # recording nothing would report the batch not at all, which is worse than
+      # reporting the notification we set out to improve on.
+      it "gives the notification back when the batch cannot be recorded" do
+        start_agent
+        allow(::ActiveJob.singleton_class)
+          .to receive(:private_method_defined?).and_call_original
+        allow(::ActiveJob.singleton_class)
+          .to receive(:private_method_defined?)
+          .with(:instrument_enqueue_all)
+          .and_return(false)
+
+        described_class.new.install
+
+        expect(integration.record_event?("enqueue_all.active_job")).to be(true)
+      end
+    end
   end
 
   describe Appsignal::Hooks::ActiveJobHook::ActiveJobClassInstrumentation do
@@ -409,6 +446,145 @@ if DependencyHelper.active_job_present?
             transaction.to_h["events"].select { |event| event["name"] == "enqueue.active_job" }
           expect(enqueue_events).to be_empty
           expect(ActiveJob::Base.queue_adapter.enqueued_jobs.count).to eq(1)
+        end
+      end
+    end
+
+    if DependencyHelper.rails7_1_present?
+      context "when enqueuing jobs in bulk" do
+        before { ActiveJob::Base.queue_adapter = :test }
+
+        let(:jobs) { Array.new(3) { ActiveJobTestJob.new } }
+
+        def bulk_enqueue_events(transaction)
+          transaction.to_h["events"]
+            .select { |event| event["name"] == "enqueue_all.active_job" }
+        end
+
+        context "with an active transaction" do
+          it "records a single enqueue_all.active_job event on the transaction" do
+            transaction = http_request_transaction
+            set_current_transaction(transaction)
+
+            ActiveJob.perform_all_later(jobs)
+
+            # Exactly one event for the batch: ours. Rails' native
+            # `enqueue_all.active_job` notification is suppressed so it isn't
+            # recorded a second time.
+            events = bulk_enqueue_events(transaction)
+            expect(events.size).to eq(1)
+            expect(events.first["title"]).to eq("bulk enqueue ActiveJobTestJob jobs")
+            expect(ActiveJob::Base.queue_adapter.enqueued_jobs.count).to eq(3)
+          end
+
+          it "records no per-job enqueue events alongside it" do
+            transaction = http_request_transaction
+            set_current_transaction(transaction)
+
+            ActiveJob.perform_all_later(jobs)
+
+            event_names = transaction.to_h["events"].map { |event| event["name"] }
+            expect(event_names).to_not include("enqueue.active_job")
+          end
+        end
+
+        context "with jobs of more than one class" do
+          # Active Job groups the jobs it enqueues by queue adapter rather than
+          # by class, so one batch can cover several classes.
+          let(:jobs) { [ActiveJobTestJob.new, ActiveJobCustomQueueTestJob.new] }
+
+          it "records the event without naming a job class" do
+            transaction = http_request_transaction
+            set_current_transaction(transaction)
+
+            ActiveJob.perform_all_later(jobs)
+
+            events = bulk_enqueue_events(transaction)
+            expect(events.size).to eq(1)
+            expect(events.first["title"]).to eq("bulk enqueue jobs")
+          end
+        end
+
+        context "with an active transaction" do
+          it "suppresses nested adapter enqueue events while enqueuing" do
+            transaction = http_request_transaction
+            set_current_transaction(transaction)
+
+            # The window in which a nested adapter integration (Sidekiq, Resque,
+            # ...) would record an event per job in the batch, which Active Job
+            # suppresses so the batch is recorded once.
+            suppressed_during_enqueue = []
+            adapter = ActiveJob::Base.queue_adapter
+            allow(adapter).to receive(:enqueue).and_wrap_original do |method, *args|
+              suppressed_during_enqueue <<
+                Appsignal::Transaction.current.job_enqueue_events_suppressed?
+              method.call(*args)
+            end
+
+            ActiveJob.perform_all_later(jobs)
+
+            expect(suppressed_during_enqueue).to eq([true, true, true])
+          end
+        end
+
+        # The `:test` adapter has no `enqueue_all`, so a bulk enqueue through it
+        # falls back to enqueuing each job on its own. Sidekiq's adapter does
+        # have one, and that is the path the duplicated events were reported on,
+        # so it needs covering too.
+        context "with an adapter that enqueues the batch itself" do
+          before do
+            stub_const(
+              "ActiveJobBulkTestAdapter",
+              Class.new(ActiveJob::QueueAdapters::TestAdapter) do
+                attr_reader :enqueue_all_calls, :suppressed_during_enqueue_all
+
+                def enqueue_all(jobs)
+                  @enqueue_all_calls = (@enqueue_all_calls || 0) + 1
+                  @suppressed_during_enqueue_all =
+                    Appsignal::Transaction.current.job_enqueue_events_suppressed?
+                  jobs.each { |job| enqueue(job) }
+                  jobs.size
+                end
+              end
+            )
+            ActiveJob::Base.queue_adapter = ActiveJobBulkTestAdapter.new
+          end
+
+          it "records one event and suppresses the adapter's own" do
+            transaction = http_request_transaction
+            set_current_transaction(transaction)
+
+            ActiveJob.perform_all_later(jobs)
+
+            adapter = ActiveJob::Base.queue_adapter
+            expect(adapter.enqueue_all_calls).to eq(1)
+            expect(adapter.suppressed_during_enqueue_all).to be(true)
+            expect(bulk_enqueue_events(transaction).size).to eq(1)
+          end
+        end
+
+        context "without an active transaction" do
+          it "is a transparent pass-through that still enqueues the jobs" do
+            expect do
+              ActiveJob.perform_all_later(jobs)
+            end.to_not(change { created_transactions.count })
+
+            expect(ActiveJob::Base.queue_adapter.enqueued_jobs.count).to eq(3)
+          end
+        end
+
+        context "when enqueue instrumentation is disabled" do
+          let(:options) { { :enable_job_enqueue_instrumentation => false } }
+
+          it "does not record an event but still enqueues the jobs" do
+            transaction = http_request_transaction
+            set_current_transaction(transaction)
+
+            ActiveJob.perform_all_later(jobs)
+
+            expect(bulk_enqueue_events(transaction)).to be_empty
+            expect(ActiveJob::Base.queue_adapter.enqueued_jobs.count).to eq(3)
+          end
         end
       end
     end
