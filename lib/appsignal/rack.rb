@@ -47,6 +47,32 @@ module Appsignal
         nil
       end
 
+      # Fetch a value from the request environment, for the values that are only
+      # available there.
+      #
+      # The request class is configurable, so it may have no environment at all,
+      # which is not worth logging about. Reading from one can still raise, and
+      # that is logged. Either way the caller gets nil and skips whatever it
+      # needed the value for.
+      #
+      # @param request [Rack::Request] Request object.
+      # @param key [String] Name of the environment key to read.
+      # @return [Object, NilClass]
+      def self.request_env_value_from(request, key)
+        return unless request.respond_to?(:env)
+
+        env = request.env
+        return unless env
+
+        env[key]
+      rescue => error
+        Appsignal.internal_logger.error(
+          "Exception while fetching the HTTP request environment #{key}: " \
+            "#{error.class}: #{error}"
+        )
+        nil
+      end
+
       # Fetch the queue start time from the request environment.
       #
       # @since 3.11.0
