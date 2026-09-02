@@ -30,15 +30,19 @@ module Appsignal
           # Set here, where the transaction is created, so they land on the
           # transaction's own span rather than on the event started below.
           #
-          # Webmachine isn't Rack: the path, scheme and query string come off the
-          # request's `URI` rather than from Rack's readers. The request's own
-          # `query` is the parsed form, so the URI is where the string itself is.
+          # Webmachine isn't Rack: the path, scheme, query string, host and port
+          # come off the request's `URI` rather than from Rack's readers. The
+          # request's own `query` is the parsed form, so the URI is where the
+          # string itself is. Webmachine has no environment to read the protocol
+          # version from, so that one is left undescribed.
           transaction.add_opentelemetry_attributes(
             Appsignal::OpenTelemetry::HttpServerRequest.attributes_for(
               :method => request.method,
               :path => request.uri&.path,
               :scheme => request.uri&.scheme,
-              :query => request.uri&.query
+              :query => request.uri&.query,
+              :host => request.uri&.host,
+              :port => request.uri&.port
             )
           )
         end

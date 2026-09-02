@@ -29,6 +29,48 @@ describe Appsignal::OpenTelemetry::HttpServerRequest do
       )
     end
 
+    it "describes the host, the port and the protocol version" do
+      expect(
+        described_class.attributes_for(
+          :method => "GET",
+          :path => "/",
+          :host => "example.com",
+          :port => 443,
+          :protocol => "HTTP/1.1"
+        )
+      ).to eq(
+        "http.request.method" => "GET",
+        "url.path" => "/",
+        "server.address" => "example.com",
+        "server.port" => 443,
+        "network.protocol.version" => "1.1"
+      )
+    end
+
+    # Rack reads the port out of the request authority, so it can arrive as the
+    # String it was written as. The conventions ask for a number.
+    it "reports the port as a number" do
+      expect(
+        described_class.attributes_for(:method => "GET", :host => "example.com", :port => "8080")
+      ).to include("server.port" => 8080)
+    end
+
+    # The conventions ask for the port only alongside the host, because a port
+    # on its own describes nothing.
+    it "leaves out the port when there is no host" do
+      expect(described_class.attributes_for(:method => "GET", :port => 443)).to eq(
+        "http.request.method" => "GET"
+      )
+    end
+
+    # A protocol that is not HTTP needs `network.protocol.name` to go with the
+    # version, so a value we cannot name is left out altogether.
+    it "leaves out a protocol it cannot name" do
+      expect(described_class.attributes_for(:method => "GET", :protocol => "SPDY")).to eq(
+        "http.request.method" => "GET"
+      )
+    end
+
     # The method goes through the same normalization as anywhere else, so an
     # unknown method is reported as `_OTHER` with the original kept.
     it "normalizes the request method" do

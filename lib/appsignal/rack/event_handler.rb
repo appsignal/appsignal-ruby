@@ -81,7 +81,11 @@ module Appsignal
               :method => Appsignal::Rack::Utils.request_method_from(request),
               :path => Appsignal::Rack::Utils.request_value_from(request, :path),
               :scheme => Appsignal::Rack::Utils.request_value_from(request, :scheme),
-              :query => Appsignal::Rack::Utils.request_value_from(request, :query_string)
+              :query => Appsignal::Rack::Utils.request_value_from(request, :query_string),
+              :host => Appsignal::Rack::Utils.request_value_from(request, :hostname),
+              :port => Appsignal::Rack::Utils.request_value_from(request, :port),
+              :protocol =>
+                Appsignal::Rack::Utils.request_env_value_from(request, "SERVER_PROTOCOL")
             )
           )
           transaction.start_event(
