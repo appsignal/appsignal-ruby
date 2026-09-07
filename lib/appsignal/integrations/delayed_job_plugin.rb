@@ -11,6 +11,18 @@ module Appsignal
           enqueue_with_instrumentation(job, block)
         end
 
+        # Delayed Job asks a job for its own maximum run time before it invokes
+        # it, and answering that question reads the job's payload. A job whose
+        # payload will not deserialize therefore raises inside the worker and
+        # never reaches `invoke_job`, so the callback below does not run and the
+        # failure goes unreported. This callback sits one step further out, on
+        # the worker's whole run of the job, which is where such a job can still
+        # be seen.
+        lifecycle.around(:perform) do |worker, job, &block|
+          report_job_that_cannot_be_loaded(job)
+          block.call(worker, job)
+        end
+
         lifecycle.around(:invoke_job) do |job, &block|
           invoke_with_instrumentation(job, block)
         end
@@ -75,18 +87,35 @@ module Appsignal
         job.name
       end
 
+      # Reports a job whose payload cannot be read, and does nothing at all for
+      # a job that loads. That is what keeps every ordinary job instrumented by
+      # the `:invoke_job` callback alone: no transaction is opened here, so an
+      # ordinary job's reported duration and its reported error are exactly
+      # what they were before this callback existed.
+      #
+      # Reading the payload here reads it a moment before the worker would have
+      # read it anyway. Delayed Job memoizes a payload that loads, so a job
+      # that is fine is deserialized once either way.
+      #
+      # Nothing is re-raised. The worker reads the same payload immediately
+      # after this returns, raises the same error, and fails the job as it
+      # always has. Raising here instead would move that error out of the
+      # worker's own handling and into the loop that reserves jobs.
+      def self.report_job_that_cannot_be_loaded(job)
+        job.payload_object
+        nil
+      rescue Exception => error
+        warn_unreadable_payload_once(error)
+
+        transaction = create_perform_transaction(job)
+        transaction.set_action_if_nil(action_name_without_payload(job))
+        transaction.set_error(error)
+        add_job_metadata(transaction, job)
+        Appsignal::Transaction.complete_current!
+      end
+
       def self.invoke_with_instrumentation(job, block)
-        transaction =
-          Appsignal::Transaction.create(
-            Appsignal::Transaction::BACKGROUND_JOB,
-            :opentelemetry_scope => ["appsignal-ruby/delayed_job", Appsignal::VERSION],
-            :opentelemetry_kind => :consumer,
-            :opentelemetry_relationship => :both
-          )
-        transaction.add_opentelemetry_attributes(
-          Appsignal::OpenTelemetry::Messaging
-            .perform_attributes("delayed_job", :destination => queue_name(job))
-        )
+        transaction = create_perform_transaction(job)
 
         begin
           Appsignal.instrument(
@@ -125,17 +154,37 @@ module Appsignal
             transaction.set_action_if_nil(action_name_without_payload(job))
           end
 
-          transaction.add_tags(
-            :id => extract_value(job, :id, nil, true),
-            :queue => extract_value(job, :queue),
-            :priority => extract_value(job, :priority, 0),
-            :attempts => extract_value(job, :attempts, 0)
-          )
-
-          transaction.set_queue_start(extract_value(job, :run_at)&.to_i&.* 1_000)
+          add_job_metadata(transaction, job)
 
           Appsignal::Transaction.complete_current!
         end
+      end
+
+      # The transaction a performed job is reported under. Shared by the two
+      # callbacks that can report a job, so both describe it the same way.
+      def self.create_perform_transaction(job)
+        transaction = Appsignal::Transaction.create(
+          Appsignal::Transaction::BACKGROUND_JOB,
+          :opentelemetry_scope => ["appsignal-ruby/delayed_job", Appsignal::VERSION],
+          :opentelemetry_kind => :consumer,
+          :opentelemetry_relationship => :both
+        )
+        transaction.add_opentelemetry_attributes(
+          Appsignal::OpenTelemetry::Messaging
+            .perform_attributes("delayed_job", :destination => queue_name(job))
+        )
+        transaction
+      end
+
+      def self.add_job_metadata(transaction, job)
+        transaction.add_tags(
+          :id => extract_value(job, :id, nil, true),
+          :queue => extract_value(job, :queue),
+          :priority => extract_value(job, :priority, 0),
+          :attempts => extract_value(job, :attempts, 0)
+        )
+
+        transaction.set_queue_start(extract_value(job, :run_at)&.to_i&.* 1_000)
       end
 
       # The name Delayed Job derives from the raw handler when the payload will
