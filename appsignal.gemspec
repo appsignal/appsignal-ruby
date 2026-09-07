@@ -61,6 +61,13 @@ Gem::Specification.new do |gem|
   gem.add_dependency "rack", ">= 2.0.0"
 
   gem.add_development_dependency "pry"
+  # Reached through webmock's addressable. Version 7 requires Ruby 3.2 and
+  # version 6 requires 3.0, so an older Ruby cannot resolve the development
+  # dependencies unless this is held back. The cop guards the requirements of
+  # the released gem, which a development dependency is not part of.
+  # rubocop:disable Gemspec/RubyVersionGlobalsUsage
+  gem.add_development_dependency "public_suffix", "< 6" if RUBY_VERSION < "3.2"
+  # rubocop:enable Gemspec/RubyVersionGlobalsUsage
   gem.add_development_dependency "rake", ">= 12"
   gem.add_development_dependency "rspec", "~> 3.8"
   gem.add_development_dependency "rubocop", "~> 1.87.0"
