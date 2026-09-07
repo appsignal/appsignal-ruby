@@ -2,7 +2,12 @@ source "https://rubygems.org"
 
 gem "rails", "~> 7.1.0"
 gem "rake", "> 12.2"
-gem "sidekiq"
+# The Sidekiq probe specs stub Sidekiq with a mock of its version 7 API.
+gem "sidekiq", "< 8"
+
+# JRuby activates the jar-dependencies it ships with before Bundler
+# resolves the newer one that psych asks for.
+gem "jar-dependencies", "0.4.1" if RUBY_PLATFORM == "java"
 
 # Fix install issue for jruby on gem 3.1.8.
 # No java stub is published.

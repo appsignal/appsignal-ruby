@@ -20,7 +20,7 @@ module ConfigHelpers
       config_file
     )
   end
-  module_function :project_fixture_config, :project_fixture_path
+  module_function :project_fixture_config
 
   def start_agent(env = "production")
     Appsignal._config = project_fixture_config(env)
