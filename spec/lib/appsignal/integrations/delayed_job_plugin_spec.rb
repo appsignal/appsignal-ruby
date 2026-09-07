@@ -37,6 +37,15 @@ if DependencyHelper.delayed_job_present?
       job.invoke_job
     end
 
+    # Runs the queued job the way a worker does. `work_off` is the only path
+    # that runs the `:perform` lifecycle callbacks, and it is also the path that
+    # reads a job's payload before invoking it and swallows the job's exception
+    # afterwards. Calling `invoke_job` directly does neither, so an example that
+    # needs either of those has to go through here.
+    def work_off_one_job
+      Delayed::Worker.new(:quiet => true).work_off(1)
+    end
+
     describe "enqueueing a job" do
       context "with an active transaction" do
         it "records an enqueue event titled after the job" do
@@ -280,6 +289,158 @@ if DependencyHelper.delayed_job_present?
             expect(transaction).to have_namespace("background_job")
             expect(transaction).to have_action("DelayedActiveJob#perform")
             expect(transaction).to include_params(["arg"])
+          end
+        end
+      end
+
+      # Every example above performs the job by calling `invoke_job` directly,
+      # which is what Delayed Job does when `delay_jobs` is false. A worker
+      # takes a different path. It reads the job's payload before it invokes the
+      # job, so a job that cannot be read never reaches `invoke_job` at all. It
+      # also catches the job's exception instead of letting it out, so an error
+      # report that only worked because the exception reached the integration
+      # would report nothing here. Neither is visible from `invoke_job`, which
+      # is why these examples drive the worker itself.
+      context "when a worker runs the job" do
+        before do
+          stub_const("DelayedWorkerErrorJob", Class.new do
+            def perform
+              raise ExampleException, "uh oh"
+            end
+          end)
+
+          # A job that has no attempts left, so Delayed Job marks it failed
+          # instead of rescheduling it. That runs a different set of its
+          # callbacks than a job that will be retried.
+          stub_const("DelayedLastAttemptJob", Class.new do
+            def max_attempts
+              1
+            end
+
+            def perform
+              raise ExampleException, "last try"
+            end
+          end)
+
+          # A job that outlives its own maximum run time. Delayed Job passes
+          # that number to `Timeout.timeout` as an integer, so one second is the
+          # shortest limit it can express.
+          stub_const("DelayedSlowJob", Class.new do
+            def max_run_time
+              1
+            end
+
+            def perform
+              sleep 1.1
+            end
+          end)
+        end
+
+        it "reports a job that loads exactly once" do
+          start_agent
+          Delayed::Job.enqueue(DelayedTestJob.new, :queue => "dj-queue")
+
+          keep_transactions { work_off_one_job }
+
+          expect(created_transactions.count).to eq(1)
+          transaction = last_transaction
+          expect(transaction).to be_completed
+          expect(transaction).to have_action("DelayedTestJob#perform")
+          expect(transaction).to_not have_error
+        end
+
+        # The worker catches the job's exception, so nothing is raised here.
+        # This example fails if the integration ever comes to depend on the
+        # exception reaching it, which is what would happen if the transaction
+        # were opened around the worker's whole run of the job instead of
+        # around `invoke_job`.
+        it "reports the job's own error, once" do
+          start_agent
+          Delayed::Job.enqueue(DelayedWorkerErrorJob.new)
+
+          keep_transactions { work_off_one_job }
+
+          expect(created_transactions.count).to eq(1)
+          transaction = last_transaction
+          expect(transaction).to be_completed
+          expect(transaction).to have_action("DelayedWorkerErrorJob#perform")
+          expect(transaction).to have_error("ExampleException", "uh oh")
+        end
+
+        # Delayed Job marks this job failed rather than rescheduling it, which
+        # runs its failure callbacks on top of its error callbacks. Both of
+        # those are places a second report could come from.
+        it "reports a job on its last attempt once" do
+          start_agent
+          Delayed::Job.enqueue(DelayedLastAttemptJob.new)
+
+          keep_transactions { work_off_one_job }
+
+          expect(created_transactions.count).to eq(1)
+          transaction = last_transaction
+          expect(transaction).to be_completed
+          expect(transaction).to have_action("DelayedLastAttemptJob#perform")
+          expect(transaction).to have_error("ExampleException", "last try")
+        end
+
+        it "reports a job that runs longer than its maximum run time" do
+          start_agent
+          Delayed::Job.enqueue(DelayedSlowJob.new)
+
+          keep_transactions { work_off_one_job }
+
+          expect(created_transactions.count).to eq(1)
+          transaction = last_transaction
+          expect(transaction).to be_completed
+          expect(transaction).to have_error("Delayed::WorkerTimeout", /execution expired/)
+        end
+
+        context "with a job whose payload cannot be deserialized" do
+          before do
+            Delayed::Backend::Test::Job.create(
+              :handler => "--- !ruby/object:TotallyMissingJobClass {}\n"
+            )
+          end
+
+          it "reports the job with its deserialization error" do
+            start_agent
+
+            keep_transactions { work_off_one_job }
+
+            expect(created_transactions.count).to eq(1)
+            transaction = last_transaction
+            expect(transaction).to be_completed
+            expect(transaction).to have_namespace("background_job")
+            expect(transaction).to have_error(
+              "Delayed::DeserializationError", /TotallyMissingJobClass/
+            )
+            expect(transaction).to have_action("TotallyMissingJobClass#perform")
+            expect(transaction).to include_tags("attempts" => 0, "priority" => 0)
+          end
+        end
+
+        # Delayed Job cannot name this job either, and its own failure handling
+        # raises while trying to, so the worker's run of the job ends in an
+        # error rather than in the job being marked failed. That happens whether
+        # or not AppSignal is loaded. What matters here is that the job is
+        # reported before it happens.
+        context "when the handler cannot be parsed for a class name either" do
+          before do
+            Delayed::Backend::Test::Job.create(:handler => "--- {\n")
+          end
+
+          it "names the job after Delayed Job" do
+            start_agent
+
+            keep_transactions do
+              expect { work_off_one_job }.to raise_error(NoMethodError)
+            end
+
+            expect(created_transactions.count).to eq(1)
+            transaction = last_transaction
+            expect(transaction).to be_completed
+            expect(transaction).to have_error("Delayed::DeserializationError", /./)
+            expect(transaction).to have_action("DelayedJobInternal")
           end
         end
       end
