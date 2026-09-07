@@ -151,13 +151,36 @@ describe Appsignal::Rack::EventHandler do
         # This environment carries no scheme, so there is nothing to report and
         # the attribute is left out rather than sent empty.
         expect(root_span.attributes).to_not have_key("url.scheme")
+        # This environment names no host and no protocol either, so those are
+        # left out as well.
+        expect(root_span.attributes).to_not have_key("server.address")
+        expect(root_span.attributes).to_not have_key("server.port")
+        expect(root_span.attributes).to_not have_key("network.protocol.version")
         expect(event_spans).to_not be_empty
         event_spans.each do |span|
           expect(span.attributes).to_not have_key("http.request.method")
           expect(span.attributes).to_not have_key("url.path")
           expect(span.attributes).to_not have_key("url.scheme")
           expect(span.attributes).to_not have_key("url.query")
+          expect(span.attributes).to_not have_key("server.address")
+          expect(span.attributes).to_not have_key("server.port")
+          expect(span.attributes).to_not have_key("network.protocol.version")
         end
+      end
+
+      it "reads the host, port and protocol version off the request", :collector_mode do
+        env["SERVER_NAME"] = "example.com"
+        env["SERVER_PORT"] = "8080"
+        env["SERVER_PROTOCOL"] = "HTTP/1.1"
+        start_collector_agent
+        on_start
+        Appsignal::Transaction.complete_current!
+
+        expect(root_span.attributes["server.address"]).to eq("example.com")
+        expect(root_span.attributes["server.port"]).to eq(8080)
+        # The environment holds `HTTP/1.1`. The conventions want the version
+        # without the protocol name in front of it.
+        expect(root_span.attributes["network.protocol.version"]).to eq("1.1")
       end
 
       it "reads the scheme off the request", :collector_mode do

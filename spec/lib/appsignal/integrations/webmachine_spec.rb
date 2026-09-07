@@ -89,12 +89,20 @@ if DependencyHelper.webmachine_present?
           expect(root_span.attributes["url.scheme"]).to eq("http")
           expect(root_span.attributes["url.query"])
             .to eq("param1=value1&param2=value2")
+          # The host and port come off the same URI.
+          expect(root_span.attributes["server.address"]).to eq("google.com")
+          expect(root_span.attributes["server.port"]).to eq(80)
+          # Webmachine has no request environment to read the protocol version
+          # from, so it is left undescribed rather than guessed at.
+          expect(root_span.attributes).to_not have_key("network.protocol.version")
           expect(event_spans).to_not be_empty
           event_spans.each do |span|
             expect(span.attributes).to_not have_key("http.request.method")
             expect(span.attributes).to_not have_key("url.path")
             expect(span.attributes).to_not have_key("url.scheme")
             expect(span.attributes).to_not have_key("url.query")
+            expect(span.attributes).to_not have_key("server.address")
+            expect(span.attributes).to_not have_key("server.port")
           end
         end
       end

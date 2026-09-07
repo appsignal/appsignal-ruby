@@ -60,6 +60,47 @@ describe Appsignal::Rack::Utils do
       it_should_behave_like "HTTP queue start"
     end
   end
+
+  describe ".request_env_value_from" do
+    it "reads the value from the request environment" do
+      request = Rack::Request.new(
+        Rack::MockRequest.env_for("/", "SERVER_PROTOCOL" => "HTTP/1.1")
+      )
+
+      expect(described_class.request_env_value_from(request, "SERVER_PROTOCOL"))
+        .to eq("HTTP/1.1")
+    end
+
+    # The request class is configurable, so the object we are given may have no
+    # environment at all.
+    it "returns nil when the request has no environment" do
+      expect(described_class.request_env_value_from(Object.new, "SERVER_PROTOCOL")).to be_nil
+    end
+
+    # A request class can carry the method and no environment behind it. That is
+    # the same "no environment" case as the one above, so it logs nothing.
+    it "returns nil when the request environment is nil" do
+      request = double(:env => nil)
+      logs = capture_logs do
+        expect(described_class.request_env_value_from(request, "SERVER_PROTOCOL")).to be_nil
+      end
+
+      expect(logs).to be_empty
+    end
+
+    it "logs and returns nil when reading the environment raises" do
+      request = double
+      allow(request).to receive(:respond_to?).with(:env).and_return(true)
+      allow(request).to receive(:env).and_raise(ExampleStandardError, "uh oh")
+      logs = capture_logs { expect(described_class.request_env_value_from(request, "X")).to be_nil }
+
+      expect(logs).to contains_log(
+        :error,
+        "Exception while fetching the HTTP request environment X: " \
+          "ExampleStandardError: uh oh"
+      )
+    end
+  end
 end
 
 describe Appsignal::Rack::ApplyRackRequest do

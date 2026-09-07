@@ -2211,10 +2211,12 @@ describe Appsignal::Transaction do
         perform
         transaction.complete
 
-        # True headers normalized to the OTel convention; non-header CGI vars
-        # dropped.
+        # True headers normalized to the OTel convention. `PATH_INFO` is not a
+        # header, and the instrumentation already describes it as `url.path`, so
+        # it is reported neither as a header nor as an environment value.
         expect(root_span.attributes["http.request.header.accept"]).to eq("text/html")
         expect(root_span.attributes).to_not have_key("http.request.header.path-info")
+        expect(root_span.attributes).to_not have_key("appsignal.environment.PATH_INFO")
       end
     end
 
@@ -2367,6 +2369,145 @@ describe Appsignal::Transaction do
 
           expect(root_span.attributes["http.request.header.accept"]).to eq("text/html")
           expect(root_span.attributes).to_not have_key("http.request.header.range")
+        end
+      end
+    end
+
+    context "with request_headers options allowing keys that are not headers" do
+      let(:options) do
+        {
+          :request_headers => %w[
+            CONTENT_LENGTH CONTENT_TYPE CONTENT_FOO HTTP_VERSION QUERY_STRING
+            SCRIPT_NAME REQUEST_METHOD REQUEST_PATH PATH_INFO SERVER_NAME
+            SERVER_PORT SERVER_PROTOCOL
+          ]
+        }
+      end
+
+      describe "only sending the two headers Rack passes without the HTTP_ prefix" do
+        def perform
+          transaction.add_headers(
+            "CONTENT_LENGTH" => "12",
+            "CONTENT_TYPE" => "application/json",
+            "CONTENT_FOO" => "bar"
+          )
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+          transaction._sample
+
+          expect(transaction).to include_environment(
+            "CONTENT_LENGTH" => "12",
+            "CONTENT_TYPE" => "application/json",
+            "CONTENT_FOO" => "bar"
+          )
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(root_span.attributes["http.request.header.content-length"]).to eq("12")
+          expect(root_span.attributes["http.request.header.content-type"])
+            .to eq("application/json")
+          expect(root_span.attributes).to_not have_key("http.request.header.content-foo")
+          # Not a header, and nothing describes it, so it keeps its environment
+          # name.
+          expect(root_span.attributes["appsignal.environment.CONTENT_FOO"]).to eq("bar")
+        end
+      end
+
+      describe "not calling HTTP_VERSION a header, because it is a CGI variable" do
+        def perform
+          transaction.add_headers("HTTP_VERSION" => "HTTP/1.1")
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+          transaction._sample
+
+          expect(transaction).to include_environment("HTTP_VERSION" => "HTTP/1.1")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(root_span.attributes).to_not have_key("http.request.header.version")
+          expect(root_span.attributes["appsignal.environment.HTTP_VERSION"])
+            .to eq("HTTP/1.1")
+        end
+      end
+
+      describe "keeping the environment name of a value that is not a header" do
+        def perform
+          transaction.add_headers("QUERY_STRING" => "page=2", "SCRIPT_NAME" => "/admin")
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+          transaction._sample
+
+          expect(transaction).to include_environment(
+            "QUERY_STRING" => "page=2",
+            "SCRIPT_NAME" => "/admin"
+          )
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(root_span.attributes["appsignal.environment.QUERY_STRING"]).to eq("page=2")
+          expect(root_span.attributes["appsignal.environment.SCRIPT_NAME"]).to eq("/admin")
+        end
+      end
+
+      describe "not repeating a value the instrumentation already describes" do
+        def perform
+          transaction.add_headers(
+            "REQUEST_METHOD" => "GET",
+            "REQUEST_PATH" => "/users",
+            "PATH_INFO" => "/users",
+            "SERVER_NAME" => "example.com",
+            "SERVER_PORT" => "443",
+            "SERVER_PROTOCOL" => "HTTP/1.1"
+          )
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+          transaction._sample
+
+          expect(transaction).to include_environment(
+            "REQUEST_METHOD" => "GET",
+            "REQUEST_PATH" => "/users",
+            "PATH_INFO" => "/users",
+            "SERVER_NAME" => "example.com",
+            "SERVER_PORT" => "443",
+            "SERVER_PROTOCOL" => "HTTP/1.1"
+          )
+        end
+
+        # The Rack and Webmachine instrumentation reads these off the request
+        # and sends them as `http.request.method`, `url.path`, `server.address`,
+        # `server.port` and `network.protocol.version`, from better sources than
+        # this blob has.
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          environment_keys = root_span.attributes.keys.grep(/\Aappsignal\.environment\./)
+          expect(environment_keys).to be_empty
         end
       end
     end

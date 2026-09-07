@@ -53,6 +53,9 @@ describe Appsignal::Rack::InstrumentationMiddleware do
           expect(span.attributes).to_not have_key("url.path")
           expect(span.attributes).to_not have_key("url.scheme")
           expect(span.attributes).to_not have_key("url.query")
+          expect(span.attributes).to_not have_key("server.address")
+          expect(span.attributes).to_not have_key("server.port")
+          expect(span.attributes).to_not have_key("network.protocol.version")
         end
       end
 
@@ -61,6 +64,36 @@ describe Appsignal::Rack::InstrumentationMiddleware do
         make_request(Rack::MockRequest.env_for("/some/path", :method => "POST"))
 
         expect(root_span.attributes["http.request.method"]).to eq("POST")
+      end
+
+      it "reads the host, port and protocol version off the request", :collector_mode do
+        start_collector_agent
+        make_request(
+          Rack::MockRequest.env_for(
+            "https://example.com/other/path",
+            "SERVER_PROTOCOL" => "HTTP/1.1"
+          )
+        )
+
+        expect(root_span.attributes["server.address"]).to eq("example.com")
+        expect(root_span.attributes["server.port"]).to eq(443)
+        # The environment holds `HTTP/1.1`. The conventions want the version
+        # without the protocol name in front of it.
+        expect(root_span.attributes["network.protocol.version"]).to eq("1.1")
+      end
+
+      # The conventions ask for the host the client used, which behind a proxy is
+      # the one the proxy forwards rather than the one it connected to.
+      it "prefers the forwarded host over the server's own name", :collector_mode do
+        start_collector_agent
+        make_request(
+          Rack::MockRequest.env_for(
+            "http://internal.local/some/path",
+            "HTTP_X_FORWARDED_HOST" => "www.example.com"
+          )
+        )
+
+        expect(root_span.attributes["server.address"]).to eq("www.example.com")
       end
 
       it "reads the path, scheme and query string off the request", :collector_mode do

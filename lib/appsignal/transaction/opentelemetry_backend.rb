@@ -98,6 +98,28 @@ module Appsignal
       # queue duration when `queue_start_ms > 946_681_200_000`.
       QUEUE_START_MIN = 946_681_200_000
 
+      # The only two request headers Rack passes without the `HTTP_` prefix,
+      # because CGI reserves the prefixed spelling of them.
+      UNPREFIXED_HEADER_KEYS = %w[CONTENT_LENGTH CONTENT_TYPE].freeze
+
+      # `HTTP_VERSION` is a CGI variable holding the same value as
+      # `SERVER_PROTOCOL`, not a header. A client that sends a real `Version`
+      # header arrives under the same key, so that header is reported as an
+      # environment value rather than as a header. `Version` is not a registered
+      # HTTP header, so that is the cheaper of the two mistakes.
+      NON_HEADER_KEYS = %w[HTTP_VERSION].freeze
+
+      # The environment keys the Rack and Webmachine instrumentation already
+      # describes with a semantic convention attribute, which it reads from the
+      # request itself. Reporting them as environment values as well would say
+      # the same thing twice, in a worse form: `PATH_INFO` drops the mount
+      # prefix that `url.path` keeps, and `SERVER_NAME` ignores the forwarded
+      # host that `server.address` follows.
+      TRANSLATED_ENV_KEYS = %w[
+        PATH_INFO REQUEST_METHOD REQUEST_PATH SERVER_NAME SERVER_PORT
+        SERVER_PROTOCOL
+      ].freeze
+
       # One open event on the event stack. Holds the OpenTelemetry span and the
       # context token attached for it, plus the allocation bookkeeping for the
       # event. `allocation_start` is the allocation counter when the event began
@@ -730,20 +752,29 @@ module Appsignal
       # The transaction's "environment" sample data is a Rack/CGI env allowlist
       # mixing true HTTP headers (HTTP_*, plus CONTENT_LENGTH/CONTENT_TYPE) with
       # non-header CGI vars (REQUEST_METHOD, REQUEST_PATH, PATH_INFO, SERVER_*).
-      # Only the true headers map to the OTel `http.request.header.*` convention
-      # the collector and trace UI read, so emit those (normalized to lowercase,
-      # dashed header names) and drop everything else.
+      #
+      # A true header becomes `http.request.header.*`, normalized to the
+      # lowercase dashed name that convention uses. Everything else keeps its
+      # own environment name under `appsignal.environment.*`, except for the
+      # keys in `TRANSLATED_ENV_KEYS`, which the instrumentation already
+      # describes from the request itself.
       def write_request_headers(headers)
         headers.each do |key, value|
           name = otel_header_name(key)
-          @span.set_attribute("http.request.header.#{name}", value.to_s) if name
+          if name
+            @span.set_attribute("http.request.header.#{name}", value.to_s)
+          elsif !TRANSLATED_ENV_KEYS.include?(key)
+            @span.set_attribute("appsignal.environment.#{key}", value.to_s)
+          end
         end
       end
 
       def otel_header_name(env_key)
+        return if NON_HEADER_KEYS.include?(env_key)
+
         if env_key.start_with?("HTTP_")
           env_key.delete_prefix("HTTP_").downcase.tr("_", "-")
-        elsif env_key.start_with?("CONTENT_")
+        elsif UNPREFIXED_HEADER_KEYS.include?(env_key)
           env_key.downcase.tr("_", "-")
         end
       end
