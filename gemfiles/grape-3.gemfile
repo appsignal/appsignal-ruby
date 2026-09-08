@@ -1,7 +1,6 @@
 source "https://rubygems.org"
 
-# Capped below grape 4 because the Grape middleware does not support it yet.
-# See https://github.com/appsignal/appsignal-ruby/issues/1606.
+# Capped below grape 4, which the grape-4 gemset covers.
 #
 # No grape 3 supports Ruby 2.7, so that build resolves grape 2.4.0, the last
 # grape 2 release. Capping below 4 rather than requiring 3 is what keeps that
