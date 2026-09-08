@@ -1158,7 +1158,7 @@ describe Appsignal::Config do
         :ownership_set_namespace        => false,
         :push_api_key                   => "abc",
         :request_headers                => [],
-        :response_headers               => [],
+        :response_headers               => nil,
         :revision                       => "v2.5.1",
         :send_environment_metadata      => true,
         :send_function_parameters       => nil,
@@ -2164,6 +2164,10 @@ describe Appsignal::Config do
         end
 
         options.each do |option, value|
+          # An unset array option reads as an empty array, so that appending
+          # to it works.
+          value = [] if value.nil? && Appsignal::Config::ARRAY_OPTIONS.key?(option)
+
           expect(dsl.send(option)).to eq(value)
         end
       end

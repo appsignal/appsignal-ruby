@@ -154,7 +154,7 @@ module Appsignal
         REQUEST_METHOD REQUEST_PATH SERVER_NAME SERVER_PORT
         SERVER_PROTOCOL
       ],
-      :response_headers => [],
+      :response_headers => nil,
       :send_environment_metadata => true,
       :send_function_parameters => nil,
       :send_params => true,

@@ -616,6 +616,41 @@ if DependencyHelper.opentelemetry_present?
         end
       end
 
+      it "omits attributes whose underlying option is nil or empty" do
+        resource = described_class.build_resource(
+          build_config(
+            :options => {
+              :name => "my-app",
+              :push_api_key => "abc"
+            }
+          )
+        )
+        attrs = resource_attrs(resource)
+
+        # These are unset, so they are dropped and the collector applies its
+        # own defaults.
+        %w[
+          appsignal.config.platform
+          appsignal.config.response_headers
+          appsignal.config.send_function_parameters
+          appsignal.config.send_request_query_parameters
+          appsignal.config.send_request_payload
+        ].each do |key|
+          expect(attrs).not_to have_key(key)
+        end
+
+        # These default to an empty list, which is a value of its own, so they
+        # are sent.
+        %w[
+          appsignal.config.filter_function_parameters
+          appsignal.config.filter_request_query_parameters
+          appsignal.config.ignore_errors
+          appsignal.config.ignore_logs
+        ].each do |key|
+          expect(attrs[key]).to eq([])
+        end
+      end
+
       it "sends the request header allowlist under the collector's name for it" do
         resource = described_class.build_resource(
           build_config(
@@ -634,32 +669,38 @@ if DependencyHelper.opentelemetry_present?
         expect(attrs["appsignal.config.request_headers"]).to eq(["accept", "date"])
       end
 
-      it "omits attributes whose underlying option is nil or empty" do
+      it "keeps an empty allowlist, so the collector keeps nothing" do
         resource = described_class.build_resource(
           build_config(
             :options => {
               :name => "my-app",
-              :push_api_key => "abc"
+              :push_api_key => "abc",
+              :keep_request_headers => [],
+              :response_headers => []
             }
           )
         )
         attrs = resource_attrs(resource)
 
-        # These all default to nil or [] and should be dropped so the
-        # collector can apply its own defaults.
-        %w[
-          appsignal.config.filter_function_parameters
-          appsignal.config.filter_request_query_parameters
-          appsignal.config.ignore_errors
-          appsignal.config.ignore_logs
-          appsignal.config.platform
-          appsignal.config.response_headers
-          appsignal.config.send_function_parameters
-          appsignal.config.send_request_query_parameters
-          appsignal.config.send_request_payload
-        ].each do |key|
-          expect(attrs).not_to have_key(key)
-        end
+        expect(attrs["appsignal.config.request_headers"]).to eq([])
+        expect(attrs["appsignal.config.response_headers"]).to eq([])
+      end
+
+      it "drops an empty string, which is how an unset string option arrives" do
+        resource = described_class.build_resource(
+          build_config(
+            :root_path => "",
+            :options => {
+              :name => "my-app",
+              :push_api_key => "abc",
+              :platform => ""
+            }
+          )
+        )
+        attrs = resource_attrs(resource)
+
+        expect(attrs).not_to have_key("appsignal.config.platform")
+        expect(attrs).not_to have_key("appsignal.config.app_path")
       end
     end
 
