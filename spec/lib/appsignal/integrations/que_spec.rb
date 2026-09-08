@@ -364,6 +364,176 @@ if DependencyHelper.que_present?
         end
       end
 
+      # The Active Job adapter enqueues a wrapper class with the serialized job
+      # data as its only argument, so an Active Job job carries its context
+      # there rather than in the job's tags. That works on every Que version,
+      # including the ones with no tags to carry a context in at all.
+      context "with incoming trace context from an Active Job job" do
+        let(:trace_id_hex) { "0af7651916cd43dd8448eb211c80319c" }
+        let(:span_id_hex) { "b7ad6b7169203331" }
+        let(:traceparent) { "00-#{trace_id_hex}-#{span_id_hex}-01" }
+        # Que reads a job's arguments back out of JSONB with symbol keys, so
+        # that is the shape the integration has to read.
+        let(:job_attrs) do
+          super().merge(
+            :job_class => Appsignal::Integrations::QueTraceContext::ACTIVE_JOB_WRAPPER,
+            :args => [
+              {
+                :job_class => "MyActiveJob",
+                :arguments => [],
+                :__otel_headers => [["traceparent", traceparent]]
+              }
+            ]
+          )
+        end
+        let(:job) do
+          Class.new(::Que::Job) do
+            def run(job_data)
+            end
+          end
+        end
+
+        def perform
+          perform_que_job(instance)
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent
+          expect { perform }.to change { created_transactions.length }.by(1)
+          expect(last_transaction).to be_completed
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+
+          expect(root_span.kind).to eq(:consumer)
+          expect(root_span.hex_trace_id).to eq(trace_id_hex)
+          expect(root_span.parent_span_id.unpack1("H*")).to eq(span_id_hex)
+          expect(root_span.links.size).to eq(1)
+        end
+      end
+
+      if DependencyHelper.active_job_present? && DependencyHelper.que2_present?
+        # A round trip through real Active Job and the real Que adapter. The
+        # enqueue writes the trace context onto the job and Active Job
+        # serializes it; the arguments are then put through Que's own JSON
+        # round trip, which is what turns their keys into symbols on the way
+        # back out of the database. That symbol-keyed shape is the one the
+        # integration has to read, and it is not obvious from the enqueue side,
+        # so it is worth producing rather than assuming.
+        context "with a job enqueued through real Active Job" do
+          before do
+            require "active_job"
+            # Que ships the adapter but only requires it from its railtie.
+            require "que/active_job/extensions"
+            ActiveJob::Base.queue_adapter = :que
+            ActiveJob::Base.logger = nil
+
+            stub_const("QueRoundTripJob", Class.new(ActiveJob::Base) do
+              def perform(*)
+              end
+            end)
+          end
+
+          let(:job) do
+            Class.new(::Que::Job) do
+              def run(job_data)
+              end
+            end
+          end
+
+          # Enqueues with a real Active Job job, captures the arguments Que would
+          # have inserted, and hands them back in the shape Que reads them in.
+          def enqueue_then_perform
+            enqueued = nil
+            allow(::Que).to receive(:execute) do |_command, values = nil|
+              enqueued ||= values
+              # Que builds the job it returns from the inserted row, and the
+              # adapter reads an id off it.
+              [{ :id => 1 }]
+            end
+
+            set_current_transaction(http_request_transaction)
+            QueRoundTripJob.perform_later("foo")
+            Appsignal::Transaction.complete_current!
+
+            # Que stores the arguments as JSONB and reads them back with
+            # symbolized keys. Use Que's own serializer so the shape is Que's,
+            # not this example's idea of it.
+            args_json = enqueued.find do |value|
+              value.is_a?(String) && value.start_with?("[")
+            end
+            args = ::Que.deserialize_json(args_json)
+            attrs = job_attrs.merge(
+              :job_class => Appsignal::Integrations::QueTraceContext::ACTIVE_JOB_WRAPPER,
+              :args => args
+            )
+            perform_que_job(job.new(attrs))
+            args
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+
+            args = enqueue_then_perform
+
+            producer = event_span_for("enqueue.active_job")
+
+            # The shape the integration reads, as Active Job, the Que adapter and
+            # Que's own JSON round trip really produce it. The examples that
+            # construct this shape by hand are only valid as long as this holds.
+            expect(args.size).to eq(1)
+            expect(args.first[:__otel_headers]).to eq(
+              [["traceparent", "00-#{producer.hex_trace_id}-#{producer.hex_span_id}-01"]]
+            )
+
+            consumer = span_exporter.finished_spans.find do |span|
+              span.kind == :consumer
+            end
+            expect(consumer).to_not be_nil
+            expect(consumer.hex_trace_id).to eq(producer.hex_trace_id)
+            expect(consumer.parent_span_id).to eq(producer.span_id)
+          end
+        end
+      end
+
+      # A job enqueued by a service that instruments Que but not Active Job has
+      # no Active Job carrier to read, so the job's tags are what the trace has
+      # to be continued from.
+      context "with an Active Job job carrying only a tag context",
+        :if => DependencyHelper.que1_present? do
+        let(:trace_id_hex) { "0af7651916cd43dd8448eb211c80319c" }
+        let(:span_id_hex) { "b7ad6b7169203331" }
+        let(:job_attrs) do
+          super().merge(
+            :job_class => Appsignal::Integrations::QueTraceContext::ACTIVE_JOB_WRAPPER,
+            :args => [{ :job_class => "MyActiveJob", :arguments => [] }],
+            :data => {
+              :tags => ["traceparent:00-#{trace_id_hex}-#{span_id_hex}-01"]
+            }
+          )
+        end
+        let(:job) do
+          Class.new(::Que::Job) do
+            def run(job_data)
+            end
+          end
+        end
+
+        def perform
+          perform_que_job(instance)
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+
+          expect(root_span.hex_trace_id).to eq(trace_id_hex)
+          expect(root_span.parent_span_id.unpack1("H*")).to eq(span_id_hex)
+        end
+      end
+
       # Only Que 2's `bulk_enqueue` writes the bulk tag, but reading it back is
       # the same on every version that has tags, so this runs on Que 1 too.
       context "with incoming trace context from a bulk enqueue",

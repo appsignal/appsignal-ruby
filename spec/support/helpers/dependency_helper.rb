@@ -119,6 +119,18 @@ module DependencyHelper
     dependency_present? "activejob"
   end
 
+  # Whether the Active Job adapter for Delayed Job can be loaded. Delayed Job
+  # ships an adapter that subclasses `ActiveJob::QueueAdapters::AbstractAdapter`,
+  # which Active Job only has from 7.2 on. Active Job ships an adapter of the
+  # same name, so which of the two a `require` finds depends on the load order,
+  # and the Delayed Job one raises below 7.2. Only drive the adapter on versions
+  # where it loads whichever wins.
+  def active_job_delayed_job_adapter_present?
+    return false unless active_job_present? && delayed_job_present?
+
+    Gem.loaded_specs["activejob"].version >= Gem::Version.new("7.2.0")
+  end
+
   def active_support_present?
     dependency_present? "activesupport"
   end
