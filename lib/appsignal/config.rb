@@ -301,7 +301,8 @@ module Appsignal
 
     # Configuration options that only have an effect when the integration is
     # in collector mode. When the agent is in use, setting any of these emits
-    # a warning at startup.
+    # a warning at startup. There is no list for the other direction: every
+    # option that predates collector mode still has an effect in it.
     # @!visibility private
     COLLECTOR_ONLY_OPTIONS = [
       :filter_attributes,
@@ -315,14 +316,6 @@ module Appsignal
       :send_request_payload,
       :send_request_query_parameters,
       :service_name
-    ].freeze
-
-    # Existing AppSignal options that only affect the agent's handling of
-    # trace data. In collector mode these don't filter anything; users need
-    # their collector-mode equivalents (see COLLECTOR_ONLY_OPTIONS).
-    # @!visibility private
-    AGENT_ONLY_TRACE_OPTIONS = [
-      :filter_metadata
     ].freeze
 
     # Options that are deprecated in collector mode, mapped to the options
@@ -704,10 +697,6 @@ module Appsignal
     # @!visibility private
     def warn_for_mode_mismatch
       if collector_mode_configured?
-        warn_user_modified(AGENT_ONLY_TRACE_OPTIONS) do |option|
-          "The collector is in use. The '#{option}' configuration option is " \
-            "only used by the agent for trace data and will be ignored."
-        end
         warn_user_modified(DEPRECATED_COLLECTOR_OPTIONS.keys) do |option|
           deprecated_collector_option_message(option)
         end
