@@ -122,11 +122,10 @@ describe Appsignal::Utils::RequestHeaders do
       end
     end
 
-    it "returns the same Rack name for two headers Rack cannot tell apart" do
-      # Rack folds both of these into `HTTP_X_FOO`, so the round trip renames
-      # one of them.
-      expect(rack_name("x-foo")).to eq("HTTP_X_FOO")
-      expect(rack_name("x_foo")).to eq("HTTP_X_FOO")
+    it "returns the same Rack name for two keys that name one header" do
+      expect(described_class.header_name("CONTENT_LENGTH")).to eq("content-length")
+      expect(described_class.header_name("HTTP_CONTENT_LENGTH")).to eq("content-length")
+      expect(rack_name("content-length")).to eq("CONTENT_LENGTH")
     end
   end
 end

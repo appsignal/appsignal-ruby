@@ -59,6 +59,20 @@ module Appsignal
         raise NotImplementedError
       end
 
+      # Maps each logical header channel (`:request_headers`,
+      # `:request_environment`) to the storage bucket it lands in and the
+      # transform to apply to each key and value added on it, as
+      # `[bucket, transform]`. A `nil` transform leaves the value alone.
+      def headers_mapping
+        raise NotImplementedError
+      end
+
+      # Maps each header bucket to the configuration option that lists the
+      # keys to keep in it. An option holding `nil` keeps every key.
+      def headers_allowlist
+        raise NotImplementedError
+      end
+
       # Sample data (params, session, tags, ...), breadcrumbs and errors.
       def set_sample_data(_key, _data)
         raise NotImplementedError

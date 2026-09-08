@@ -22,6 +22,8 @@ module Appsignal
 
       class << self
         def split(env)
+          return [{}, env] unless env.is_a?(Hash)
+
           headers = {}
           environment = {}
 
@@ -35,6 +37,13 @@ module Appsignal
           end
 
           [headers, environment]
+        end
+
+        def split_lazily(&block)
+          split = nil
+          splitter = lambda { split ||= split(block.call) }
+
+          [lambda { splitter.call.first }, lambda { splitter.call.last }]
         end
 
         def header_name(env_key)
