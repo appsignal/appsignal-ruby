@@ -2125,6 +2125,14 @@ describe Appsignal::Config do
         expect(logs).to_not include("only used by the collector")
       end
 
+      it "does not warn when request_headers is set" do
+        logs =
+          capture_logs do
+            build_config(:options => { :request_headers => ["HTTP_ACCEPT"] })
+          end
+        expect(logs).to_not include("deprecated in collector mode")
+      end
+
       it "does not warn about a collector-only option a loader set" do
         # A loader supplying a default is AppSignal's own code, not the
         # application asking for the option, so there is no line to point at.

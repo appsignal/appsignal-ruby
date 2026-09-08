@@ -327,9 +327,10 @@ module Appsignal
       :send_params
     ].freeze
 
-    # Options that are deprecated in collector mode, mapped to the options that
-    # replace them. Collector mode reads them only to work out a value for
-    # their replacements while those are unset.
+    # Options that are deprecated in collector mode, mapped to the options
+    # that replace them. Collector mode still reads them, to work out a value
+    # for their replacements when those are unset, so the warning says what to
+    # set instead rather than saying the option is ignored.
     # @!visibility private
     DEPRECATED_COLLECTOR_OPTIONS = {
       :request_headers => [:keep_request_headers, :keep_request_environment]
@@ -699,6 +700,9 @@ module Appsignal
           "The collector is in use. The '#{option}' configuration option is " \
             "only used by the agent for trace data and will be ignored."
         end
+        warn_user_modified(DEPRECATED_COLLECTOR_OPTIONS.keys) do |option|
+          deprecated_collector_option_message(option)
+        end
       else
         warn_user_modified(COLLECTOR_ONLY_OPTIONS) do |option|
           "The agent is in use. The '#{option}' configuration option is " \
@@ -728,6 +732,33 @@ module Appsignal
     end
 
     private
+
+    # The warning for an option that is deprecated in collector mode. Names the
+    # options that replace it and, for each one AppSignal worked out a value
+    # for, the value to set to keep reporting what the application reports now.
+    def deprecated_collector_option_message(option)
+      replacements = DEPRECATED_COLLECTOR_OPTIONS.fetch(option)
+      message = "The collector is in use. The '#{option}' configuration " \
+        "option is deprecated in collector mode. It is replaced by " \
+        "#{quoted_option_list(replacements)}."
+
+      derived = replacements.select { |name| derived_config.key?(name) }
+      return message if derived.empty?
+
+      # A line per option, so that a reader can find the one they are after
+      # without reading past the others.
+      values = derived.map { |name| "\n  #{name}: #{derived_config[name].inspect}" }
+      "#{message} Set these options to keep reporting what this application " \
+        "reports now:#{values.join}"
+    end
+
+    # Joins names for a message: "'a'", "'a' and 'b'", "'a', 'b' and 'c'".
+    def quoted_option_list(names)
+      names = names.map { |name| "'#{name}'" }
+      return names.first if names.length == 1
+
+      "#{names[0..-2].join(", ")} and #{names.last}"
+    end
 
     # Yield a warning for each option in `options` the application configured.
     # An option nobody asked for, or one asked for and left at its default, is
