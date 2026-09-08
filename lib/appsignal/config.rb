@@ -309,14 +309,6 @@ module Appsignal
       :service_name
     ].freeze
 
-    # Existing AppSignal options that only affect the agent's handling of
-    # trace data. In collector mode these don't filter anything; users need
-    # their collector-mode equivalents (see COLLECTOR_ONLY_OPTIONS).
-    # @!visibility private
-    AGENT_ONLY_TRACE_OPTIONS = [
-      :filter_metadata
-    ].freeze
-
     # @!visibility private
     DEPRECATED_COLLECTOR_OPTIONS = {
       :filter_parameters => {
@@ -711,10 +703,6 @@ module Appsignal
     # @!visibility private
     def warn_for_mode_mismatch
       if collector_mode_configured?
-        warn_user_modified(AGENT_ONLY_TRACE_OPTIONS) do |option|
-          "The collector is in use. The '#{option}' configuration option is " \
-            "only used by the agent for trace data and will be ignored."
-        end
         warn_user_modified(DEPRECATED_COLLECTOR_OPTIONS.keys) do |option|
           deprecated_collector_option_message(option)
         end

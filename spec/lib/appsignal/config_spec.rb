@@ -2151,13 +2151,13 @@ describe Appsignal::Config do
         expect(logs).to include(%(\n  send_request_payload: false))
       end
 
-      it "warns when filter_metadata is set" do
+      it "does not warn when filter_metadata is set" do
         logs =
           capture_logs do
             build_config(:options => collector_options.merge(:filter_metadata => ["path"]))
           end
-        expect(logs).to include("filter_metadata")
-        expect(logs).to include("only used by the agent")
+        expect(logs).to_not include("will be ignored")
+        expect(logs).to_not include("deprecated in collector mode")
       end
 
       it "does not warn when only filter_attributes is set" do
@@ -2165,8 +2165,43 @@ describe Appsignal::Config do
           capture_logs do
             build_config(:options => collector_options.merge(:filter_attributes => ["password"]))
           end
-        expect(logs).to_not include("only used by the agent")
         expect(logs).to_not include("only used by the collector")
+      end
+
+      it "warns when request_headers is set" do
+        logs =
+          capture_logs do
+            build_config(
+              :options => collector_options.merge(
+                :request_headers => %w[HTTP_ACCEPT REMOTE_ADDR]
+              )
+            )
+          end
+        expect(logs).to include("request_headers")
+        expect(logs).to include("deprecated in collector mode")
+        expect(logs).to include("'keep_request_headers' and 'keep_request_environment'")
+        expect(logs).to include(%(\n  keep_request_headers: ["accept"]))
+        expect(logs).to include(%(\n  keep_request_environment: ["REMOTE_ADDR"]))
+      end
+
+      it "leaves out the value of a replacement the application set itself" do
+        logs =
+          capture_logs do
+            build_config(
+              :options => collector_options.merge(
+                :request_headers => %w[HTTP_ACCEPT REMOTE_ADDR],
+                :keep_request_headers => ["date"]
+              )
+            )
+          end
+        expect(logs).to include(%(\n  keep_request_environment: ["REMOTE_ADDR"]))
+        expect(logs).to_not include("\n  keep_request_headers:")
+      end
+
+      it "does not warn when request_headers is left at its default" do
+        logs = capture_logs { build_config(:options => collector_options) }
+
+        expect(logs).to_not include("deprecated in collector mode")
       end
 
       it "does not warn when an agent-only option is explicitly set to its default" do
@@ -2176,7 +2211,6 @@ describe Appsignal::Config do
           capture_logs do
             build_config(:options => collector_options.merge(:send_params => true))
           end
-        expect(logs).to_not include("only used by the agent")
         expect(logs).to_not include("only used by the collector")
       end
     end
@@ -2205,7 +2239,6 @@ describe Appsignal::Config do
           capture_logs do
             build_config(:options => { :filter_parameters => ["password"] })
           end
-        expect(logs).to_not include("only used by the agent")
         expect(logs).to_not include("only used by the collector")
       end
 
@@ -2232,7 +2265,6 @@ describe Appsignal::Config do
           capture_logs do
             build_config(:options => { :filter_attributes => [] })
           end
-        expect(logs).to_not include("only used by the agent")
         expect(logs).to_not include("only used by the collector")
       end
     end
