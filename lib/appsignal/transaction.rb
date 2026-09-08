@@ -264,6 +264,7 @@ module Appsignal
       # That symbol is also the sample-data key the backend receives, so it can
       # route the bucket to the right storage.
       @params_mapping = @backend.params_mapping
+      @params_options = @backend.params_options
       @params_buckets = @params_mapping.values.uniq.to_h do |bucket|
         [bucket, Appsignal::SampleData.new(bucket)]
       end
@@ -662,10 +663,6 @@ module Appsignal
 
     # Add headers to the transaction.
     #
-    # @deprecated Use {#add_request_headers} for request headers and
-    #   {#add_request_environment} for the values a Rack environment holds that
-    #   are not request headers. This method takes both kinds at once, so it
-    #   has to work out which of them each value is.
     # @since 4.0.0
     # @param given_headers [Hash<String, Object>] A hash containing headers.
     # @yield This block is called when the transaction is sampled. The block's
@@ -700,8 +697,6 @@ module Appsignal
     # When both the `given_headers` and a block is given to this method,
     # the block is leading and the argument will _not_ be used.
     #
-    # @deprecated Use {#add_request_headers_if_nil} or
-    #   {#add_request_environment_if_nil}.
     # @since 4.0.0
     # @param given_headers [Hash<String, Object>] A hash containing headers.
     # @yield This block is called when the transaction is sampled. The block's
@@ -1180,7 +1175,6 @@ module Appsignal
       !channel_set?(params_channel(channel)) && !params_data(channel).empty?
     end
 
-
     # `add_params`/`set_params` don't say whether the params are a request
     # payload or function parameters, so in collector mode they always map to
     # the request payload. Warn once per process to nudge callers toward the
@@ -1377,7 +1371,7 @@ module Appsignal
       # `:request_payload` and `:function_parameters` buckets. The backend maps
       # each key to its storage (C-extension slot or OpenTelemetry attribute).
       @params_buckets.each do |bucket, sample|
-        data[bucket] = sanitized_params(sample)
+        data[bucket] = sanitized_params(bucket, sample)
       end
       data.each do |key, value|
         set_sample_data(key, value)
@@ -1405,10 +1399,22 @@ module Appsignal
       params_value(params_data(:params))
     end
 
-    def sanitized_params(sample = params_data(:params))
-      return unless Appsignal.config[:send_params]
+    # Returns the values of a params bucket that its options report.
+    #
+    # Each bucket has an option naming the keys to filter out of it and an
+    # option deciding whether to report it at all. Agent mode has a single
+    # bucket, filtered and gated by `filter_parameters` and `send_params`.
+    # Collector mode has a bucket per kind of params, each with its own pair,
+    # because the collector keeps each kind in its own attribute.
+    #
+    # @return [nil] if the bucket is not reported.
+    def sanitized_params(bucket, sample)
+      options = @params_options.fetch(bucket)
+      # An option that is not set says nothing, and the default is to report,
+      # so only an explicit `false` suppresses a bucket.
+      return if Appsignal.config[options.fetch(:send)] == false
 
-      filter_keys = Appsignal.config[:filter_parameters] || []
+      filter_keys = Appsignal.config[options.fetch(:filter)] || []
       Appsignal::Utils::SampleDataSanitizer.sanitize(params_value(sample), filter_keys)
     end
 

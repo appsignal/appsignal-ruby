@@ -322,9 +322,7 @@ module Appsignal
     # their collector-mode equivalents (see COLLECTOR_ONLY_OPTIONS).
     # @!visibility private
     AGENT_ONLY_TRACE_OPTIONS = [
-      :filter_metadata,
-      :filter_parameters,
-      :send_params
+      :filter_metadata
     ].freeze
 
     # Options that are deprecated in collector mode, mapped to the options
@@ -338,9 +336,19 @@ module Appsignal
     # silently taking the wrong one.
     # @!visibility private
     DEPRECATED_COLLECTOR_OPTIONS = {
+      :filter_parameters => {
+        :filter_request_payload => :derived_as_is,
+        :filter_function_parameters => :derived_as_is,
+        :filter_request_query_parameters => :derived_as_is
+      },
       :request_headers => {
         :keep_request_headers => :derived_header_names,
         :keep_request_environment => :derived_environment_keys
+      },
+      :send_params => {
+        :send_request_payload => :derived_as_is,
+        :send_request_query_parameters => :derived_as_is,
+        :send_function_parameters => :derived_as_is
       }
     }.freeze
 
@@ -1053,6 +1061,12 @@ module Appsignal
       end
 
       derived
+    end
+
+    # The value a replacement takes as it is, because it and the option it
+    # replaces mean the same thing and differ only in what they reach.
+    def derived_as_is(value)
+      value
     end
 
     # The half of `request_headers` that names a request header, named the way

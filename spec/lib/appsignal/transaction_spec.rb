@@ -62,7 +62,10 @@ describe Appsignal::Transaction do
             :request_headers => [:environment, nil],
             :request_environment => [:environment, nil]
           },
-          :headers_allowlist => { :environment => :request_headers }
+          :headers_allowlist => { :environment => :request_headers },
+          :params_options => {
+            :params => { :filter => :filter_parameters, :send => :send_params }
+          }
         )
       end
 
@@ -1255,6 +1258,79 @@ describe Appsignal::Transaction do
 
         expect(JSON.parse(root_span.attributes["appsignal.request.payload"]))
           .to eq("key" => "value")
+      end
+    end
+
+    context "with a filter option per kind of params" do
+      let(:options) do
+        {
+          :filter_parameters => %w[blanket],
+          :filter_request_payload => %w[payload_key],
+          :filter_function_parameters => %w[function_key]
+        }
+      end
+
+      def perform
+        transaction.add_request_payload("payload_key" => "a", "blanket" => "b")
+        transaction.add_function_parameters("function_key" => "c", "blanket" => "d")
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        # The per-kind options do nothing here. `filter_parameters` filters the
+        # one bucket every kind merges into.
+        expect(transaction).to include_params(
+          "payload_key" => "a",
+          "function_key" => "c",
+          "blanket" => "[FILTERED]"
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        # Each bucket is filtered by its own option, and by nothing else.
+        expect(JSON.parse(root_span.attributes["appsignal.request.payload"]))
+          .to eq("payload_key" => "[FILTERED]", "blanket" => "b")
+        expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+          .to eq("function_key" => "[FILTERED]", "blanket" => "d")
+      end
+    end
+
+    context "with a send option per kind of params" do
+      let(:options) { { :send_function_parameters => false } }
+
+      def perform
+        transaction.add_request_payload("payload_key" => "a")
+        transaction.add_function_parameters("function_key" => "c")
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        # The per-kind option does nothing here, and `send_params` reports
+        # both kinds.
+        expect(transaction).to include_params(
+          "payload_key" => "a",
+          "function_key" => "c"
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(JSON.parse(root_span.attributes["appsignal.request.payload"]))
+          .to eq("payload_key" => "a")
+        expect(root_span.attributes).to_not have_key("appsignal.function.parameters")
       end
     end
 

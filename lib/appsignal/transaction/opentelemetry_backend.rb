@@ -284,6 +284,30 @@ module Appsignal
         PARAMS_MAPPING
       end
 
+      # The collector keeps each kind of params in its own attribute, and has
+      # an option per kind to filter and to suppress it. `filter_parameters`
+      # and `send_params` cover every kind at once, so they say nothing about
+      # which bucket they mean and are not used here. Collector mode works out
+      # a value for these options from them instead.
+      PARAMS_OPTIONS = {
+        :request_payload => {
+          :filter => :filter_request_payload,
+          :send => :send_request_payload
+        },
+        :function_parameters => {
+          :filter => :filter_function_parameters,
+          :send => :send_function_parameters
+        },
+        :query_parameters => {
+          :filter => :filter_request_query_parameters,
+          :send => :send_request_query_parameters
+        }
+      }.freeze
+
+      def params_options
+        PARAMS_OPTIONS
+      end
+
       # The collector reports a request header as an `http.request.header.*`
       # attribute and has nowhere to put the rest of a Rack environment, so the
       # two channels stay in separate buckets. Neither needs a transform: the
