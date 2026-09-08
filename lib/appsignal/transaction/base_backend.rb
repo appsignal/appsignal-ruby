@@ -59,6 +59,13 @@ module Appsignal
         raise NotImplementedError
       end
 
+      # Maps each params bucket to the configuration options that decide what
+      # it reports: `:filter`, naming the keys to filter out of it, and
+      # `:send`, deciding whether to report it at all.
+      def params_options
+        raise NotImplementedError
+      end
+
       # Maps each logical header channel (`:request_headers`,
       # `:request_environment`) to the storage bucket it lands in and the
       # transform to apply to each key and value added on it, as

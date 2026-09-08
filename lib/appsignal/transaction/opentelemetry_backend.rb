@@ -284,6 +284,25 @@ module Appsignal
         PARAMS_MAPPING
       end
 
+      PARAMS_OPTIONS = {
+        :request_payload => {
+          :filter => :filter_request_payload,
+          :send => :send_request_payload
+        },
+        :function_parameters => {
+          :filter => :filter_function_parameters,
+          :send => :send_function_parameters
+        },
+        :query_parameters => {
+          :filter => :filter_request_query_parameters,
+          :send => :send_request_query_parameters
+        }
+      }.freeze
+
+      def params_options
+        PARAMS_OPTIONS
+      end
+
       HEADERS_MAPPING = {
         :request_headers => [:request_headers, nil],
         :request_environment => [:environment, nil]

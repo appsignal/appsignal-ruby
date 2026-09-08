@@ -314,16 +314,24 @@ module Appsignal
     # their collector-mode equivalents (see COLLECTOR_ONLY_OPTIONS).
     # @!visibility private
     AGENT_ONLY_TRACE_OPTIONS = [
-      :filter_metadata,
-      :filter_parameters,
-      :send_params
+      :filter_metadata
     ].freeze
 
     # @!visibility private
     DEPRECATED_COLLECTOR_OPTIONS = {
+      :filter_parameters => {
+        :filter_request_payload => :derived_as_is,
+        :filter_function_parameters => :derived_as_is,
+        :filter_request_query_parameters => :derived_as_is
+      },
       :request_headers => {
         :keep_request_headers => :derived_header_names,
         :keep_request_environment => :derived_environment_keys
+      },
+      :send_params => {
+        :send_request_payload => :derived_as_is,
+        :send_request_query_parameters => :derived_as_is,
+        :send_function_parameters => :derived_as_is
       }
     }.freeze
 
@@ -994,6 +1002,10 @@ module Appsignal
       end
 
       derived
+    end
+
+    def derived_as_is(value)
+      value
     end
 
     def derived_header_names(value)

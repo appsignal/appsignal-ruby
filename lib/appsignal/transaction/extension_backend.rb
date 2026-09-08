@@ -96,6 +96,14 @@ module Appsignal
         PARAMS_MAPPING
       end
 
+      PARAMS_OPTIONS = {
+        :params => { :filter => :filter_parameters, :send => :send_params }
+      }.freeze
+
+      def params_options
+        PARAMS_OPTIONS
+      end
+
       HEADERS_MAPPING = {
         :request_headers => [
           :environment,
