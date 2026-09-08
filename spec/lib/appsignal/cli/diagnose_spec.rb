@@ -908,6 +908,35 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
           expect_config_to_be_printed(Appsignal.config.config_hash)
         end
 
+        describe "options derived from other options" do
+          context "when the option they're derived from is configured" do
+            before do
+              ENV["APPSIGNAL_REQUEST_HEADERS"] = "HTTP_ACCEPT,REMOTE_ADDR"
+              run
+            end
+
+            it "outputs the derived value and names the derived source" do
+              expect(output).to include(%(      derived: ["accept"]\n))
+              expect(output).to include(%(      derived: ["REMOTE_ADDR"]\n))
+            end
+
+            it "transmits the derived values in the report", :send_report => :yes_cli_input do
+              expect(received_report["config"]["sources"]["derived"]).to include(
+                "keep_request_headers" => ["accept"],
+                "keep_request_environment" => ["REMOTE_ADDR"]
+              )
+            end
+          end
+
+          context "when it isn't configured" do
+            before { run }
+
+            it "derives nothing, so the report stays quiet about them" do
+              expect(output).to_not include("derived:")
+            end
+          end
+        end
+
         describe "option sources" do
           context "when the source is a single source" do
             before { run }
