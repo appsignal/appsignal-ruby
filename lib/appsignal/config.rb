@@ -707,6 +707,9 @@ module Appsignal
           "The collector is in use. The '#{option}' configuration option is " \
             "only used by the agent for trace data and will be ignored."
         end
+        warn_user_modified(DEPRECATED_COLLECTOR_OPTIONS.keys) do |option|
+          deprecated_collector_option_message(option)
+        end
       else
         warn_user_modified(COLLECTOR_ONLY_OPTIONS) do |option|
           "The agent is in use. The '#{option}' configuration option is " \
@@ -736,6 +739,27 @@ module Appsignal
     end
 
     private
+
+    def deprecated_collector_option_message(option)
+      replacements = DEPRECATED_COLLECTOR_OPTIONS.fetch(option).keys
+      message = "The collector is in use. The '#{option}' configuration " \
+        "option is deprecated in collector mode. It is replaced by " \
+        "#{quoted_option_list(replacements)}."
+
+      derived = replacements.select { |name| derived_config.key?(name) }
+      return message if derived.empty?
+
+      values = derived.map { |name| "\n  #{name}: #{derived_config[name].inspect}" }
+      "#{message} Set these options to keep reporting what this application " \
+        "reports now:#{values.join}"
+    end
+
+    def quoted_option_list(names)
+      names = names.map { |name| "'#{name}'" }
+      return names.first if names.length == 1
+
+      "#{names[0..-2].join(", ")} and #{names.last}"
+    end
 
     def warn_user_modified(options)
       options.each do |option|
