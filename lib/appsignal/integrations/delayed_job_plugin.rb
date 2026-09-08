@@ -11,6 +11,18 @@ module Appsignal
           enqueue_with_instrumentation(job, block)
         end
 
+        # Delayed Job asks a job for its own maximum run time before it invokes
+        # it, and answering that question reads the job's payload. A job whose
+        # payload will not deserialize therefore raises inside the worker and
+        # never reaches `invoke_job`, so the callback below does not run and the
+        # failure goes unreported. This callback sits one step further out, on
+        # the worker's whole run of the job, which is where such a job can still
+        # be seen.
+        lifecycle.around(:perform) do |worker, job, &block|
+          report_job_that_cannot_be_loaded(job)
+          block.call(worker, job)
+        end
+
         lifecycle.around(:invoke_job) do |job, &block|
           invoke_with_instrumentation(job, block)
         end
@@ -51,6 +63,34 @@ module Appsignal
         job.name
       end
 
+      # Reports a job whose payload cannot be read, and does nothing at all for
+      # a job that loads. That is what keeps every ordinary job instrumented by
+      # the `:invoke_job` callback alone: no transaction is opened here, so an
+      # ordinary job's reported duration and its reported error are exactly
+      # what they were before this callback existed.
+      #
+      # Reading the payload here reads it a moment before the worker would have
+      # read it anyway. Delayed Job memoizes a payload that loads, so a job
+      # that is fine is deserialized once either way.
+      #
+      # Nothing is re-raised. The worker reads the same payload immediately
+      # after this returns, raises the same error, and fails the job as it
+      # always has. Raising here instead would move that error out of the
+      # worker's own handling and into the loop that reserves jobs.
+      def self.report_job_that_cannot_be_loaded(job)
+        job.payload_object
+        nil
+      rescue Exception => error
+        warn_unreadable_payload_once(error)
+
+        transaction =
+          Appsignal::Transaction.create(Appsignal::Transaction::BACKGROUND_JOB)
+        transaction.set_action_if_nil(action_name_without_payload(job))
+        transaction.set_error(error)
+        add_job_metadata(transaction, job)
+        Appsignal::Transaction.complete_current!
+      end
+
       def self.invoke_with_instrumentation(job, block)
         transaction =
           Appsignal::Transaction.create(Appsignal::Transaction::BACKGROUND_JOB)
@@ -63,39 +103,106 @@ module Appsignal
           transaction.set_error(error)
           raise
         ensure
-          payload = job.payload_object
-          if payload.respond_to? :job_data
-            # ActiveJob
-            job_data = payload.job_data
-            transaction.set_action_if_nil("#{job_data["job_class"]}#perform")
-            transaction.add_params_if_nil(job_data.fetch("arguments", {}))
-          else
-            # Delayed Job
-            transaction.set_action_if_nil(action_name_from_payload(payload, job.name))
-            transaction.add_params_if_nil(extract_value(payload, :args, {}))
+          # Delayed Job raises when a job's handler will not deserialize, and it
+          # raises again on every further attempt to read it. Reading the payload
+          # here without a guard therefore replaces the error the job already
+          # failed with, and skips the rest of this block, so the transaction is
+          # never completed and the failure is never reported.
+          begin
+            payload = job.payload_object
+            if payload.respond_to? :job_data
+              # ActiveJob
+              job_data = payload.job_data
+              transaction.set_action_if_nil("#{job_data["job_class"]}#perform")
+              transaction.add_params_if_nil(job_data.fetch("arguments", {}))
+            else
+              # Delayed Job
+              transaction.set_action_if_nil(action_name_from_payload(payload, job.name))
+              transaction.add_params_if_nil(extract_value(payload, :args, {}))
+            end
+          rescue => error
+            warn_unreadable_payload_once(error)
+            transaction.set_action_if_nil(action_name_without_payload(job))
           end
 
-          transaction.add_tags(
-            :id => extract_value(job, :id, nil, true),
-            :queue => extract_value(job, :queue),
-            :priority => extract_value(job, :priority, 0),
-            :attempts => extract_value(job, :attempts, 0)
-          )
-
-          transaction.set_queue_start(extract_value(job, :run_at)&.to_i&.* 1_000)
+          add_job_metadata(transaction, job)
 
           Appsignal::Transaction.complete_current!
         end
+      end
+
+      def self.add_job_metadata(transaction, job)
+        transaction.add_tags(
+          :id => extract_value(job, :id, nil, true),
+          :queue => extract_value(job, :queue),
+          :priority => extract_value(job, :priority, 0),
+          :attempts => extract_value(job, :attempts, 0)
+        )
+
+        transaction.set_queue_start(extract_value(job, :run_at)&.to_i&.* 1_000)
+      end
+
+      # The name Delayed Job derives from the raw handler when the payload will
+      # not deserialize. It reads the class name out of the handler with a
+      # regular expression, which covers the job class a deploy removed. That
+      # expression raises for a handler it does not match, and it is skipped
+      # altogether when the payload raised something Delayed Job does not wrap,
+      # so fall back to a name that says the failure came from inside Delayed
+      # Job. The failure is then reported under a name that can be found, and
+      # every job this happens to is grouped together.
+      def self.action_name_without_payload(job)
+        with_perform_suffix(job.name)
+      rescue
+        "DelayedJobInternal"
+      end
+
+      # Guards the check-and-set below, so two threads that read an unreadable
+      # payload at the same time cannot both warn. A constant so it is created
+      # once at load time, because creating it lazily would race in turn.
+      WARN_ONCE_LOCK = Mutex.new
+
+      # A deploy that removes a job class leaves every job of that class unable
+      # to deserialize, so this can be reached once per job. Each of those jobs
+      # reports its own error to AppSignal, so the log only has to say once that
+      # it is happening.
+      def self.warn_unreadable_payload_once(error)
+        should_warn = WARN_ONCE_LOCK.synchronize do
+          next false if @warned_unreadable_payload
+
+          @warned_unreadable_payload = true
+        end
+        return unless should_warn
+
+        Appsignal.internal_logger.warn(
+          "Unable to read a Delayed Job job's payload: #{error.class}: " \
+            "#{error.message}. Jobs whose payload cannot be read are reported " \
+            "without parameters. They are named after the class in their raw " \
+            "handler, or DelayedJobInternal when that cannot be read either."
+        )
+      end
+
+      # @!visibility private
+      #
+      # Resets the warn-once state. Only used to keep test runs isolated.
+      def self.reset_unreadable_payload_warning!
+        WARN_ONCE_LOCK.synchronize { @warned_unreadable_payload = false }
       end
 
       def self.action_name_from_payload(payload, default_name)
         # Attempt to find appsignal_name override
         class_and_method_name = extract_value(payload, :appsignal_name, nil)
         return class_and_method_name if class_and_method_name.is_a?(String)
-        return default_name if default_name.split("#").length == 2
-        return default_name if default_name.split(".").length == 2
 
-        "#{default_name}#perform"
+        with_perform_suffix(default_name)
+      end
+
+      # An action name is a class and a method. A name that already names both,
+      # separated either way, is left alone.
+      def self.with_perform_suffix(name)
+        return name if name.split("#").length == 2
+        return name if name.split(".").length == 2
+
+        "#{name}#perform"
       end
 
       # rubocop:disable Style/OptionalBooleanParameter
