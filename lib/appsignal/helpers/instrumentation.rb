@@ -894,6 +894,88 @@ module Appsignal
       end
       alias set_headers add_headers
 
+      # Add request headers to the current transaction.
+      #
+      # Request headers are automatically added by most of our integrations. It
+      # should not be necessary to call this method unless you want to also
+      # report different request headers.
+      #
+      # Name each header the way OpenTelemetry names it, in lowercase and with
+      # dashes. In agent mode the names are converted to the Rack spellings the
+      # environment uses, so `accept` is reported as `HTTP_ACCEPT`.
+      #
+      # To filter request headers, see our request header filtering guide.
+      #
+      # When both the `headers` argument and a block is given to this method,
+      # the block is leading and the argument will _not_ be used.
+      #
+      # @example Add request headers
+      #   Appsignal.add_request_headers("accept" => "text/html")
+      #   # The request headers will include:
+      #   # { "accept" => "text/html" }
+      #
+      # @example Calling `add_request_headers` multiple times merges the values
+      #   Appsignal.add_request_headers("accept" => "text/html")
+      #   Appsignal.add_request_headers("user-agent" => "Firefox")
+      #   # The request headers will include:
+      #   # { "accept" => "text/html", "user-agent" => "Firefox" }
+      #
+      # @param headers [Hash<String, Object>] The request headers to add to the
+      #   transaction.
+      # @yield This block is called when the transaction is sampled. The block's
+      #   return value will become the new request headers.
+      # @yieldreturn [Hash<String, Object>]
+      # @return [void]
+      #
+      # @see #add_request_environment
+      # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
+      #   Sample data guide
+      # @see https://docs.appsignal.com/guides/filter-data/filter-headers.html
+      #   Request headers filtering guide
+      def add_request_headers(headers = nil, &block)
+        return unless Appsignal.active?
+        return unless Appsignal::Transaction.current?
+
+        transaction = Appsignal::Transaction.current
+        transaction.add_request_headers(headers, &block)
+      end
+
+      # Add values from the request environment to the current transaction.
+      #
+      # These are the values a Rack environment holds that are not request
+      # headers, such as `REMOTE_ADDR` and `QUERY_STRING`. Name each one the
+      # way Rack names it. Use {#add_request_headers} for the request headers.
+      #
+      # The request environment is automatically added by most of our
+      # integrations. It should not be necessary to call this method unless you
+      # want to also report different values.
+      #
+      # When both the `environment` argument and a block is given to this
+      # method, the block is leading and the argument will _not_ be used.
+      #
+      # @example Add request environment values
+      #   Appsignal.add_request_environment("REMOTE_ADDR" => "127.0.0.1")
+      #   # The request environment will include:
+      #   # { "REMOTE_ADDR" => "127.0.0.1" }
+      #
+      # @param environment [Hash<String, Object>] The request environment
+      #   values to add to the transaction.
+      # @yield This block is called when the transaction is sampled. The block's
+      #   return value will become the new request environment.
+      # @yieldreturn [Hash<String, Object>]
+      # @return [void]
+      #
+      # @see #add_request_headers
+      # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
+      #   Sample data guide
+      def add_request_environment(environment = nil, &block)
+        return unless Appsignal.active?
+        return unless Appsignal::Transaction.current?
+
+        transaction = Appsignal::Transaction.current
+        transaction.add_request_environment(environment, &block)
+      end
+
       # Add breadcrumbs to the transaction.
       #
       # Breadcrumbs can be used to trace what path a user has taken

@@ -947,6 +947,74 @@ module Appsignal
   sig { params(headers: T.nilable(T::Hash[String, Object]), block: T.proc.returns(T::Hash[String, Object])).void }
   def self.add_headers(headers = nil, &block); end
 
+  # Add request headers to the current transaction.
+  # 
+  # Request headers are automatically added by most of our integrations. It
+  # should not be necessary to call this method unless you want to also
+  # report different request headers.
+  # 
+  # Name each header the way OpenTelemetry names it, in lowercase and with
+  # dashes. In agent mode the names are converted to the Rack spellings the
+  # environment uses, so `accept` is reported as `HTTP_ACCEPT`.
+  # 
+  # To filter request headers, see our request header filtering guide.
+  # 
+  # When both the `headers` argument and a block is given to this method,
+  # the block is leading and the argument will _not_ be used.
+  # 
+  # _@param_ `headers` — The request headers to add to the transaction.
+  # 
+  # Add request headers
+  # ```ruby
+  # Appsignal.add_request_headers("accept" => "text/html")
+  # # The request headers will include:
+  # # { "accept" => "text/html" }
+  # ```
+  # 
+  # Calling `add_request_headers` multiple times merges the values
+  # ```ruby
+  # Appsignal.add_request_headers("accept" => "text/html")
+  # Appsignal.add_request_headers("user-agent" => "Firefox")
+  # # The request headers will include:
+  # # { "accept" => "text/html", "user-agent" => "Firefox" }
+  # ```
+  # 
+  # _@see_ `#add_request_environment`
+  # 
+  # _@see_ `https://docs.appsignal.com/guides/custom-data/sample-data.html` — Sample data guide
+  # 
+  # _@see_ `https://docs.appsignal.com/guides/filter-data/filter-headers.html` — Request headers filtering guide
+  sig { params(headers: T.nilable(T::Hash[String, Object]), block: T.proc.returns(T::Hash[String, Object])).void }
+  def self.add_request_headers(headers = nil, &block); end
+
+  # Add values from the request environment to the current transaction.
+  # 
+  # These are the values a Rack environment holds that are not request
+  # headers, such as `REMOTE_ADDR` and `QUERY_STRING`. Name each one the
+  # way Rack names it. Use {#add_request_headers} for the request headers.
+  # 
+  # The request environment is automatically added by most of our
+  # integrations. It should not be necessary to call this method unless you
+  # want to also report different values.
+  # 
+  # When both the `environment` argument and a block is given to this
+  # method, the block is leading and the argument will _not_ be used.
+  # 
+  # _@param_ `environment` — The request environment values to add to the transaction.
+  # 
+  # Add request environment values
+  # ```ruby
+  # Appsignal.add_request_environment("REMOTE_ADDR" => "127.0.0.1")
+  # # The request environment will include:
+  # # { "REMOTE_ADDR" => "127.0.0.1" }
+  # ```
+  # 
+  # _@see_ `#add_request_headers`
+  # 
+  # _@see_ `https://docs.appsignal.com/guides/custom-data/sample-data.html` — Sample data guide
+  sig { params(environment: T.nilable(T::Hash[String, Object]), block: T.proc.returns(T::Hash[String, Object])).void }
+  def self.add_request_environment(environment = nil, &block); end
+
   # Add breadcrumbs to the transaction.
   # 
   # Breadcrumbs can be used to trace what path a user has taken
@@ -1493,6 +1561,16 @@ module Appsignal
       sig { returns(T::Array[String]) }
       attr_accessor :ignore_namespaces
 
+      # _@return_ — Rack environment keys to report in collector
+      # mode, named the way Rack names them
+      sig { returns(T::Array[String]) }
+      attr_accessor :keep_request_environment
+
+      # _@return_ — HTTP request headers to report in collector
+      # mode, named the way OpenTelemetry names them
+      sig { returns(T::Array[String]) }
+      attr_accessor :keep_request_headers
+
       # _@return_ — HTTP request headers to include in error reports
       sig { returns(T::Array[String]) }
       attr_accessor :request_headers
@@ -1955,11 +2033,51 @@ module Appsignal
     # 
     # _@param_ `given_headers` — A hash containing headers.
     # 
+    # _@deprecated_ — Use {#add_request_headers} for request headers and
+    # {#add_request_environment} for the values a Rack environment holds that
+    # are not request headers. This method takes both kinds at once, so it
+    # has to work out which of them each value is.
+    # 
     # _@see_ `Helpers::Instrumentation#add_headers`
     # 
     # _@see_ `https://docs.appsignal.com/guides/custom-data/sample-data.html` — Sample data guide
     sig { params(given_headers: T.nilable(T::Hash[String, Object]), block: T.proc.returns(T::Hash[String, Object])).void }
     def add_headers(given_headers = nil, &block); end
+
+    # Add request headers to the transaction.
+    # 
+    # Name each header the way OpenTelemetry names it, in lowercase and with
+    # dashes, such as `accept` and `content-length`. In agent mode the names
+    # are converted to the Rack spellings the environment uses, such as
+    # `HTTP_ACCEPT`.
+    # 
+    # Behaves like {#add_headers}: merges when called multiple times, and a
+    # block takes precedence over the argument.
+    # 
+    # _@param_ `given_headers` — A hash containing request headers.
+    # 
+    # _@see_ `#add_request_environment`
+    # 
+    # _@see_ `https://docs.appsignal.com/guides/custom-data/sample-data.html` — Sample data guide
+    sig { params(given_headers: T.nilable(T::Hash[String, Object]), block: T.proc.returns(T::Hash[String, Object])).void }
+    def add_request_headers(given_headers = nil, &block); end
+
+    # Add values from the request environment to the transaction.
+    # 
+    # These are the values a Rack environment holds that are not request
+    # headers, such as `REMOTE_ADDR` and `QUERY_STRING`. Name each one the way
+    # Rack names it. Use {#add_request_headers} for the request headers.
+    # 
+    # Behaves like {#add_headers}: merges when called multiple times, and a
+    # block takes precedence over the argument.
+    # 
+    # _@param_ `given_environment` — A hash containing request environment values.
+    # 
+    # _@see_ `#add_request_headers`
+    # 
+    # _@see_ `https://docs.appsignal.com/guides/custom-data/sample-data.html` — Sample data guide
+    sig { params(given_environment: T.nilable(T::Hash[String, Object]), block: T.proc.returns(T::Hash[String, Object])).void }
+    def add_request_environment(given_environment = nil, &block); end
 
     # Add custom data to the transaction.
     # 
@@ -2857,6 +2975,74 @@ module Appsignal
       # _@see_ `https://docs.appsignal.com/guides/filter-data/filter-headers.html` — Request headers filtering guide
       sig { params(headers: T.nilable(T::Hash[String, Object]), block: T.proc.returns(T::Hash[String, Object])).void }
       def add_headers(headers = nil, &block); end
+
+      # Add request headers to the current transaction.
+      # 
+      # Request headers are automatically added by most of our integrations. It
+      # should not be necessary to call this method unless you want to also
+      # report different request headers.
+      # 
+      # Name each header the way OpenTelemetry names it, in lowercase and with
+      # dashes. In agent mode the names are converted to the Rack spellings the
+      # environment uses, so `accept` is reported as `HTTP_ACCEPT`.
+      # 
+      # To filter request headers, see our request header filtering guide.
+      # 
+      # When both the `headers` argument and a block is given to this method,
+      # the block is leading and the argument will _not_ be used.
+      # 
+      # _@param_ `headers` — The request headers to add to the transaction.
+      # 
+      # Add request headers
+      # ```ruby
+      # Appsignal.add_request_headers("accept" => "text/html")
+      # # The request headers will include:
+      # # { "accept" => "text/html" }
+      # ```
+      # 
+      # Calling `add_request_headers` multiple times merges the values
+      # ```ruby
+      # Appsignal.add_request_headers("accept" => "text/html")
+      # Appsignal.add_request_headers("user-agent" => "Firefox")
+      # # The request headers will include:
+      # # { "accept" => "text/html", "user-agent" => "Firefox" }
+      # ```
+      # 
+      # _@see_ `#add_request_environment`
+      # 
+      # _@see_ `https://docs.appsignal.com/guides/custom-data/sample-data.html` — Sample data guide
+      # 
+      # _@see_ `https://docs.appsignal.com/guides/filter-data/filter-headers.html` — Request headers filtering guide
+      sig { params(headers: T.nilable(T::Hash[String, Object]), block: T.proc.returns(T::Hash[String, Object])).void }
+      def add_request_headers(headers = nil, &block); end
+
+      # Add values from the request environment to the current transaction.
+      # 
+      # These are the values a Rack environment holds that are not request
+      # headers, such as `REMOTE_ADDR` and `QUERY_STRING`. Name each one the
+      # way Rack names it. Use {#add_request_headers} for the request headers.
+      # 
+      # The request environment is automatically added by most of our
+      # integrations. It should not be necessary to call this method unless you
+      # want to also report different values.
+      # 
+      # When both the `environment` argument and a block is given to this
+      # method, the block is leading and the argument will _not_ be used.
+      # 
+      # _@param_ `environment` — The request environment values to add to the transaction.
+      # 
+      # Add request environment values
+      # ```ruby
+      # Appsignal.add_request_environment("REMOTE_ADDR" => "127.0.0.1")
+      # # The request environment will include:
+      # # { "REMOTE_ADDR" => "127.0.0.1" }
+      # ```
+      # 
+      # _@see_ `#add_request_headers`
+      # 
+      # _@see_ `https://docs.appsignal.com/guides/custom-data/sample-data.html` — Sample data guide
+      sig { params(environment: T.nilable(T::Hash[String, Object]), block: T.proc.returns(T::Hash[String, Object])).void }
+      def add_request_environment(environment = nil, &block); end
 
       # Add breadcrumbs to the transaction.
       # 

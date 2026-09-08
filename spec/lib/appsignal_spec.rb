@@ -2023,8 +2023,8 @@ describe Appsignal do
         let(:transaction) { http_request_transaction }
 
         # Uses true HTTP headers (rather than CGI vars like PATH_INFO) because
-        # collector mode only emits the HTTP_*/CONTENT_* headers as
-        # http.request.header.* attributes and drops the rest.
+        # collector mode reports those as `http.request.header.*` attributes,
+        # and reports the rest as `appsignal.environment.*` instead.
         describe "merging the request headers if called multiple times" do
           def perform
             set_current_transaction(transaction)
@@ -2082,6 +2082,86 @@ describe Appsignal do
           Appsignal.add_headers("PATH_INFO" => "/some-path")
 
           expect_any_instance_of(Appsignal::Transaction).to_not receive(:add_headers)
+        end
+      end
+    end
+
+    describe ".add_request_headers" do
+      before do |example|
+        start_agent unless example.metadata[:agent_mode] || example.metadata[:collector_mode]
+      end
+
+      describe "adding request headers through the public API" do
+        let(:transaction) { http_request_transaction }
+
+        def perform
+          set_current_transaction(transaction)
+          Appsignal.add_request_headers("accept" => "text/html")
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent
+          perform
+
+          transaction._sample
+          expect(transaction).to include_environment("HTTP_ACCEPT" => "text/html")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(root_span.attributes["http.request.header.accept"]).to eq("text/html")
+        end
+      end
+
+      context "without transaction" do
+        it "does not add request headers to any transaction" do
+          Appsignal.add_request_headers("accept" => "text/html")
+
+          expect_any_instance_of(Appsignal::Transaction).to_not receive(:add_request_headers)
+        end
+      end
+    end
+
+    describe ".add_request_environment" do
+      before do |example|
+        start_agent unless example.metadata[:agent_mode] || example.metadata[:collector_mode]
+      end
+
+      describe "adding request environment values through the public API" do
+        let(:transaction) { http_request_transaction }
+        let(:start_agent_args) { { :options => { :request_headers => %w[REMOTE_ADDR] } } }
+
+        def perform
+          set_current_transaction(transaction)
+          Appsignal.add_request_environment("REMOTE_ADDR" => "127.0.0.1")
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent(**start_agent_args)
+          perform
+
+          transaction._sample
+          expect(transaction).to include_environment("REMOTE_ADDR" => "127.0.0.1")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          transaction.complete
+
+          expect(root_span.attributes["appsignal.environment.REMOTE_ADDR"]).to eq("127.0.0.1")
+        end
+      end
+
+      context "without transaction" do
+        it "does not add request environment values to any transaction" do
+          Appsignal.add_request_environment("REMOTE_ADDR" => "127.0.0.1")
+
+          expect_any_instance_of(Appsignal::Transaction)
+            .to_not receive(:add_request_environment)
         end
       end
     end
