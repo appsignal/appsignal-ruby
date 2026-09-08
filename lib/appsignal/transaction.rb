@@ -274,8 +274,6 @@ module Appsignal
         [bucket, Appsignal::SampleData.new(bucket, Hash)]
       end
 
-      # The header channels something has been added to. This is what the
-      # `_if_nil` header setters guard on.
       @channels_set = []
 
       run_after_create_hooks
@@ -442,7 +440,7 @@ module Appsignal
     #   Sample data guide
     def add_params(given_params = nil, &block)
       warn_params_deprecation
-      params_data(:params).add(given_params, &block)
+      add_params_channel(:params, given_params, &block)
     end
     alias set_params add_params
 
@@ -500,7 +498,7 @@ module Appsignal
     #
     # @see #add_function_parameters
     def add_request_payload(given_params = nil, &block)
-      params_data(:request_payload).add(given_params, &block)
+      add_params_channel(:request_payload, given_params, &block)
     end
 
     # Add the request payload to the transaction if not already set.
@@ -536,7 +534,7 @@ module Appsignal
     #
     # @see #add_request_payload
     def add_function_parameters(given_params = nil, &block)
-      params_data(:function_parameters).add(given_params, &block)
+      add_params_channel(:function_parameters, given_params, &block)
     end
 
     # Add the function parameters to the transaction if not already set.
@@ -573,7 +571,7 @@ module Appsignal
     #
     # @see #add_request_payload
     def add_query_parameters(given_params = nil, &block)
-      params_data(:query_parameters).add(given_params, &block)
+      add_params_channel(:query_parameters, given_params, &block)
     end
 
     # Add the query parameters to the transaction if not already set.
@@ -1066,12 +1064,23 @@ module Appsignal
       @params_buckets.fetch(@params_mapping.fetch(channel))
     end
 
-    # Whether a params channel's bucket has had nothing set yet, so the
-    # `_if_nil` setters do not overwrite params the caller already provided.
-    def params_unset?(channel)
-      bucket = params_data(channel)
-      !bucket.value? && !bucket.empty?
+    PARAMS_CHANNEL_ALIASES = { :params => :request_payload }.freeze
+    private_constant :PARAMS_CHANNEL_ALIASES
+
+    def params_channel(channel)
+      PARAMS_CHANNEL_ALIASES.fetch(channel, channel)
     end
+
+    def add_params_channel(channel, given_params = nil, &block)
+      sample = params_data(channel)
+      sample.add(given_params, &block)
+      mark_channel_set(params_channel(channel)) if sample.value?
+    end
+
+    def params_unset?(channel)
+      !channel_set?(params_channel(channel)) && !params_data(channel).empty?
+    end
+
 
     # `add_params`/`set_params` don't say whether the params are a request
     # payload or function parameters, so in collector mode they always map to
@@ -1363,13 +1372,6 @@ module Appsignal
       @channels_set << channel unless @channels_set.include?(channel)
     end
 
-    # Whether anything has been set on a header channel, which is what the
-    # `_if_nil` header setters guard on.
-    #
-    # Tracked per channel rather than per storage bucket, because agent mode
-    # maps both channels to one bucket. Reading it from the bucket would mean
-    # that setting one channel stops the other from being set, so agent mode
-    # would drop values collector mode reports.
     def channel_set?(channel)
       @channels_set.include?(channel)
     end
