@@ -2048,6 +2048,75 @@ describe Appsignal::Config do
     end
   end
 
+  describe "the collector-mode params options" do
+    let(:collector_endpoint) { "http://collector.example.test:4318" }
+    let(:options) { {} }
+    let(:config) do
+      build_config(
+        :options => { :collector_endpoint => collector_endpoint }.merge(options)
+      )
+    end
+
+    context "in collector mode" do
+      context "with a customised filter_parameters" do
+        let(:options) { { :filter_parameters => ["password"] } }
+
+        it "derives every filter option from it" do
+          expect(config[:filter_request_payload]).to eq(["password"])
+          expect(config[:filter_function_parameters]).to eq(["password"])
+          expect(config[:filter_request_query_parameters]).to eq(["password"])
+        end
+      end
+
+      context "with a customised send_params" do
+        let(:options) { { :send_params => false } }
+
+        it "derives every send option from it" do
+          expect(config[:send_request_payload]).to be(false)
+          expect(config[:send_request_query_parameters]).to be(false)
+          expect(config[:send_function_parameters]).to be(false)
+        end
+      end
+
+      context "with one replacement set" do
+        let(:options) do
+          {
+            :filter_parameters => ["password"],
+            :filter_request_payload => ["token"]
+          }
+        end
+
+        it "derives the other replacements and keeps the one that was set" do
+          expect(config[:filter_request_payload]).to eq(["token"])
+          expect(config[:filter_function_parameters]).to eq(["password"])
+          expect(config[:filter_request_query_parameters]).to eq(["password"])
+        end
+      end
+
+      it "leaves the defaults alone when neither option is configured" do
+        expect(config[:filter_request_payload]).to eq([])
+        expect(config.derived_config).to_not have_key(:filter_request_payload)
+        expect(config.derived_config).to_not have_key(:send_request_payload)
+      end
+    end
+
+    context "in agent mode" do
+      let(:collector_endpoint) { nil }
+      let(:options) { { :filter_parameters => ["password"], :send_params => false } }
+
+      it "derives the same values, so a report answers what a switch would do" do
+        expect(config[:filter_request_payload]).to eq(["password"])
+        expect(config[:send_request_payload]).to be(false)
+      end
+
+      it "doesn't warn about the values it worked out" do
+        logs = capture_logs { config }
+
+        expect(logs).to_not include("only used by the collector")
+      end
+    end
+  end
+
   describe "#warn_for_mode_mismatch" do
     let(:options) { {} }
     let(:config) { build_config(:options => options) }
@@ -2064,7 +2133,14 @@ describe Appsignal::Config do
             build_config(:options => collector_options.merge(:filter_parameters => ["password"]))
           end
         expect(logs).to include("filter_parameters")
-        expect(logs).to include("only used by the agent")
+        expect(logs).to include("deprecated in collector mode")
+        expect(logs).to include(
+          %(It is replaced by 'filter_request_payload', ) +
+            %('filter_function_parameters' and 'filter_request_query_parameters'.)
+        )
+        expect(logs).to include(%(\n  filter_request_payload: ["password"]))
+        expect(logs).to include(%(\n  filter_function_parameters: ["password"]))
+        expect(logs).to include(%(\n  filter_request_query_parameters: ["password"]))
       end
 
       it "warns when send_params is set" do
@@ -2073,6 +2149,16 @@ describe Appsignal::Config do
             build_config(:options => collector_options.merge(:send_params => false))
           end
         expect(logs).to include("send_params")
+        expect(logs).to include("deprecated in collector mode")
+        expect(logs).to include(%(\n  send_request_payload: false))
+      end
+
+      it "warns when filter_metadata is set" do
+        logs =
+          capture_logs do
+            build_config(:options => collector_options.merge(:filter_metadata => ["path"]))
+          end
+        expect(logs).to include("filter_metadata")
         expect(logs).to include("only used by the agent")
       end
 

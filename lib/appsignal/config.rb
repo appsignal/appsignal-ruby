@@ -322,9 +322,7 @@ module Appsignal
     # their collector-mode equivalents (see COLLECTOR_ONLY_OPTIONS).
     # @!visibility private
     AGENT_ONLY_TRACE_OPTIONS = [
-      :filter_metadata,
-      :filter_parameters,
-      :send_params
+      :filter_metadata
     ].freeze
 
     # Options that are deprecated in collector mode, mapped to the options
@@ -333,7 +331,17 @@ module Appsignal
     # set instead rather than saying the option is ignored.
     # @!visibility private
     DEPRECATED_COLLECTOR_OPTIONS = {
-      :request_headers => [:keep_request_headers, :keep_request_environment]
+      :filter_parameters => [
+        :filter_request_payload,
+        :filter_function_parameters,
+        :filter_request_query_parameters
+      ],
+      :request_headers => [:keep_request_headers, :keep_request_environment],
+      :send_params => [
+        :send_request_payload,
+        :send_request_query_parameters,
+        :send_function_parameters
+      ]
     }.freeze
 
     # @!visibility private
@@ -1015,25 +1023,28 @@ module Appsignal
     end
 
     # The value a replacement option takes from the deprecated option it
-    # replaces.
+    # replaces. Most take it as it is, because the two mean the same thing and
+    # differ only in what they reach.
     #
-    # `request_headers` names Rack environment keys, and mixes request headers
-    # in with values that are not headers, so it is split in two and the header
-    # names are converted. The environment half leaves out the keys the
-    # instrumentation already describes with a semantic convention attribute,
-    # which an application can still ask for by setting
-    # `keep_request_environment` itself.
+    # The two request header options are the exception. `request_headers` names
+    # Rack environment keys and mixes request headers in with values that are
+    # not headers, so it is split in two and the header names are converted.
+    # The environment half leaves out the keys the instrumentation already
+    # describes with a semantic convention attribute, which an application can
+    # still ask for by setting `keep_request_environment` itself.
     def derived_value(replacement, value)
       case replacement
       when :keep_request_headers
         Array(value).filter_map do |key|
           Appsignal::Utils::RequestHeaders.header_name(key)
         end
-      else
+      when :keep_request_environment
         Array(value).reject do |key|
           Appsignal::Utils::RequestHeaders.header_name(key) ||
             Appsignal::Utils::RequestHeaders::TRANSLATED_ENV_KEYS.include?(key)
         end
+      else
+        value
       end
     end
 

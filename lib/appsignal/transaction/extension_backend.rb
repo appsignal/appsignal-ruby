@@ -96,6 +96,17 @@ module Appsignal
         PARAMS_MAPPING
       end
 
+      # The agent has one params slot, so the one bucket every channel merges
+      # into is filtered and gated by the options that predate the per-kind
+      # ones.
+      PARAMS_OPTIONS = {
+        :params => { :filter => :filter_parameters, :send => :send_params }
+      }.freeze
+
+      def params_options
+        PARAMS_OPTIONS
+      end
+
       # The agent has a single environment slot, so both header channels map to
       # one `:environment` bucket and merge into it. The request headers arrive
       # under the names OpenTelemetry uses, so they are converted back to the
