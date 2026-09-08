@@ -872,6 +872,15 @@ module Appsignal
   # # { "PATH_INFO" => "/some-path", "HTTP_USER_AGENT" => "Firefox" }
   # ```
   # 
+  # _@deprecated_ — Use {#add_request_headers} for request headers and
+  # {#add_request_environment} for the values a Rack environment holds
+  # that are not request headers. This method takes both kinds at once,
+  # so it has to work out which of them each value is.
+  # 
+  # _@see_ `#add_request_headers`
+  # 
+  # _@see_ `#add_request_environment`
+  # 
   # _@see_ `https://docs.appsignal.com/guides/custom-data/sample-data.html` — Sample data guide
   # 
   # _@see_ `https://docs.appsignal.com/guides/filter-data/filter-headers.html` — Request headers filtering guide
@@ -2759,6 +2768,15 @@ module Appsignal
       # # The request headers will include:
       # # { "PATH_INFO" => "/some-path", "HTTP_USER_AGENT" => "Firefox" }
       # ```
+      # 
+      # _@deprecated_ — Use {#add_request_headers} for request headers and
+      # {#add_request_environment} for the values a Rack environment holds
+      # that are not request headers. This method takes both kinds at once,
+      # so it has to work out which of them each value is.
+      # 
+      # _@see_ `#add_request_headers`
+      # 
+      # _@see_ `#add_request_environment`
       # 
       # _@see_ `https://docs.appsignal.com/guides/custom-data/sample-data.html` — Sample data guide
       # 
