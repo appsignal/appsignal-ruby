@@ -20,6 +20,10 @@ if DependencyHelper.delayed_job_present?
       Delayed::Worker.plugins << Appsignal::Integrations::DelayedJobPlugin
       Delayed::Worker.setup_lifecycle
 
+      # The unreadable-payload warning is emitted once per process, so it has to
+      # be reset or only the first example to reach it would see it.
+      Appsignal::Integrations::DelayedJobPlugin.reset_unreadable_payload_warning!
+
       stub_const("DelayedTestJob", Class.new do
         def perform
         end
@@ -31,6 +35,21 @@ if DependencyHelper.delayed_job_present?
     # swallow the job's exception, so it drives our instrumentation directly.
     def perform_job(job)
       job.invoke_job
+    end
+
+    # Runs the queued job the way a worker does. `work_off` is the only path
+    # that runs the `:perform` lifecycle callbacks, and it is also the path that
+    # reads a job's payload before invoking it and swallows the job's exception
+    # afterwards. Calling `invoke_job` directly does neither, so an example that
+    # needs either of those has to go through here.
+    def work_off_one_job
+      Delayed::Worker.new(:quiet => true).work_off(1)
+    end
+
+    # The transactions the integration reported, in both modes. Error examples
+    # assert on the count so a second report cannot slip in unnoticed.
+    def reported_consumer_spans
+      span_exporter.finished_spans.select { |span| span.kind == :consumer }
     end
 
     describe "enqueueing a job" do
@@ -252,6 +271,124 @@ if DependencyHelper.delayed_job_present?
         end
       end
 
+      # What a deploy that removes a job class leaves behind: jobs whose stored
+      # handler names a class that is gone. Created straight through the backend,
+      # because `Delayed::Job.enqueue` stores the live object next to the handler
+      # and Delayed Job then never parses the handler at all.
+      context "with a job whose payload cannot be deserialized" do
+        let(:job) do
+          Delayed::Backend::Test::Job.create(
+            :handler => "--- !ruby/object:TotallyMissingJobClass {}\n"
+          )
+        end
+
+        it "reports the job with its deserialization error", :agent_mode do
+          start_agent
+
+          keep_transactions do
+            expect { perform_job(job) }.to raise_error(
+              Delayed::DeserializationError, /TotallyMissingJobClass/
+            )
+          end
+
+          transaction = last_transaction
+          expect(transaction).to be_completed
+          expect(transaction).to have_namespace("background_job")
+          expect(transaction).to have_error(
+            "Delayed::DeserializationError", /TotallyMissingJobClass/
+          )
+          # Delayed Job reads the class name out of the raw handler when the
+          # payload will not load, so the job is still named after its class.
+          expect(transaction).to have_action("TotallyMissingJobClass#perform")
+          expect(transaction).to include_tags("attempts" => 0, "priority" => 0)
+        end
+
+        it "records the error on the consumer span", :collector_mode do
+          start_collector_agent
+
+          expect { perform_job(job) }.to raise_error(
+            Delayed::DeserializationError, /TotallyMissingJobClass/
+          )
+
+          # No `complete_current!` call here, on purpose. A span only reaches the
+          # exporter once it has ended, so having a `root_span` at all is what
+          # proves the integration completed the transaction itself.
+          expect(root_span.kind).to eq(:consumer)
+          expect(root_span.attributes["appsignal.action_name"])
+            .to eq("TotallyMissingJobClass#perform")
+          expect(root_span.attributes).to_not have_key("appsignal.ignore_subtrace")
+          event = root_span.events.find { |e| e.name == "exception" }
+          expect(event.attributes["exception.type"])
+            .to eq("Delayed::DeserializationError")
+          expect(event.attributes["exception.message"])
+            .to match(/TotallyMissingJobClass/)
+        end
+
+        # Untagged: the warning is logged from the same code in both modes, so
+        # there is nothing mode-specific to assert about it.
+        it "logs that the payload could not be read, once per process" do
+          start_agent
+          other_job = Delayed::Backend::Test::Job.create(:handler => job.handler)
+
+          logs = capture_logs do
+            keep_transactions do
+              [job, other_job].each do |unreadable_job|
+                expect { perform_job(unreadable_job) }
+                  .to raise_error(Delayed::DeserializationError)
+              end
+            end
+          end
+
+          expect(logs).to contains_log(
+            :warn, "Unable to read a Delayed Job job's payload"
+          )
+          # Both jobs failed, but a deploy that removes a job class can leave
+          # very many of them, so the warning is only worth logging once.
+          expect(logs.scan("Unable to read a Delayed Job").count).to eq(1)
+        end
+
+        # A handler that defeats the class-name expression Delayed Job falls back
+        # to, so the job's own class cannot be named.
+        context "when the handler cannot be parsed for a class name either" do
+          let(:job) { Delayed::Backend::Test::Job.create(:handler => "--- {\n") }
+
+          it "names the job after Delayed Job", :agent_mode do
+            start_agent
+
+            keep_transactions do
+              expect { perform_job(job) }
+                .to raise_error(Delayed::DeserializationError)
+            end
+
+            transaction = last_transaction
+            expect(transaction).to be_completed
+            expect(transaction).to have_error("Delayed::DeserializationError", /./)
+            # Named after Delayed Job itself, so the failure is reported under a
+            # name that can be found rather than under none.
+            expect(transaction).to have_action("DelayedJobInternal")
+            expect(transaction).to include_tags("attempts" => 0, "priority" => 0)
+          end
+
+          it "names the consumer span after Delayed Job", :collector_mode do
+            start_collector_agent
+
+            expect { perform_job(job) }
+              .to raise_error(Delayed::DeserializationError)
+
+            expect(root_span.kind).to eq(:consumer)
+            expect(root_span.attributes["appsignal.action_name"])
+              .to eq("DelayedJobInternal")
+            # An exported span is not necessarily a reported one: the collector
+            # drops a subtrace flagged with this attribute. Naming the span is
+            # what keeps the failure reported.
+            expect(root_span.attributes).to_not have_key("appsignal.ignore_subtrace")
+            event = root_span.events.find { |e| e.name == "exception" }
+            expect(event.attributes["exception.type"])
+              .to eq("Delayed::DeserializationError")
+          end
+        end
+      end
+
       context "with a custom appsignal_name" do
         before do
           stub_const("DelayedNamedJob", Class.new do
@@ -299,6 +436,238 @@ if DependencyHelper.delayed_job_present?
             expect(transaction).to have_namespace("background_job")
             expect(transaction).to have_action("DelayedActiveJob#perform")
             expect(transaction).to include_params(["arg"])
+          end
+        end
+      end
+
+      # Every example above performs the job by calling `invoke_job` directly,
+      # which is what Delayed Job does when `delay_jobs` is false. A worker
+      # takes a different path. It reads the job's payload before it invokes the
+      # job, so a job that cannot be read never reaches `invoke_job` at all. It
+      # also catches the job's exception instead of letting it out, so an error
+      # report that only worked because the exception reached the integration
+      # would report nothing here. Neither is visible from `invoke_job`, which
+      # is why these examples drive the worker itself.
+      context "when a worker runs the job" do
+        before do
+          stub_const("DelayedWorkerErrorJob", Class.new do
+            def perform
+              raise ExampleException, "uh oh"
+            end
+          end)
+
+          # A job that has no attempts left, so Delayed Job marks it failed
+          # instead of rescheduling it. That runs a different set of its
+          # callbacks than a job that will be retried.
+          stub_const("DelayedLastAttemptJob", Class.new do
+            def max_attempts
+              1
+            end
+
+            def perform
+              raise ExampleException, "last try"
+            end
+          end)
+
+          # A job that outlives its own maximum run time. Delayed Job passes
+          # that number to `Timeout.timeout` as an integer, so one second is the
+          # shortest limit it can express.
+          stub_const("DelayedSlowJob", Class.new do
+            def max_run_time
+              1
+            end
+
+            def perform
+              sleep 1.1
+            end
+          end)
+        end
+
+        it "reports a job that loads exactly once", :agent_mode do
+          start_agent
+          Delayed::Job.enqueue(DelayedTestJob.new, :queue => "dj-queue")
+
+          keep_transactions { work_off_one_job }
+
+          expect(created_transactions.count).to eq(1)
+          transaction = last_transaction
+          expect(transaction).to be_completed
+          expect(transaction).to have_action("DelayedTestJob#perform")
+          expect(transaction).to_not have_error
+        end
+
+        it "records one consumer span for a job that loads", :collector_mode do
+          start_collector_agent
+          Delayed::Job.enqueue(DelayedTestJob.new, :queue => "dj-queue")
+
+          work_off_one_job
+
+          expect(reported_consumer_spans.count).to eq(1)
+          expect(root_span.attributes["appsignal.action_name"])
+            .to eq("DelayedTestJob#perform")
+          expect(root_span.events.map(&:name)).to_not include("exception")
+        end
+
+        # The worker catches the job's exception, so nothing is raised here.
+        # This example fails if the integration ever comes to depend on the
+        # exception reaching it, which is what would happen if the transaction
+        # were opened around the worker's whole run of the job instead of
+        # around `invoke_job`.
+        it "reports the job's own error, once", :agent_mode do
+          start_agent
+          Delayed::Job.enqueue(DelayedWorkerErrorJob.new)
+
+          keep_transactions { work_off_one_job }
+
+          expect(created_transactions.count).to eq(1)
+          transaction = last_transaction
+          expect(transaction).to be_completed
+          expect(transaction).to have_action("DelayedWorkerErrorJob#perform")
+          expect(transaction).to have_error("ExampleException", "uh oh")
+        end
+
+        it "records the job's own error on one consumer span", :collector_mode do
+          start_collector_agent
+          Delayed::Job.enqueue(DelayedWorkerErrorJob.new)
+
+          work_off_one_job
+
+          expect(reported_consumer_spans.count).to eq(1)
+          expect(root_span.attributes["appsignal.action_name"])
+            .to eq("DelayedWorkerErrorJob#perform")
+          exceptions = root_span.events.select { |e| e.name == "exception" }
+          expect(exceptions.count).to eq(1)
+          expect(exceptions.first.attributes["exception.type"])
+            .to eq("ExampleException")
+          expect(exceptions.first.attributes["exception.message"]).to eq("uh oh")
+        end
+
+        # Delayed Job marks this job failed rather than rescheduling it, which
+        # runs its failure callbacks on top of its error callbacks. Both of
+        # those are places a second report could come from.
+        it "reports a job on its last attempt once", :agent_mode do
+          start_agent
+          Delayed::Job.enqueue(DelayedLastAttemptJob.new)
+
+          keep_transactions { work_off_one_job }
+
+          expect(created_transactions.count).to eq(1)
+          transaction = last_transaction
+          expect(transaction).to be_completed
+          expect(transaction).to have_action("DelayedLastAttemptJob#perform")
+          expect(transaction).to have_error("ExampleException", "last try")
+        end
+
+        it "records a job on its last attempt on one consumer span", :collector_mode do
+          start_collector_agent
+          Delayed::Job.enqueue(DelayedLastAttemptJob.new)
+
+          work_off_one_job
+
+          expect(reported_consumer_spans.count).to eq(1)
+          exceptions = root_span.events.select { |e| e.name == "exception" }
+          expect(exceptions.count).to eq(1)
+          expect(exceptions.first.attributes["exception.type"]).to eq("ExampleException")
+          expect(exceptions.first.attributes["exception.message"]).to eq("last try")
+        end
+
+        it "reports a job that runs longer than its maximum run time", :agent_mode do
+          start_agent
+          Delayed::Job.enqueue(DelayedSlowJob.new)
+
+          keep_transactions { work_off_one_job }
+
+          expect(created_transactions.count).to eq(1)
+          transaction = last_transaction
+          expect(transaction).to be_completed
+          expect(transaction).to have_error("Delayed::WorkerTimeout", /execution expired/)
+        end
+
+        it "records a run that timed out on the consumer span", :collector_mode do
+          start_collector_agent
+          Delayed::Job.enqueue(DelayedSlowJob.new)
+
+          work_off_one_job
+
+          expect(reported_consumer_spans.count).to eq(1)
+          event = root_span.events.find { |e| e.name == "exception" }
+          expect(event.attributes["exception.type"]).to eq("Delayed::WorkerTimeout")
+        end
+
+        context "with a job whose payload cannot be deserialized" do
+          before do
+            Delayed::Backend::Test::Job.create(
+              :handler => "--- !ruby/object:TotallyMissingJobClass {}\n"
+            )
+          end
+
+          it "reports the job with its deserialization error", :agent_mode do
+            start_agent
+
+            keep_transactions { work_off_one_job }
+
+            expect(created_transactions.count).to eq(1)
+            transaction = last_transaction
+            expect(transaction).to be_completed
+            expect(transaction).to have_namespace("background_job")
+            expect(transaction).to have_error(
+              "Delayed::DeserializationError", /TotallyMissingJobClass/
+            )
+            expect(transaction).to have_action("TotallyMissingJobClass#perform")
+            expect(transaction).to include_tags("attempts" => 0, "priority" => 0)
+          end
+
+          it "records the error on the consumer span", :collector_mode do
+            start_collector_agent
+
+            work_off_one_job
+
+            expect(reported_consumer_spans.count).to eq(1)
+            expect(root_span.attributes["appsignal.action_name"])
+              .to eq("TotallyMissingJobClass#perform")
+            expect(root_span.attributes).to_not have_key("appsignal.ignore_subtrace")
+            event = root_span.events.find { |e| e.name == "exception" }
+            expect(event.attributes["exception.type"])
+              .to eq("Delayed::DeserializationError")
+          end
+        end
+
+        # Delayed Job cannot name this job either, and its own failure handling
+        # raises while trying to, so the worker's run of the job ends in an
+        # error rather than in the job being marked failed. That happens whether
+        # or not AppSignal is loaded. What matters here is that the job is
+        # reported before it happens.
+        context "when the handler cannot be parsed for a class name either" do
+          before do
+            Delayed::Backend::Test::Job.create(:handler => "--- {\n")
+          end
+
+          it "names the job after Delayed Job", :agent_mode do
+            start_agent
+
+            keep_transactions do
+              expect { work_off_one_job }.to raise_error(NoMethodError)
+            end
+
+            expect(created_transactions.count).to eq(1)
+            transaction = last_transaction
+            expect(transaction).to be_completed
+            expect(transaction).to have_error("Delayed::DeserializationError", /./)
+            expect(transaction).to have_action("DelayedJobInternal")
+          end
+
+          it "names the consumer span after Delayed Job", :collector_mode do
+            start_collector_agent
+
+            expect { work_off_one_job }.to raise_error(NoMethodError)
+
+            expect(reported_consumer_spans.count).to eq(1)
+            expect(root_span.attributes["appsignal.action_name"])
+              .to eq("DelayedJobInternal")
+            expect(root_span.attributes).to_not have_key("appsignal.ignore_subtrace")
+            event = root_span.events.find { |e| e.name == "exception" }
+            expect(event.attributes["exception.type"])
+              .to eq("Delayed::DeserializationError")
           end
         end
       end
