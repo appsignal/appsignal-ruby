@@ -386,8 +386,9 @@ module Appsignal
         defaults.each do |option, value|
           new_loader_defaults[option] =
             if ARRAY_OPTIONS.key?(option)
-              # Merge arrays: new value first
-              value + options[option]
+              # Merge arrays: new value first. An array option that is unset
+              # holds `nil` rather than an empty array.
+              value + (options[option] || [])
             else
               value
             end
@@ -943,13 +944,23 @@ module Appsignal
     #   https://docs.appsignal.com/ruby/configuration.html
     class ConfigDSL
       # @!visibility private
-      # @return [Hash] Hash containing the DSL option values
-      attr_reader :dsl_options
-
-      # @!visibility private
       def initialize(config)
         @config = config
         @dsl_options = {}
+      end
+
+      # The options the block set, without the ones it only read.
+      #
+      # Reading an option memoizes the config's current value for it, so that
+      # appending to it works. An option whose value still matches what the
+      # config held before the block ran is therefore left out, so that it is
+      # not reported as set by the block and, for an option whose value is
+      # derived from another, so that the derivation still runs.
+      #
+      # @!visibility private
+      # @return [Hash] Hash containing the DSL option values
+      def dsl_options
+        @dsl_options.reject { |key, value| unchanged_option?(key, value) }
       end
 
       # Returns the application's root path.
@@ -1145,7 +1156,9 @@ module Appsignal
         end
 
         define_method("#{option}=") do |value|
-          update_option(option, value.to_a)
+          # `nil` means the option is unset, which is not the same as an empty
+          # array for an allowlist, so it is not cast.
+          update_option(option, value&.to_a)
         end
       end
 
@@ -1189,12 +1202,29 @@ module Appsignal
         if @dsl_options.key?(key)
           @dsl_options[key]
         else
-          @dsl_options[key] = @config[key].dup
+          @dsl_options[key] = initial_option_value(key)
         end
       end
 
       def update_option(key, value)
         @dsl_options[key] = value
+      end
+
+      # The value the block starts out from. An unset array option starts from
+      # an empty array rather than from `nil`, so that appending to it works.
+      def initial_option_value(key)
+        value = @config[key]
+        return [] if value.nil? && Appsignal::Config::ARRAY_OPTIONS.key?(key)
+
+        value.dup
+      end
+
+      # Whether the value is the one the config already held before the block
+      # ran, treating an unset array option as empty. Reading an option
+      # memoizes its current value, so without this check a block that only
+      # reads an option would record it as one the block set.
+      def unchanged_option?(key, value)
+        value == initial_option_value(key)
       end
 
       # Parse tags from various input formats and validate values

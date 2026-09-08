@@ -2108,6 +2108,36 @@ describe Appsignal::Config do
       expect(dsl.cpu_count).to eq(1.0)
     end
 
+    it "keeps an array option unset when it's set to nil" do
+      dsl.ignore_actions = nil
+
+      expect(dsl.ignore_actions).to be_nil
+      expect(dsl.dsl_options).to eq(:ignore_actions => nil)
+    end
+
+    it "doesn't set options that are only read" do
+      expect(dsl.push_api_key).to eq("abc") # Loaded from file
+      expect(dsl.ignore_actions).to eq([])
+
+      expect(dsl.dsl_options).to be_empty
+    end
+
+    context "with an unset array option" do
+      let(:options) { { :ignore_actions => nil } }
+
+      it "reads as an empty array so it can be appended to" do
+        dsl.ignore_actions << "my ignored action"
+
+        expect(dsl.dsl_options).to eq(:ignore_actions => ["my ignored action"])
+      end
+
+      it "stays unset when it's only read" do
+        expect(dsl.ignore_actions).to eq([])
+
+        expect(dsl.dsl_options).to be_empty
+      end
+    end
+
     describe "#activate_if_environment" do
       it "sets active to true if loaded env matches argument" do
         dsl.activate_if_environment(:production)
