@@ -52,18 +52,24 @@ if DependencyHelper.opentelemetry_present?
       expect(attrs["telemetry.sdk.name"].string_value).to eq("opentelemetry")
       expect(attrs["telemetry.sdk.language"].string_value).to eq("ruby")
 
-      # Attributes that default to nil or [] are omitted so the collector applies defaults.
+      expect(attrs["appsignal.config.response_headers"].array_value.values).to be_empty
+
       %w[
-        appsignal.config.filter_function_parameters
-        appsignal.config.filter_request_query_parameters
-        appsignal.config.filter_request_session_data
-        appsignal.config.ignore_errors
-        appsignal.config.response_headers
         appsignal.config.send_function_parameters
         appsignal.config.send_request_query_parameters
       ].each do |key|
         expect(attrs).to_not have_key(key),
           "expected #{key.inspect} to be omitted from the resource, got #{attrs[key].inspect}"
+      end
+
+      %w[
+        appsignal.config.filter_function_parameters
+        appsignal.config.filter_request_query_parameters
+        appsignal.config.filter_request_session_data
+        appsignal.config.ignore_errors
+      ].each do |key|
+        expect(attrs[key].array_value.values).to eq([]),
+          "expected #{key.inspect} to be sent as an empty list, got #{attrs[key].inspect}"
       end
     end
 
@@ -99,6 +105,23 @@ if DependencyHelper.opentelemetry_present?
       end
       expect(log_bodies).to include("test-log-line")
       expect_appsignal_resource(log_msg.resource_logs.first.resource)
+    end
+
+    it "sends an empty request header allowlist as an empty array" do
+      runner = Runner.new(
+        "collector_mode_emit",
+        :env => OTLPCollectorServer.env.merge("APPSIGNAL_KEEP_REQUEST_HEADERS" => "")
+      )
+      runner.run
+
+      trace_req = OTLPCollectorServer.listen_to("/v1/traces")
+      trace_msg = Opentelemetry::Proto::Collector::Trace::V1::ExportTraceServiceRequest
+        .decode(trace_req[:body])
+      resource = trace_msg.resource_spans.first.resource
+      attrs = resource.attributes.to_h { |kv| [kv.key, kv.value] }
+
+      expect(attrs).to have_key("appsignal.config.request_headers")
+      expect(attrs["appsignal.config.request_headers"].array_value.values).to eq([])
     end
   end
 end

@@ -362,7 +362,9 @@ module Appsignal
           "appsignal.config.send_request_payload" => config[:send_request_payload],
           "appsignal.config.send_request_session_data" => config[:send_session_data]
         }
-        attrs.reject! { |_, v| v.nil? || (v.respond_to?(:empty?) && v.empty?) }
+        # An absent attribute leaves the collector its own default, which an empty
+        # allowlist cannot say, so an empty list is sent and an unset option is not.
+        attrs.reject! { |_, value| value.nil? || value == "" }
         ::OpenTelemetry::SDK::Resources::Resource.create(attrs)
       end
 

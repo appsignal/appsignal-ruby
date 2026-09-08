@@ -241,6 +241,8 @@ describe Appsignal do
         end
         Appsignal.configure do |config|
           options.each do |option, value|
+            value = [] if value.nil? && Appsignal::Config::ARRAY_OPTIONS.key?(option)
+
             expect(config.send(option)).to eq(value)
           end
         end
