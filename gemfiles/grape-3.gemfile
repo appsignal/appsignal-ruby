@@ -1,0 +1,13 @@
+source "https://rubygems.org"
+
+# Capped below grape 4 because the Grape middleware does not support it yet.
+# See https://github.com/appsignal/appsignal-ruby/issues/1606.
+#
+# No grape 3 supports Ruby 2.7, so that build resolves grape 2.4.0, the last
+# grape 2 release. Capping below 4 rather than requiring 3 is what keeps that
+# build working, so grape 2 stays covered. That coverage rides on Ruby 2.7
+# being in the matrix, and it goes away with it.
+gem "grape", "< 4"
+gem "ostruct"
+
+gemspec :path => "../"
