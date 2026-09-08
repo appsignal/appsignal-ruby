@@ -1596,6 +1596,62 @@ describe Appsignal::Transaction do
       end
     end
 
+    describe "#add_function_parameters_if_nil guards its own channel only" do
+      def perform
+        transaction.add_request_payload("payload" => "value")
+        transaction.add_function_parameters_if_nil("arguments" => "value")
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        # Setting the request payload does not count as setting the function
+        # parameters, even though both end up in one bucket here.
+        expect(transaction).to include_params(
+          "payload" => "value",
+          "arguments" => "value"
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(JSON.parse(root_span.attributes["appsignal.request.payload"]))
+          .to eq("payload" => "value")
+        expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+          .to eq("arguments" => "value")
+      end
+    end
+
+    describe "#add_params guards the request payload channel" do
+      def perform
+        transaction.add_params("legacy" => "value")
+        transaction.add_request_payload_if_nil("payload" => "value")
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_params("legacy" => "value")
+        expect(transaction).to_not include_params("payload" => "value")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(JSON.parse(root_span.attributes["appsignal.request.payload"]))
+          .to eq("legacy" => "value")
+      end
+    end
+
     describe "#set_empty_params! also suppresses function parameters set later" do
       def perform
         transaction.set_empty_params!
