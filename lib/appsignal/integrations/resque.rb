@@ -7,12 +7,14 @@ module Appsignal
       def perform
         # Read trace context off the job so the transaction links back to the
         # enqueuer. No-op outside collector mode.
+        job_data = ResqueHelpers.active_job_data(payload)
         transaction = Appsignal::Transaction.create(
           Appsignal::Transaction::BACKGROUND_JOB,
-          :opentelemetry_context => ResqueHelpers.extract_context(payload),
+          :opentelemetry_context => ResqueHelpers.extract_context(payload, job_data),
           :opentelemetry_scope => ["appsignal-ruby/resque", Appsignal::VERSION],
           :opentelemetry_kind => :consumer,
-          :opentelemetry_relationship => :both
+          :opentelemetry_relationship =>
+            Appsignal::OpenTelemetry.active_job_relationship(job_data)
         )
         # Describes this span as a job being performed. The messaging system is
         # what the trace timeline reads to recognize background job work, and
@@ -118,8 +120,8 @@ module Appsignal
       # The trace context to continue: the Active Job layer when this is an
       # Active Job job, the Resque job itself otherwise. See `Appsignal::OpenTelemetry.extract_active_job_context`
       # for why that layer wins.
-      def self.extract_context(payload)
-        Appsignal::OpenTelemetry.extract_active_job_context(active_job_data(payload)) ||
+      def self.extract_context(payload, job_data)
+        Appsignal::OpenTelemetry.extract_active_job_context(job_data) ||
           Appsignal::OpenTelemetry.extract_job_context(payload)
       end
     end

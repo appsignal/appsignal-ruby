@@ -498,6 +498,53 @@ if DependencyHelper.que_present?
         end
       end
 
+      # A job from an Active Job bulk enqueue carries a marker alongside its
+      # trace context, because every job in the batch shares one producer span.
+      context "with incoming trace context from an Active Job bulk enqueue" do
+        let(:trace_id_hex) { "0af7651916cd43dd8448eb211c80319c" }
+        let(:span_id_hex) { "b7ad6b7169203331" }
+        let(:traceparent) { "00-#{trace_id_hex}-#{span_id_hex}-01" }
+        let(:job_attrs) do
+          super().merge(
+            :job_class => Appsignal::Integrations::QueTraceContext::ACTIVE_JOB_WRAPPER,
+            :args => [
+              {
+                :job_class => "MyActiveJob",
+                :arguments => [],
+                :__otel_headers => [
+                  ["traceparent", traceparent],
+                  [Appsignal::OpenTelemetry::ACTIVE_JOB_BATCH_HEADER, "1"]
+                ]
+              }
+            ]
+          )
+        end
+        let(:job) do
+          Class.new(::Que::Job) do
+            def run(job_data)
+            end
+          end
+        end
+
+        def perform
+          perform_que_job(instance)
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+
+          # Every job in the batch shares the one producer span, so the job
+          # only links back to it. It gets its own trace instead of hanging the
+          # whole batch off that span.
+          expect(root_span.kind).to eq(:consumer)
+          expect(root_span.parent_span_id).to eq(::OpenTelemetry::Trace::INVALID_SPAN_ID)
+          expect(root_span.hex_trace_id).to_not eq(trace_id_hex)
+          expect(root_span.links.size).to eq(1)
+          expect(root_span.links.first.span_context.hex_trace_id).to eq(trace_id_hex)
+        end
+      end
+
       # A job enqueued by a service that instruments Que but not Active Job has
       # no Active Job carrier to read, so the job's tags are what the trace has
       # to be continued from.
