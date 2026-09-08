@@ -145,7 +145,10 @@ module Appsignal
         self.class.safe_execution("Appsignal::Rack::EventHandler#on_finish") do
           transaction.finish_event("process_request.rack", "callback: on_finish", "")
           transaction.add_request_payload_if_nil { request.params }
-          transaction.add_headers_if_nil { request.env }
+          headers, environment =
+            Appsignal::Utils::RequestHeaders.split_lazily { request.env }
+          transaction.add_request_headers_if_nil(&headers)
+          transaction.add_request_environment_if_nil(&environment)
           transaction.add_session_data_if_nil do
             request.session if request.respond_to?(:session)
           end

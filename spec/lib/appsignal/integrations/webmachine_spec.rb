@@ -14,16 +14,23 @@ if DependencyHelper.webmachine_present?
   end
 
   describe Appsignal::Integrations::WebmachineIntegration do
+    # Built the way the real Webmachine adapter builds it, from the Rack
+    # environment. `Webmachine::Headers.from_cgi` keeps only the request
+    # headers and names each one in lowercase and with dashes, so a Webmachine
+    # request never carries the environment values a Rack request does.
+    let(:request_headers) do
+      Webmachine::Headers.from_cgi(
+        "REQUEST_METHOD" => "GET",
+        "PATH_INFO" => "/some/path",
+        "HTTP_ACCEPT" => "text/html",
+        "ignored_header" => "something"
+      )
+    end
     let(:request) do
       Webmachine::Request.new(
         "GET",
         "http://google.com:80/foo?param1=value1&param2=value2",
-        {
-          "REQUEST_METHOD" => "GET",
-          "PATH_INFO" => "/some/path",
-          "HTTP_ACCEPT" => "application/json",
-          "ignored_header" => "something"
-        },
+        request_headers,
         nil
       )
     end
@@ -183,20 +190,33 @@ if DependencyHelper.webmachine_present?
         it "in agent mode", :agent_mode do
           start_agent
           perform
-          expect(last_transaction).to include_environment(
-            "REQUEST_METHOD" => "GET",
-            "PATH_INFO" => "/some/path",
-            "HTTP_ACCEPT" => "application/json"
-          )
+          # Webmachine names a header the way OpenTelemetry does, so agent mode
+          # converts it to the Rack name the environment panel shows and the
+          # `request_headers` allowlist matches.
+          expect(last_transaction).to include_environment("HTTP_ACCEPT" => "text/html")
         end
 
         it "in collector mode", :collector_mode do
           start_collector_agent
           perform
-          # Only true HTTP headers map to `http.request.header.*`; the non-header
-          # CGI vars (REQUEST_METHOD, PATH_INFO) are intentionally dropped.
-          expect(root_span.attributes["http.request.header.accept"]).to eq("application/json")
-          expect(root_span.attributes.keys).to_not include("http.request.header.request-method")
+          expect(root_span.attributes["http.request.header.accept"]).to eq("text/html")
+        end
+      end
+
+      describe "does not report the headers Webmachine leaves out" do
+        it "in agent mode", :agent_mode do
+          start_agent
+          perform
+          expect(last_transaction).to_not include_environment("REQUEST_METHOD" => "GET")
+          expect(last_transaction).to_not include_environment("PATH_INFO" => "/some/path")
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          perform
+          expect(root_span.attributes.keys)
+            .to_not include("http.request.header.request-method")
+          expect(root_span.attributes.keys).to_not include("appsignal.environment.PATH_INFO")
         end
       end
 

@@ -77,21 +77,23 @@ module Appsignal
       end
 
       def add_headers_to(transaction)
-        transaction.add_headers(
+        transaction.add_request_headers(
+          "accept" => "text/html,application/xhtml+xml",
+          "accept-encoding" => "gzip, deflate, sdch",
+          "accept-language" => "en-US,en;q=0.8,nl;q=0.6",
+          "cache-control" => "max-age=0",
+          "connection" => "keep-alive",
+          "user-agent" => "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_0)",
+          "referer" => "http://appsignal.com/accounts"
+        )
+        transaction.add_request_environment(
           "REMOTE_ADDR" => "127.0.0.1",
           "REQUEST_METHOD" => "GET",
           "SERVER_NAME" => "localhost",
           "SERVER_PORT" => "80",
           "SERVER_PROTOCOL" => "HTTP/1.1",
           "REQUEST_PATH" => "/hello",
-          "PATH_INFO" => "/hello",
-          "HTTP_ACCEPT" => "text/html,application/xhtml+xml",
-          "HTTP_ACCEPT_ENCODING" => "gzip, deflate, sdch",
-          "HTTP_ACCEPT_LANGUAGE" => "en-US,en;q=0.8,nl;q=0.6",
-          "HTTP_CACHE_CONTROL" => "max-age=0",
-          "HTTP_CONNECTION" => "keep-alive",
-          "HTTP_USER_AGENT" => "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_0)",
-          "HTTP_REFERER" => "http://appsignal.com/accounts"
+          "PATH_INFO" => "/hello"
         )
       end
     end
