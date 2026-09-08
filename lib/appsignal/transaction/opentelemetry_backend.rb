@@ -284,6 +284,28 @@ module Appsignal
         PARAMS_MAPPING
       end
 
+      # The collector reports a request header as an `http.request.header.*`
+      # attribute and has nowhere to put the rest of a Rack environment, so the
+      # two channels stay in separate buckets. Neither needs a transform: the
+      # headers already arrive under the names OpenTelemetry uses.
+      HEADERS_MAPPING = {
+        :request_headers => [:request_headers, nil],
+        :request_environment => [:environment, nil]
+      }.freeze
+
+      def headers_mapping
+        HEADERS_MAPPING
+      end
+
+      HEADERS_ALLOWLIST = {
+        :request_headers => :keep_request_headers,
+        :environment => :keep_request_environment
+      }.freeze
+
+      def headers_allowlist
+        HEADERS_ALLOWLIST
+      end
+
       # Routes each sample-data category to the attribute the collector reads.
       # The params arrive on one of three channels: `request_payload` (web),
       # `function_parameters` (jobs) and `query_parameters` (a request's query
@@ -305,8 +327,10 @@ module Appsignal
           @span.set_attribute("appsignal.request.session_data", JSON.generate(data))
         when "custom_data"
           @span.set_attribute("appsignal.custom_data", JSON.generate(data))
-        when "environment"
+        when "request_headers"
           write_request_headers(data)
+        when "environment"
+          write_request_environment(data)
         when "tags"
           write_tags(data)
         else
@@ -717,23 +741,22 @@ module Appsignal
         DISPLAY_NAMESPACE.fetch(namespace, namespace)
       end
 
-      # The transaction's "environment" sample data is a Rack/CGI env allowlist
-      # mixing true HTTP headers (HTTP_*, plus CONTENT_LENGTH/CONTENT_TYPE) with
-      # non-header CGI vars (REQUEST_METHOD, REQUEST_PATH, PATH_INFO, SERVER_*).
-      #
-      # A true header becomes `http.request.header.*`, normalized to the
-      # lowercase dashed name that convention uses. Everything else keeps its
-      # own environment name under `appsignal.environment.*`, except for the
-      # keys in `TRANSLATED_ENV_KEYS`, which the instrumentation already
-      # describes from the request itself.
+      # The request headers arrive under the names OpenTelemetry uses, which
+      # is what the convention wants in the attribute name.
       def write_request_headers(headers)
-        headers.each do |key, value|
-          name = Appsignal::Utils::RequestHeaders.header_name(key)
-          if name
-            @span.set_attribute("http.request.header.#{name}", value.to_s)
-          elsif !Appsignal::Utils::RequestHeaders::TRANSLATED_ENV_KEYS.include?(key)
-            @span.set_attribute("appsignal.environment.#{key}", value.to_s)
-          end
+        headers.each do |name, value|
+          @span.set_attribute("http.request.header.#{name}", value.to_s)
+        end
+      end
+
+      # Everything a Rack environment holds that is not a request header keeps
+      # its own name. Most of those values have no semantic convention
+      # attribute to go in, and the ones that do are already described from the
+      # request itself, so `keep_request_environment` leaves those out unless
+      # the application asks for them.
+      def write_request_environment(environment)
+        environment.each do |key, value|
+          @span.set_attribute("appsignal.environment.#{key}", value.to_s)
         end
       end
 

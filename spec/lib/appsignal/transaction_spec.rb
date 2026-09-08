@@ -57,7 +57,12 @@ describe Appsignal::Transaction do
             :params => :params,
             :request_payload => :params,
             :function_parameters => :params
-          }
+          },
+          :headers_mapping => {
+            :request_headers => [:environment, nil],
+            :request_environment => [:environment, nil]
+          },
+          :headers_allowlist => { :environment => :request_headers }
         )
       end
 
@@ -2217,6 +2222,95 @@ describe Appsignal::Transaction do
         expect(root_span.attributes["http.request.header.accept"]).to eq("text/html")
         expect(root_span.attributes).to_not have_key("http.request.header.path-info")
         expect(root_span.attributes).to_not have_key("appsignal.environment.PATH_INFO")
+      end
+    end
+
+    describe "evaluating the given block once, although it feeds two channels" do
+      let(:calls) { [] }
+
+      def perform
+        transaction.add_headers do
+          calls << :called
+          { "HTTP_ACCEPT" => "text/html", "REMOTE_ADDR" => "127.0.0.1" }
+        end
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(calls.length).to eq(1)
+        expect(transaction).to include_environment("HTTP_ACCEPT" => "text/html")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(calls.length).to eq(1)
+        expect(root_span.attributes["http.request.header.accept"]).to eq("text/html")
+      end
+    end
+
+    context "with an empty allowlist" do
+      let(:options) do
+        { :request_headers => [], :keep_request_headers => [] }
+      end
+
+      def perform
+        transaction.add_headers("HTTP_ACCEPT" => "text/html")
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to_not include_environment
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(root_span.attributes.keys)
+          .to_not include(a_string_starting_with("http.request.header."))
+      end
+    end
+
+    context "with keep_request_environment asking for a value the request describes" do
+      let(:options) do
+        {
+          :request_headers => %w[PATH_INFO],
+          :keep_request_environment => %w[PATH_INFO]
+        }
+      end
+
+      def perform
+        transaction.add_headers("PATH_INFO" => "/users")
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        # `keep_request_environment` does nothing here. Agent mode filters by
+        # `request_headers`, which also allows the value.
+        expect(transaction).to include_environment("PATH_INFO" => "/users")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        # The derived allowlist leaves this key out, because `url.path`
+        # describes it better. An application that asks for it anyway gets it.
+        expect(root_span.attributes["appsignal.environment.PATH_INFO"]).to eq("/users")
       end
     end
 

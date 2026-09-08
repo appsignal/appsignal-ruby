@@ -96,6 +96,30 @@ module Appsignal
         PARAMS_MAPPING
       end
 
+      # The agent has a single environment slot, so both header channels map to
+      # one `:environment` bucket and merge into it. The request headers arrive
+      # under the names OpenTelemetry uses, so they are converted back to the
+      # Rack names the `request_headers` allowlist and the agent both expect.
+      # That has to happen before the merge, because once the two channels
+      # share a bucket their values cannot be told apart.
+      HEADERS_MAPPING = {
+        :request_headers => [
+          :environment,
+          lambda { |name, value| [Appsignal::Utils::RequestHeaders.rack_name(name), value] }
+        ],
+        :request_environment => [:environment, nil]
+      }.freeze
+
+      def headers_mapping
+        HEADERS_MAPPING
+      end
+
+      HEADERS_ALLOWLIST = { :environment => :request_headers }.freeze
+
+      def headers_allowlist
+        HEADERS_ALLOWLIST
+      end
+
       # `data` is a raw Ruby Hash/Array; the C extension wants a `Data` object,
       # so serialize it here (mirrors how `set_error` serializes its backtrace).
       def set_sample_data(key, data)

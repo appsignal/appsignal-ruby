@@ -37,9 +37,14 @@ module Appsignal
         # the way OpenTelemetry names them, and everything else, which keeps
         # its Rack name.
         #
+        # A value that is not a Hash cannot be split, so it goes to the
+        # environment side unchanged and whatever rejects it there can say so.
+        #
         # @param env [Hash<String, Object>]
         # @return [Array(Hash<String, Object>, Hash<String, Object>)]
         def split(env)
+          return [{}, env] unless env.is_a?(Hash)
+
           headers = {}
           environment = {}
 
@@ -53,6 +58,22 @@ module Appsignal
           end
 
           [headers, environment]
+        end
+
+        # Returns a pair of blocks that split what `block` returns, the first
+        # giving the request headers and the second the rest of the
+        # environment.
+        #
+        # Used to feed the two channels of a transaction from one Rack
+        # environment. Both blocks run when the transaction is sampled, and
+        # `block` runs once however many of them are called.
+        #
+        # @return [Array(Proc, Proc)]
+        def split_lazily(&block)
+          split = nil
+          splitter = lambda { split ||= split(block.call) }
+
+          [lambda { splitter.call.first }, lambda { splitter.call.last }]
         end
 
         # The OpenTelemetry name of the header a Rack environment key holds, or
@@ -73,9 +94,12 @@ module Appsignal
 
         # The Rack environment key a header's OpenTelemetry name maps back to.
         #
-        # Rack folds the `X-Foo` and the `X_Foo` header into the same
-        # `HTTP_X_FOO` key, so a name that has made the round trip is not
-        # always the one the client sent.
+        # A key that makes the round trip is not always the one it started as,
+        # because two Rack keys can name the same header. A server that sets
+        # both `CONTENT_LENGTH` and `HTTP_CONTENT_LENGTH` gives the second one
+        # back as the first, since that is the spelling Rack is supposed to
+        # use. Rack itself has the same problem earlier on, folding the `X-Foo`
+        # and `X_Foo` headers into one `HTTP_X_FOO` key.
         #
         # @param header [String]
         # @return [String]
