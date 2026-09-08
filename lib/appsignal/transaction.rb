@@ -243,7 +243,6 @@ module Appsignal
       @error_set = nil
 
       @session_data = Appsignal::SampleData.new(:session_data, Hash)
-      @headers = Appsignal::SampleData.new(:headers, Hash)
       @custom_data = Appsignal::SampleData.new(:custom_data)
 
       @backend = backend || Appsignal::Backends.transaction.new(
@@ -268,6 +267,21 @@ module Appsignal
       @params_buckets = @params_mapping.values.uniq.to_h do |bucket|
         [bucket, Appsignal::SampleData.new(bucket)]
       end
+
+      # The header channels are stored the same way, with two additions. A
+      # channel also carries a transform, applied when a value is added, which
+      # the extension backend uses to convert a header's OpenTelemetry name
+      # back to its Rack name. And each bucket has a configuration option
+      # listing the keys to keep in it, applied when the bucket is sampled.
+      @headers_mapping = @backend.headers_mapping
+      @headers_allowlist = @backend.headers_allowlist
+      @headers_buckets = @headers_mapping.each_value.map(&:first).uniq.to_h do |bucket|
+        [bucket, Appsignal::SampleData.new(bucket, Hash)]
+      end
+
+      # The header channels something has been added to. This is what the
+      # `_if_nil` header setters guard on.
+      @channels_set = []
 
       run_after_create_hooks
     end
@@ -648,6 +662,10 @@ module Appsignal
 
     # Add headers to the transaction.
     #
+    # @deprecated Use {#add_request_headers} for request headers and
+    #   {#add_request_environment} for the values a Rack environment holds that
+    #   are not request headers. This method takes both kinds at once, so it
+    #   has to work out which of them each value is.
     # @since 4.0.0
     # @param given_headers [Hash<String, Object>] A hash containing headers.
     # @yield This block is called when the transaction is sampled. The block's
@@ -659,7 +677,21 @@ module Appsignal
     # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
     #   Sample data guide
     def add_headers(given_headers = nil, &block)
-      @headers.add(given_headers, &block)
+      if block
+        headers, environment = Appsignal::Utils::RequestHeaders.split_lazily(&block)
+
+        add_headers_channel(:request_headers, &headers)
+        add_headers_channel(:request_environment, &environment)
+      elsif given_headers.is_a?(Hash)
+        headers, environment = Appsignal::Utils::RequestHeaders.split(given_headers)
+
+        add_headers_channel(:request_headers, headers)
+        add_headers_channel(:request_environment, environment)
+      else
+        # There is nothing to split, so hand the value to one channel and let
+        # `SampleData` report the unsupported type once.
+        add_headers_channel(:request_environment, given_headers)
+      end
     end
     alias set_headers add_headers
 
@@ -668,6 +700,8 @@ module Appsignal
     # When both the `given_headers` and a block is given to this method,
     # the block is leading and the argument will _not_ be used.
     #
+    # @deprecated Use {#add_request_headers_if_nil} or
+    #   {#add_request_environment_if_nil}.
     # @since 4.0.0
     # @param given_headers [Hash<String, Object>] A hash containing headers.
     # @yield This block is called when the transaction is sampled. The block's
@@ -680,7 +714,9 @@ module Appsignal
     # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
     #   Sample data guide
     def add_headers_if_nil(given_headers = nil, &block)
-      add_headers(given_headers, &block) unless @headers.value?
+      return if channel_set?(:request_headers) || channel_set?(:request_environment)
+
+      add_headers(given_headers, &block)
     end
     alias set_headers_if_nil add_headers_if_nil
 
@@ -984,7 +1020,7 @@ module Appsignal
 
     # @!visibility private
     attr_writer :is_duplicate, :tags, :custom_data, :params_buckets,
-      :session_data, :headers
+      :session_data, :headers_buckets, :channels_set
 
     # @!visibility private
     def internal_set_error(error, &block)
@@ -1222,12 +1258,19 @@ module Appsignal
     end
 
     def sample_data
-      data = {
-        :environment => sanitized_request_headers,
+      data = {}
+      # Each header bucket is emitted under its own key, before the rest, so
+      # the agent's `environment` blob keeps the place it has always had. The
+      # extension backend has a single `:environment` bucket; the OpenTelemetry
+      # backend keeps `:request_headers` apart from it.
+      @headers_buckets.each do |bucket, sample|
+        data[bucket] = sanitized_headers(bucket, sample)
+      end
+      data.merge!(
         :session_data => sanitized_session_data,
         :tags => sanitized_tags,
         :custom_data => custom_data
-      }
+      )
       # Each params bucket is emitted under its own key. The extension backend
       # has a single `:params` bucket; the OpenTelemetry backend has separate
       # `:request_payload` and `:function_parameters` buckets. The backend maps
@@ -1252,7 +1295,8 @@ module Appsignal
         transaction.custom_data = @custom_data.dup
         transaction.params_buckets = @params_buckets.transform_values(&:dup)
         transaction.session_data = @session_data.dup
-        transaction.headers = @headers.dup
+        transaction.headers_buckets = @headers_buckets.transform_values(&:dup)
+        transaction.channels_set = @channels_set.dup
       end
     end
 
@@ -1305,27 +1349,81 @@ module Appsignal
       )
     end
 
-    def request_headers
-      @headers.value
+    # Adds to a header channel, applying the transform the backend gave the
+    # channel.
+    #
+    # The transform runs when the value is added rather than when the bucket is
+    # sampled, because two channels can share a bucket and once they do their
+    # values cannot be told apart. `SampleData` evaluates a block lazily, so
+    # the transform has to wrap the block rather than the value.
+    def add_headers_channel(channel, given_headers = nil, &block)
+      bucket, transform = @headers_mapping.fetch(channel)
+      sample = @headers_buckets.fetch(bucket)
+
+      if transform.nil?
+        sample.add(given_headers, &block)
+      elsif block
+        sample.add { transform_headers(transform, block.call) }
+      else
+        sample.add(transform_headers(transform, given_headers))
+      end
+
+      mark_channel_set(channel) if sample.value?
+    end
+
+    # Applies a channel's transform to each of its pairs, leaving a value that
+    # is not a Hash alone so that `SampleData` still reports it as an
+    # unsupported type.
+    def transform_headers(transform, headers)
+      return headers unless headers.is_a?(Hash)
+
+      headers.to_h(&transform)
+    end
+
+    # Records that a channel has been set.
+    def mark_channel_set(channel)
+      @channels_set << channel unless @channels_set.include?(channel)
+    end
+
+    # Whether anything has been set on a header channel, which is what the
+    # `_if_nil` header setters guard on.
+    #
+    # Tracked per channel rather than per storage bucket, because agent mode
+    # maps both channels to one bucket. Reading it from the bucket would mean
+    # that setting one channel stops the other from being set, so agent mode
+    # would drop values collector mode reports.
+    def channel_set?(channel)
+      @channels_set.include?(channel)
+    end
+
+    # Reads a header bucket's value. Evaluating it runs any block the caller
+    # passed to `add_headers`, which is user code that can raise, so a failure
+    # is logged and swallowed.
+    def headers_value(sample)
+      sample.value
     rescue => e
       Appsignal.internal_logger.error \
         "Exception while fetching headers: #{e.class}: #{e}"
       nil
     end
 
-    # Returns sanitized environment for a transaction.
+    # Returns the values of a header bucket that its allowlist keeps.
     #
-    # The environment of a transaction can contain a lot of information, not
-    # all of it useful for debugging.
+    # A Rack environment holds a lot of information, not all of it useful for
+    # debugging, so each bucket has a configuration option naming the keys to
+    # keep. An option that is not set keeps every key.
     #
-    # @return [nil] if no environment is present.
+    # @return [nil] if the bucket holds nothing.
     # @return [Hash<String, Object>]
-    def sanitized_request_headers
-      headers = request_headers
+    def sanitized_headers(bucket, sample)
+      headers = headers_value(sample)
       return unless headers
 
+      allowlist = Appsignal.config[@headers_allowlist.fetch(bucket)]
+      return headers if allowlist.nil?
+
       {}.tap do |out|
-        Appsignal.config[:request_headers].each do |key|
+        allowlist.each do |key|
           out[key] = headers[key] if headers[key]
         end
       end
