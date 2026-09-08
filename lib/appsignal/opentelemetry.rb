@@ -363,7 +363,13 @@ module Appsignal
           "appsignal.config.send_request_payload" => config[:send_request_payload],
           "appsignal.config.send_request_session_data" => config[:send_session_data]
         }
-        attrs.reject! { |_, v| v.nil? || (v.respond_to?(:empty?) && v.empty?) }
+        # An unset option says nothing, so it is dropped and the collector
+        # applies its own default. So is an empty string, which is how an
+        # unset string option reaches here. An empty list is sent: for an
+        # allowlist it means "keep nothing", which an absent attribute cannot
+        # say, and for a denylist it filters nothing, which is what the
+        # collector does without it either way.
+        attrs.reject! { |_, value| value.nil? || value == "" }
         ::OpenTelemetry::SDK::Resources::Resource.create(attrs)
       end
 
