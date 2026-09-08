@@ -720,6 +720,86 @@ module Appsignal
     end
     alias set_headers_if_nil add_headers_if_nil
 
+    # Add request headers to the transaction.
+    #
+    # Name each header the way OpenTelemetry names it, in lowercase and with
+    # dashes, such as `accept` and `content-length`. In agent mode the names
+    # are converted to the Rack spellings the environment uses, such as
+    # `HTTP_ACCEPT`.
+    #
+    # Behaves like {#add_headers}: merges when called multiple times, and a
+    # block takes precedence over the argument.
+    #
+    # @param given_headers [Hash<String, Object>] A hash containing request
+    #   headers.
+    # @yield This block is called when the transaction is sampled. The block's
+    #   return value will become the new request headers.
+    # @yieldreturn [Hash<String, Object>]
+    # @return [void]
+    #
+    # @see #add_request_environment
+    # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
+    #   Sample data guide
+    def add_request_headers(given_headers = nil, &block)
+      add_headers_channel(:request_headers, given_headers, &block)
+    end
+
+    # Add request headers to the transaction if none are already set.
+    #
+    # @param given_headers [Hash<String, Object>] A hash containing request
+    #   headers to set if none are already set.
+    # @yield This block is called when the transaction is sampled. The block's
+    #   return value will become the new request headers.
+    # @yieldreturn [Hash<String, Object>]
+    # @return [void]
+    # @!visibility private
+    #
+    # @see #add_request_headers
+    def add_request_headers_if_nil(given_headers = nil, &block)
+      add_request_headers(given_headers, &block) unless channel_set?(:request_headers)
+    end
+
+    # Add values from the request environment to the transaction.
+    #
+    # These are the values a Rack environment holds that are not request
+    # headers, such as `REMOTE_ADDR` and `QUERY_STRING`. Name each one the way
+    # Rack names it. Use {#add_request_headers} for the request headers.
+    #
+    # Behaves like {#add_headers}: merges when called multiple times, and a
+    # block takes precedence over the argument.
+    #
+    # @param given_environment [Hash<String, Object>] A hash containing request
+    #   environment values.
+    # @yield This block is called when the transaction is sampled. The block's
+    #   return value will become the new request environment.
+    # @yieldreturn [Hash<String, Object>]
+    # @return [void]
+    #
+    # @see #add_request_headers
+    # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
+    #   Sample data guide
+    def add_request_environment(given_environment = nil, &block)
+      add_headers_channel(:request_environment, given_environment, &block)
+    end
+
+    # Add values from the request environment to the transaction if none are
+    # already set.
+    #
+    # @param given_environment [Hash<String, Object>] A hash containing request
+    #   environment values to set if none are already set.
+    # @yield This block is called when the transaction is sampled. The block's
+    #   return value will become the new request environment.
+    # @yieldreturn [Hash<String, Object>]
+    # @return [void]
+    # @!visibility private
+    #
+    # @see #add_request_environment
+    def add_request_environment_if_nil(given_environment = nil, &block)
+      return if channel_set?(:request_environment)
+
+      add_request_environment(given_environment, &block)
+    end
+
     # Add custom data to the transaction.
     #
     # @since 4.0.0
