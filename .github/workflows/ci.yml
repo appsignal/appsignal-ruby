@@ -349,8 +349,8 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/faraday-2.gemfile
-  ruby_4-0-0__grape_ubuntu-latest:
-    name: Ruby 4.0.0 - grape
+  ruby_4-0-0__grape-3_ubuntu-latest:
+    name: Ruby 4.0.0 - grape-3
     needs: ruby_4-0-0_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
@@ -375,7 +375,7 @@ jobs:
       RAILS_ENV: test
       JRUBY_OPTS: ''
       COV: '1'
-      BUNDLE_GEMFILE: gemfiles/grape.gemfile
+      BUNDLE_GEMFILE: gemfiles/grape-3.gemfile
   ruby_4-0-0__http5_ubuntu-latest:
     name: Ruby 4.0.0 - http5
     needs: ruby_4-0-0_ubuntu-latest
@@ -1271,8 +1271,8 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/faraday-2.gemfile
-  ruby_3-4-1__grape_ubuntu-latest:
-    name: Ruby 3.4.1 - grape
+  ruby_3-4-1__grape-3_ubuntu-latest:
+    name: Ruby 3.4.1 - grape-3
     needs: ruby_3-4-1_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
@@ -1297,7 +1297,7 @@ jobs:
       RAILS_ENV: test
       JRUBY_OPTS: ''
       COV: '1'
-      BUNDLE_GEMFILE: gemfiles/grape.gemfile
+      BUNDLE_GEMFILE: gemfiles/grape-3.gemfile
   ruby_3-4-1__hanami-2-0_ubuntu-latest:
     name: Ruby 3.4.1 - hanami-2.0
     needs: ruby_3-4-1_ubuntu-latest
@@ -2328,8 +2328,8 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/faraday-2.gemfile
-  ruby_3-3-4__grape_ubuntu-latest:
-    name: Ruby 3.3.4 - grape
+  ruby_3-3-4__grape-3_ubuntu-latest:
+    name: Ruby 3.3.4 - grape-3
     needs: ruby_3-3-4_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
@@ -2354,7 +2354,7 @@ jobs:
       RAILS_ENV: test
       JRUBY_OPTS: ''
       COV: '1'
-      BUNDLE_GEMFILE: gemfiles/grape.gemfile
+      BUNDLE_GEMFILE: gemfiles/grape-3.gemfile
   ruby_3-3-4__hanami-2-0_ubuntu-latest:
     name: Ruby 3.3.4 - hanami-2.0
     needs: ruby_3-3-4_ubuntu-latest
@@ -3331,8 +3331,8 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/faraday-2.gemfile
-  ruby_3-2-5__grape_ubuntu-latest:
-    name: Ruby 3.2.5 - grape
+  ruby_3-2-5__grape-3_ubuntu-latest:
+    name: Ruby 3.2.5 - grape-3
     needs: ruby_3-2-5_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
@@ -3357,7 +3357,7 @@ jobs:
       RAILS_ENV: test
       JRUBY_OPTS: ''
       COV: '1'
-      BUNDLE_GEMFILE: gemfiles/grape.gemfile
+      BUNDLE_GEMFILE: gemfiles/grape-3.gemfile
   ruby_3-2-5__hanami-2-0_ubuntu-latest:
     name: Ruby 3.2.5 - hanami-2.0
     needs: ruby_3-2-5_ubuntu-latest
@@ -4334,8 +4334,8 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/faraday-2.gemfile
-  ruby_3-1-6__grape_ubuntu-latest:
-    name: Ruby 3.1.6 - grape
+  ruby_3-1-6__grape-3_ubuntu-latest:
+    name: Ruby 3.1.6 - grape-3
     needs: ruby_3-1-6_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
@@ -4360,7 +4360,7 @@ jobs:
       RAILS_ENV: test
       JRUBY_OPTS: ''
       COV: '1'
-      BUNDLE_GEMFILE: gemfiles/grape.gemfile
+      BUNDLE_GEMFILE: gemfiles/grape-3.gemfile
   ruby_3-1-6__hanami-2-0_ubuntu-latest:
     name: Ruby 3.1.6 - hanami-2.0
     needs: ruby_3-1-6_ubuntu-latest
@@ -5256,8 +5256,8 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/faraday-2.gemfile
-  ruby_3-0-7__grape_ubuntu-latest:
-    name: Ruby 3.0.7 - grape
+  ruby_3-0-7__grape-3_ubuntu-latest:
+    name: Ruby 3.0.7 - grape-3
     needs: ruby_3-0-7_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
@@ -5282,7 +5282,7 @@ jobs:
       RAILS_ENV: test
       JRUBY_OPTS: ''
       COV: '1'
-      BUNDLE_GEMFILE: gemfiles/grape.gemfile
+      BUNDLE_GEMFILE: gemfiles/grape-3.gemfile
   ruby_3-0-7__hanami-2-0_ubuntu-latest:
     name: Ruby 3.0.7 - hanami-2.0
     needs: ruby_3-0-7_ubuntu-latest
@@ -6097,8 +6097,8 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/faraday-1.gemfile
-  ruby_2-7-8__grape_ubuntu-latest:
-    name: Ruby 2.7.8 - grape
+  ruby_2-7-8__grape-3_ubuntu-latest:
+    name: Ruby 2.7.8 - grape-3
     needs: ruby_2-7-8_ubuntu-latest
     runs-on: ubuntu-latest
     steps:
@@ -6123,7 +6123,7 @@ jobs:
       RAILS_ENV: test
       JRUBY_OPTS: ''
       COV: '1'
-      BUNDLE_GEMFILE: gemfiles/grape.gemfile
+      BUNDLE_GEMFILE: gemfiles/grape-3.gemfile
   ruby_2-7-8__http5_ubuntu-latest:
     name: Ruby 2.7.8 - http5
     needs: ruby_2-7-8_ubuntu-latest
