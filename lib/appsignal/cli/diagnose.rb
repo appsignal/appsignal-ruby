@@ -201,6 +201,12 @@ module Appsignal
 
           # No config loaded yet, try loading as normal
           Appsignal._load_config!(env_option) unless Appsignal.config
+          # Some options are derived from others once the user config is
+          # final. The report is about the config an application would run
+          # with, so derive them here too, whether the config came from
+          # `Appsignal._load_config!` above or from an initializer that
+          # already ran.
+          Appsignal.config.apply_overrides
           Appsignal._start_logger
           Appsignal.config.write_to_environment
           Appsignal.internal_logger.info("Starting AppSignal diagnose")
