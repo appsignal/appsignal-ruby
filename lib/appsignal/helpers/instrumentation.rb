@@ -874,6 +874,10 @@ module Appsignal
       #   # The request headers will include:
       #   # { "PATH_INFO" => "/some-path", "HTTP_USER_AGENT" => "Firefox" }
       #
+      # @deprecated Use {#add_request_headers} for request headers and
+      #   {#add_request_environment} for the values a Rack environment holds
+      #   that are not request headers. This method takes both kinds at once,
+      #   so it has to work out which of them each value is.
       # @since 4.0.0
       # @param headers [Hash<String, Object>] The request headers to add to the transaction.
       # @yield This block is called when the transaction is sampled. The block's
@@ -881,6 +885,8 @@ module Appsignal
       # @yieldreturn [Hash<String, Object>]
       # @return [void]
       #
+      # @see #add_request_headers
+      # @see #add_request_environment
       # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
       #   Sample data guide
       # @see https://docs.appsignal.com/guides/filter-data/filter-headers.html

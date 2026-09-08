@@ -663,6 +663,10 @@ module Appsignal
 
     # Add headers to the transaction.
     #
+    # @deprecated Use {#add_request_headers} for request headers and
+    #   {#add_request_environment} for the values a Rack environment holds that
+    #   are not request headers. This method takes both kinds at once, so it
+    #   has to work out which of them each value is.
     # @since 4.0.0
     # @param given_headers [Hash<String, Object>] A hash containing headers.
     # @yield This block is called when the transaction is sampled. The block's
@@ -697,6 +701,8 @@ module Appsignal
     # When both the `given_headers` and a block is given to this method,
     # the block is leading and the argument will _not_ be used.
     #
+    # @deprecated Use {#add_request_headers_if_nil} or
+    #   {#add_request_environment_if_nil}.
     # @since 4.0.0
     # @param given_headers [Hash<String, Object>] A hash containing headers.
     # @yield This block is called when the transaction is sampled. The block's
