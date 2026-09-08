@@ -176,6 +176,90 @@ if DependencyHelper.opentelemetry_present?
           )
         end
       end
+
+      describe "the certificate authority file" do
+        # The exporters take the certificate file as a keyword argument and
+        # apply it to their own connection, so all that is left to test here
+        # is that AppSignal hands it to them.
+        it "gives each exporter the file in the ca_file_path option" do
+          certificate_files = capture_exporter_option(:certificate_file) do
+            with_config(:ca_file_path => "/path/to/cacert.pem") do |ca_config|
+              described_class.configure(ca_config)
+            end
+          end
+
+          expect(certificate_files).to eq(["/path/to/cacert.pem"] * 3)
+        end
+      end
+
+      describe "the HTTP proxy" do
+        # The exporters take no proxy argument, so each one is subclassed and
+        # the connection it builds is configured through a method that is not
+        # part of its public API. This asserts the proxy reached all three
+        # connections, so a version of the exporters that builds its
+        # connection somewhere else fails here, naming the exporter, rather
+        # than sending around the proxy unnoticed.
+        #
+        # Whether those requests then really go through a proxy is covered end
+        # to end against a mock proxy in
+        # `spec/integration/collector_mode_proxy_spec.rb`.
+        it "applies the proxy in the http_proxy option to each exporter" do
+          exporters = capture_built_exporters do
+            with_config(:http_proxy => "http://proxy.example.com:8080") do |proxy_config|
+              described_class.configure(proxy_config)
+            end
+          end
+
+          expect(exporters.size).to eq(3)
+          expect(exporters.map(&:appsignal_proxy_applied?)).to eq([true] * 3)
+        end
+      end
+    end
+
+    # Run the block and return the value each OTLP exporter was built with for
+    # `option`, in the order they were built.
+    def capture_exporter_option(option)
+      values = []
+      [
+        ::OpenTelemetry::Exporter::OTLP::Exporter,
+        ::OpenTelemetry::Exporter::OTLP::Metrics::MetricsExporter,
+        ::OpenTelemetry::Exporter::OTLP::Logs::LogsExporter
+      ].each do |klass|
+        allow(klass).to receive(:new).and_wrap_original do |original, **kwargs|
+          values << kwargs[option]
+          original.call(**kwargs)
+        end
+      end
+
+      yield
+
+      values
+    end
+
+    # Run the block and return each OTLP exporter it built, in the order they
+    # were built. Captured where AppSignal builds them, rather than by stubbing
+    # the exporter classes, because a proxied exporter is an instance of a
+    # subclass built at configure time.
+    def capture_built_exporters
+      exporters = []
+      allow(described_class).to receive(:build_exporter)
+        .and_wrap_original do |original, *args, **kwargs|
+          original.call(*args, **kwargs).tap { |exporter| exporters << exporter }
+        end
+
+      yield
+
+      exporters
+    end
+
+    def with_config(options)
+      yield build_config(
+        :options => {
+          :name => "collector-mode-spec",
+          :push_api_key => "abc",
+          :collector_endpoint => "http://127.0.0.1:9090"
+        }.merge(options)
+      )
     end
 
     describe ".started?" do
