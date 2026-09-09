@@ -125,7 +125,9 @@ module Appsignal
         HEADERS_MAPPING
       end
 
-      HEADERS_ALLOWLIST = { :environment => :request_headers }.freeze
+      # `request_headers` names Rack environment keys rather than headers, so
+      # there is no header name here to reduce to one spelling.
+      HEADERS_ALLOWLIST = { :environment => [:request_headers, false] }.freeze
 
       def headers_allowlist
         HEADERS_ALLOWLIST

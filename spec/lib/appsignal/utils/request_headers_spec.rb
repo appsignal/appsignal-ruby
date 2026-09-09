@@ -130,4 +130,17 @@ describe Appsignal::Utils::RequestHeaders do
       expect(rack_name("content-length")).to eq("CONTENT_LENGTH")
     end
   end
+  describe ".normalize" do
+    it "lowercases the name" do
+      expect(described_class.normalize("Accept-Encoding")).to eq("accept-encoding")
+    end
+
+    it "writes an underscore as the dash the header itself uses" do
+      expect(described_class.normalize("accept_encoding")).to eq("accept-encoding")
+    end
+
+    it "leaves a name that is already in that spelling alone" do
+      expect(described_class.normalize("accept-encoding")).to eq("accept-encoding")
+    end
+  end
 end

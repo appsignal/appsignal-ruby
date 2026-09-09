@@ -321,9 +321,11 @@ module Appsignal
         HEADERS_MAPPING
       end
 
+      # Only the request header bucket holds header names, which go by more
+      # than one spelling, so only it is compared on the reduced ones.
       HEADERS_ALLOWLIST = {
-        :request_headers => :keep_request_headers,
-        :environment => :keep_request_environment
+        :request_headers => [:keep_request_headers, true],
+        :environment => [:keep_request_environment, false]
       }.freeze
 
       def headers_allowlist

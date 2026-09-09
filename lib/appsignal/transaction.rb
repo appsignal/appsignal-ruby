@@ -1532,12 +1532,26 @@ module Appsignal
       headers = headers_value(sample)
       return unless headers
 
-      allowlist = Appsignal.config[@headers_allowlist.fetch(bucket)]
+      option, header_names = @headers_allowlist.fetch(bucket)
+      allowlist = Appsignal.config[option]
+
+      # A header goes by more than one name, so a bucket holding header names
+      # is reduced to one spelling on both sides of the comparison, and keeps
+      # that spelling on the way out. A caller naming a header any other way
+      # then has it reported rather than filtered out by the option naming it.
+      headers = normalized_headers(headers) if header_names
 
       {}.tap do |out|
         allowlist.each do |key|
+          key = Appsignal::Utils::RequestHeaders.normalize(key) if header_names
           out[key] = headers[key] if headers[key]
         end
+      end
+    end
+
+    def normalized_headers(headers)
+      headers.to_h do |key, value|
+        [Appsignal::Utils::RequestHeaders.normalize(key), value]
       end
     end
 

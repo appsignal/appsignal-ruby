@@ -669,6 +669,26 @@ if DependencyHelper.opentelemetry_present?
         expect(attrs["appsignal.config.request_headers"]).to eq(["accept", "date"])
       end
 
+      it "names the headers the way the collector receives them" do
+        resource = described_class.build_resource(
+          build_config(
+            :options => {
+              :name => "AppName",
+              :push_api_key => "abc",
+              :keep_request_headers => ["Accept_Encoding", "X-Custom-Header"],
+              :response_headers => ["Content_Type"]
+            }
+          )
+        )
+        attrs = resource_attrs(resource)
+
+        # The collector compares these against the names the headers arrive
+        # under, so a name written any other way would keep its header out.
+        expect(attrs["appsignal.config.request_headers"])
+          .to eq(["accept-encoding", "x-custom-header"])
+        expect(attrs["appsignal.config.response_headers"]).to eq(["content-type"])
+      end
+
       it "keeps an empty allowlist, so the collector keeps nothing" do
         resource = described_class.build_resource(
           build_config(

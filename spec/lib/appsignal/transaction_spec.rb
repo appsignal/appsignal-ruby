@@ -2770,6 +2770,26 @@ describe Appsignal::Transaction do
       end
     end
 
+    describe "adding a header named in another spelling" do
+      let(:options) { { :keep_request_headers => %w[Accept-Encoding] } }
+
+      def perform
+        transaction.add_request_headers("Accept_Encoding" => "gzip")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        # The caller and the option each named the header their own way, and
+        # the allowlist still keeps it, under the one name the collector
+        # compares against.
+        expect(root_span.attributes["http.request.header.accept-encoding"])
+          .to eq("gzip")
+      end
+    end
+
     describe "adding the headers with a block" do
       def perform
         transaction.add_request_headers { { "accept" => "text/html" } }
