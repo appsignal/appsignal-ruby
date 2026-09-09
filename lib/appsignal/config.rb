@@ -303,6 +303,16 @@ module Appsignal
     # in collector mode. When the agent is in use, setting any of these emits
     # a warning at startup. There is no list for the other direction: every
     # option that predates collector mode still has an effect in it.
+    # The options that hold header names the way OpenTelemetry writes them,
+    # which is lowercase. A name written any other way matches no header, and
+    # the collector compares the request header allowlist against the attribute
+    # names it receives, so a capitalized entry is silently kept out of both.
+    # @!visibility private
+    HEADER_NAME_OPTIONS = [
+      :keep_request_headers,
+      :response_headers
+    ].freeze
+
     # @!visibility private
     COLLECTOR_ONLY_OPTIONS = [
       :filter_attributes,
@@ -977,7 +987,26 @@ module Appsignal
         config[:sidekiq_report_errors] = "all"
       end
 
+      config.merge!(downcased_header_names)
+
       config
+    end
+
+    # Lowercases the header names in the options that hold them, because a name
+    # written in any other case matches no header.
+    #
+    # An override rather than a derived value: the application did name the
+    # option, and the value it named cannot work as written, which is what an
+    # override is for. Only an option whose value actually changes is included,
+    # so a diagnose report names the ones that were rewritten and no others.
+    def downcased_header_names
+      HEADER_NAME_OPTIONS.each_with_object({}) do |option, overrides|
+        value = config_hash[option]
+        next unless value.is_a?(Array)
+
+        downcased = value.map { |name| name.to_s.downcase }
+        overrides[option] = downcased if downcased != value
+      end
     end
 
     # Works out a value for each collector-mode option that replaces a

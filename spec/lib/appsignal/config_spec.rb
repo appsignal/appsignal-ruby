@@ -1670,6 +1670,48 @@ describe Appsignal::Config do
       end
     end
 
+    context "header name options" do
+      it "lowercases the names in keep_request_headers" do
+        config = build_config(
+          :options => { :keep_request_headers => ["Accept", "X-Custom-Header"] }
+        )
+
+        expect(config[:keep_request_headers]).to eq(["accept", "x-custom-header"])
+        expect(config.override_config[:keep_request_headers])
+          .to eq(["accept", "x-custom-header"])
+      end
+
+      it "lowercases the names in response_headers" do
+        config = build_config(:options => { :response_headers => ["Content-Type"] })
+
+        expect(config[:response_headers]).to eq(["content-type"])
+        expect(config.override_config[:response_headers]).to eq(["content-type"])
+      end
+
+      it "does not override a value that is already lowercase" do
+        config = build_config(:options => { :keep_request_headers => ["accept"] })
+
+        expect(config[:keep_request_headers]).to eq(["accept"])
+        expect(config.override_config).to_not have_key(:keep_request_headers)
+      end
+
+      it "does not override the default" do
+        config = build_config
+
+        expect(config.override_config).to_not have_key(:keep_request_headers)
+        expect(config.override_config).to_not have_key(:response_headers)
+      end
+
+      it "leaves the Rack environment names in keep_request_environment alone" do
+        config = build_config(
+          :options => { :keep_request_environment => ["QUERY_STRING"] }
+        )
+
+        expect(config[:keep_request_environment]).to eq(["QUERY_STRING"])
+        expect(config.override_config).to_not have_key(:keep_request_environment)
+      end
+    end
+
     describe "push_api_key" do
       let(:config_options) { { :push_api_key => push_api_key, :request_headers => [] } }
       before { config.validate }
