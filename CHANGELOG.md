@@ -1,5 +1,19 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.13.2
+
+_Published on 2026-09-09._
+
+### Changed
+
+- Update the agent to handle high traffic apps. On high-traffic apps that would exceed the maximum accepted internal payload size, send data to the Push API more frequently. (patch [c69fbf57](https://github.com/appsignal/appsignal-ruby/commit/c69fbf57242b13c86af2196baae8f295285de947))
+- Update the agent from version 0.35.19 to version 0.37.0. The 3.x series of the Ruby gem was several agent releases behind, so this update also brings the improvements from every agent release in between. Those include better sanitisation of SQL queries, host metric collection that keeps working when a disk mount is frozen, and no more leftover `[timeout]` processes on Alpine Linux containers. (patch [c69fbf57](https://github.com/appsignal/appsignal-ruby/commit/c69fbf57242b13c86af2196baae8f295285de947))
+
+### Fixed
+
+- Fix events showing as unknown in long-running applications. An application process that kept running for thirty days without restarting could lose the names and queries of the events it recorded, both in slow traces and in the "Slow events" panel. (patch [c69fbf57](https://github.com/appsignal/appsignal-ruby/commit/c69fbf57242b13c86af2196baae8f295285de947))
+- Prevent `gc` events from appearing in the "Slow events" panel. (patch [c69fbf57](https://github.com/appsignal/appsignal-ruby/commit/c69fbf57242b13c86af2196baae8f295285de947))
+
 ## 3.13.1
 
 _Published on 2024-08-23._
