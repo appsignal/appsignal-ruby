@@ -147,6 +147,10 @@ module DependencyHelper
     dependency_present? "grape"
   end
 
+  def grape4_present?
+    grape_present? && Gem.loaded_specs["grape"].version >= Gem::Version.new("4.0")
+  end
+
   def webmachine_present?
     dependency_present? "webmachine"
   end

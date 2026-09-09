@@ -241,6 +241,7 @@ BUNDLE_GEMFILE=gemfiles/capistrano2.gemfile bundle exec rspec
 BUNDLE_GEMFILE=gemfiles/capistrano3.gemfile bundle exec rspec
 BUNDLE_GEMFILE=gemfiles/dry-monitor.gemfile bundle exec rspec
 BUNDLE_GEMFILE=gemfiles/grape-3.gemfile bundle exec rspec
+BUNDLE_GEMFILE=gemfiles/grape-4.gemfile bundle exec rspec
 BUNDLE_GEMFILE=gemfiles/hanami.gemfile bundle exec rspec
 BUNDLE_GEMFILE=gemfiles/http5.gemfile bundle exec rspec
 BUNDLE_GEMFILE=gemfiles/no_dependencies.gemfile bundle exec rspec
