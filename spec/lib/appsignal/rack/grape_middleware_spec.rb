@@ -33,6 +33,21 @@ if DependencyHelper.grape_present?
       end.to raise_error(exception_class, exception_message)
     end
 
+    let(:expected_method) { "GET" }
+
+    # Where the two Grape majors report a route differently, each gets its own
+    # "in Grape 3" and "in Grape 4" examples rather than one example with a
+    # version-dependent expectation. That way a build matrix that stopped
+    # running one of the two majors leaves examples that nothing runs, instead
+    # of examples that quietly stop checking that major.
+    def expect_reported_route
+      expect(last_transaction).to have_action(expected_action)
+      expect(last_transaction).to include_metadata(
+        "path" => expected_path,
+        "method" => expected_method
+      )
+    end
+
     context "with error" do
       let(:app) do
         Class.new(::Grape::API) do
@@ -109,11 +124,33 @@ if DependencyHelper.grape_present?
         Rack::MockRequest.env_for("/users/123", :method => "GET")
       end
 
-      it "sets non-unique route_param path" do
-        make_request(env)
+      let(:expected_action) { "GET::GrapeExample::Api##{expected_path}" }
 
-        expect(last_transaction).to have_action("GET::GrapeExample::Api#/users/:id/")
-        expect(last_transaction).to include_metadata("path" => "/users/:id/", "method" => "GET")
+      def perform
+        make_request(env)
+      end
+
+      # The endpoint declares no path of its own, so the namespace is reported
+      # with the endpoint's default "/" path appended.
+      describe "in Grape 3", :if => !DependencyHelper.grape4_present? do
+        let(:expected_path) { "/users/:id/" }
+
+        it "sets non-unique route_param path" do
+          perform
+
+          expect_reported_route
+        end
+      end
+
+      # The route's own template has no trailing slash.
+      describe "in Grape 4", :if => DependencyHelper.grape4_present? do
+        let(:expected_path) { "/users/:id" }
+
+        it "sets non-unique route_param path" do
+          perform
+
+          expect_reported_route
+        end
       end
     end
 
@@ -200,6 +237,105 @@ if DependencyHelper.grape_present?
             expect(last_transaction).to include_metadata("path" => "/v1/beta/ping",
               "method" => "POST")
           end
+        end
+      end
+    end
+
+    context "with a prefix and a path version" do
+      let(:app) do
+        Class.new(::Grape::API) do
+          use Appsignal::Rack::GrapeMiddleware
+          format :json
+          prefix "api"
+          version "v2", :using => :path
+          namespace :things do
+            get :list do
+              { :message => "Hello prefixed world!" }
+            end
+          end
+        end
+      end
+      let(:env) do
+        Rack::MockRequest.env_for("/api/v2/things/list", :method => "GET")
+      end
+      let(:expected_action) { "GET::GrapeExample::Api##{expected_path}" }
+
+      def perform
+        make_request(env)
+      end
+
+      # Only the endpoint's namespace and its own path are reported.
+      describe "in Grape 3", :if => !DependencyHelper.grape4_present? do
+        let(:expected_path) { "/things/list" }
+
+        it "sets the prefixed and versioned path" do
+          perform
+
+          expect_reported_route
+        end
+      end
+
+      # The route's template also carries the API prefix and the path
+      # version.
+      describe "in Grape 4", :if => DependencyHelper.grape4_present? do
+        let(:expected_path) { "/api/:version/things/list" }
+
+        it "sets the prefixed and versioned path" do
+          perform
+
+          expect_reported_route
+        end
+      end
+    end
+
+    context "with a mounted API" do
+      let(:mounted_app) do
+        Class.new(::Grape::API) do
+          namespace :inner do
+            get :thing do
+              { :message => "Hello mounted world!" }
+            end
+          end
+        end
+      end
+      let(:app) do
+        mounted = mounted_app
+        Class.new(::Grape::API) do
+          use Appsignal::Rack::GrapeMiddleware
+          format :json
+          mount mounted => "/mnt"
+        end
+      end
+      let(:env) do
+        Rack::MockRequest.env_for("/mnt/inner/thing", :method => "GET")
+      end
+      before { stub_const("GrapeExample::Mounted", mounted_app) }
+      # The action names the mounted API rather than the one it is mounted in.
+      let(:expected_action) { "GET::GrapeExample::Mounted##{expected_path}" }
+
+      def perform
+        make_request(env)
+      end
+
+      # Only the endpoint's namespace and its own path are reported.
+      describe "in Grape 3", :if => !DependencyHelper.grape4_present? do
+        let(:expected_path) { "/inner/thing" }
+
+        it "sets the mounted path" do
+          perform
+
+          expect_reported_route
+        end
+      end
+
+      # The route's template also carries the mount point.
+      describe "in Grape 4", :if => DependencyHelper.grape4_present? do
+        let(:expected_path) { "/mnt/inner/thing" }
+
+        it "sets the mounted path" do
+          perform
+
+          expect_reported_route
         end
       end
     end
