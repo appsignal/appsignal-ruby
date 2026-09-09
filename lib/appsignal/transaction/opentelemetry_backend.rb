@@ -313,8 +313,8 @@ module Appsignal
       end
 
       HEADERS_ALLOWLIST = {
-        :request_headers => :keep_request_headers,
-        :environment => :keep_request_environment
+        :request_headers => [:keep_request_headers, true],
+        :environment => [:keep_request_environment, false]
       }.freeze
 
       def headers_allowlist

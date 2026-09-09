@@ -352,10 +352,12 @@ module Appsignal
           "appsignal.config.ignore_errors" => config[:ignore_errors],
           "appsignal.config.ignore_logs" => config[:ignore_logs],
           "appsignal.config.ignore_namespaces" => config[:ignore_namespaces],
-          "appsignal.config.response_headers" => config[:response_headers],
+          "appsignal.config.response_headers" =>
+            normalized_header_names(config[:response_headers]),
           # The collector filters `http.request.header.*` attributes by their
           # OpenTelemetry names, which is what `keep_request_headers` holds.
-          "appsignal.config.request_headers" => config[:keep_request_headers],
+          "appsignal.config.request_headers" =>
+            normalized_header_names(config[:keep_request_headers]),
           "appsignal.config.send_function_parameters" => config[:send_function_parameters],
           "appsignal.config.send_request_query_parameters" =>
             config[:send_request_query_parameters],
@@ -369,6 +371,10 @@ module Appsignal
       end
 
       private
+
+      def normalized_header_names(names)
+        names.map { |name| Appsignal::Utils::RequestHeaders.normalize(name) }
+      end
 
       # Build one OTLP exporter, applying the `ca_file_path` and `http_proxy`
       # options to the requests it sends. The certificate file is a keyword

@@ -1469,12 +1469,22 @@ module Appsignal
       headers = headers_value(sample)
       return unless headers
 
-      allowlist = Appsignal.config[@headers_allowlist.fetch(bucket)]
+      option, header_names = @headers_allowlist.fetch(bucket)
+      allowlist = Appsignal.config[option]
+
+      headers = normalized_headers(headers) if header_names
 
       {}.tap do |out|
         allowlist.each do |key|
+          key = Appsignal::Utils::RequestHeaders.normalize(key) if header_names
           out[key] = headers[key] if headers[key]
         end
+      end
+    end
+
+    def normalized_headers(headers)
+      headers.to_h do |key, value|
+        [Appsignal::Utils::RequestHeaders.normalize(key), value]
       end
     end
 

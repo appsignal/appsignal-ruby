@@ -116,7 +116,7 @@ module Appsignal
         HEADERS_MAPPING
       end
 
-      HEADERS_ALLOWLIST = { :environment => :request_headers }.freeze
+      HEADERS_ALLOWLIST = { :environment => [:request_headers, false] }.freeze
 
       def headers_allowlist
         HEADERS_ALLOWLIST

@@ -51,9 +51,9 @@ module Appsignal
           return if NON_HEADER_KEYS.include?(env_key)
 
           if env_key.start_with?(HTTP_PREFIX)
-            clean(env_key.delete_prefix(HTTP_PREFIX))
+            normalize(env_key.delete_prefix(HTTP_PREFIX))
           elsif UNPREFIXED_HEADER_KEYS.include?(env_key)
-            clean(env_key)
+            normalize(env_key)
           end
         end
 
@@ -67,10 +67,10 @@ module Appsignal
           "#{HTTP_PREFIX}#{env_key}"
         end
 
-        private
-
-        def clean(env_key)
-          env_key.downcase.tr("_", "-")
+        # Several OpenTelemetry SDKs write header attribute names with underscores,
+        # where the semantic conventions the collector compares against use dashes.
+        def normalize(name)
+          name.to_s.downcase.tr("_", "-")
         end
       end
     end
