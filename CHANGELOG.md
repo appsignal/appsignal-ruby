@@ -1,5 +1,17 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.10.3
+
+_Published on 2026-09-10._
+
+### Fixed
+
+- Fix the sanitization of function arguments in SQL statements.
+
+  Before this release, SQL sanitization of function arguments stripped out parts of the SQL statement after the function argument list.
+
+  (patch [74f509b0](https://github.com/appsignal/appsignal-ruby/commit/74f509b0e8438140bab79a5189c2ed421bbbdf6d))
+
 ## 4.10.2
 
 _Published on 2026-09-09._
