@@ -474,6 +474,7 @@ module Appsignal
             :options => config.config_hash.merge(:env => config.env),
             :sources => {
               :default => Appsignal::Config::DEFAULT_CONFIG,
+              :derived => config.derived_config,
               :system => config.system_config,
               :loaders => config.loaders_config,
               :initial => config.initial_config,

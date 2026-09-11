@@ -353,7 +353,10 @@ module Appsignal
           "appsignal.config.ignore_logs" => config[:ignore_logs],
           "appsignal.config.ignore_namespaces" => config[:ignore_namespaces],
           "appsignal.config.response_headers" => config[:response_headers],
-          "appsignal.config.request_headers" => config[:request_headers],
+          # The collector filters `http.request.header.*` attributes by their
+          # OpenTelemetry names, which is what `keep_request_headers` holds.
+          # `request_headers` names Rack environment keys, so it never matched.
+          "appsignal.config.request_headers" => config[:keep_request_headers],
           "appsignal.config.send_function_parameters" => config[:send_function_parameters],
           "appsignal.config.send_request_query_parameters" =>
             config[:send_request_query_parameters],

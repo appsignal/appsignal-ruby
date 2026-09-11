@@ -820,6 +820,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
             "options" => options,
             "sources" => {
               "default" => default_config,
+              "derived" => {},
               "system" => system_options,
               "loaders" => {},
               "initial" => { "env" => "" },
@@ -1126,6 +1127,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
             "options" => hash_with_string_keys(final_config),
             "sources" => {
               "default" => hash_with_string_keys(Appsignal::Config::DEFAULT_CONFIG),
+              "derived" => {},
               "system" => system_options,
               "loaders" => {},
               "initial" => hash_with_string_keys(Appsignal.config.initial_config),
@@ -1170,6 +1172,7 @@ describe Appsignal::CLI::Diagnose, :api_stub => true, :send_report => :yes_cli_i
             "options" => hash_with_string_keys(options),
             "sources" => {
               "default" => hash_with_string_keys(Appsignal::Config::DEFAULT_CONFIG),
+              "derived" => {},
               "system" => system_options,
               "loaders" => {},
               "initial" => hash_with_string_keys(Appsignal.config.initial_config),
