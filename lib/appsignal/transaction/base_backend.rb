@@ -59,6 +59,31 @@ module Appsignal
         raise NotImplementedError
       end
 
+      # Maps each params bucket to the configuration options that decide what
+      # it reports: `:filter`, naming the keys to filter out of it, and
+      # `:send`, deciding whether to report it at all.
+      def params_options
+        raise NotImplementedError
+      end
+
+      # Maps each logical header channel (`:request_headers`,
+      # `:request_environment`) to the storage bucket it lands in and the
+      # transform to apply to each key and value added on it, as
+      # `[bucket, transform]`.
+      # Channels that share a bucket merge into one `SampleData` object on the
+      # transaction. A `nil` transform leaves the value alone. As with
+      # {#params_mapping}, the bucket name is the sample-data key
+      # {#set_sample_data} receives.
+      def headers_mapping
+        raise NotImplementedError
+      end
+
+      # Maps each header bucket to the configuration option that lists the
+      # keys to keep in it. An option holding `nil` keeps every key.
+      def headers_allowlist
+        raise NotImplementedError
+      end
+
       # Sample data (params, session, tags, ...), breadcrumbs and errors.
       def set_sample_data(_key, _data)
         raise NotImplementedError

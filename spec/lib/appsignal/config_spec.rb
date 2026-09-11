@@ -899,6 +899,8 @@ describe Appsignal::Config do
         :instrument_sequel => false,
         :instrument_shoryuken => false,
         :instrument_sidekiq => false,
+        :keep_request_environment => ["REMOTE_ADDR", "QUERY_STRING"],
+        :keep_request_headers => ["accept", "accept-charset"],
         :log => "file",
         :log_level => "debug",
         :log_path => "/tmp/something",
@@ -1000,6 +1002,8 @@ describe Appsignal::Config do
         "APPSIGNAL_IGNORE_ERRORS" => "ExampleStandardError,AnotherError",
         "APPSIGNAL_IGNORE_LOGS" => "^start$,^Completed 2.* in .*ms (.*)",
         "APPSIGNAL_IGNORE_NAMESPACES" => "admin,private_namespace",
+        "APPSIGNAL_KEEP_REQUEST_ENVIRONMENT" => "REMOTE_ADDR,QUERY_STRING",
+        "APPSIGNAL_KEEP_REQUEST_HEADERS" => "accept,accept-charset",
         "APPSIGNAL_REQUEST_HEADERS" => "accept,accept-charset",
         "APPSIGNAL_RESPONSE_HEADERS" => "x-response-1,x-response-2",
 
@@ -1144,13 +1148,17 @@ describe Appsignal::Config do
         :instrument_sequel              => true,
         :instrument_shoryuken           => true,
         :instrument_sidekiq             => true,
+        # Worked out from the `request_headers => []` set below: an
+        # application asking for no request headers gets none in either mode.
+        :keep_request_environment       => [],
+        :keep_request_headers           => [],
         :log                            => "file",
         :logging_endpoint               => "https://appsignal-endpoint.net",
         :name                           => "TestApp",
         :ownership_set_namespace        => false,
         :push_api_key                   => "abc",
         :request_headers                => [],
-        :response_headers               => [],
+        :response_headers               => nil,
         :revision                       => "v2.5.1",
         :send_environment_metadata      => true,
         :send_function_parameters       => nil,
@@ -1662,6 +1670,48 @@ describe Appsignal::Config do
       end
     end
 
+    context "header name options" do
+      it "lowercases the names in keep_request_headers" do
+        config = build_config(
+          :options => { :keep_request_headers => ["Accept", "X-Custom-Header"] }
+        )
+
+        expect(config[:keep_request_headers]).to eq(["accept", "x-custom-header"])
+        expect(config.override_config[:keep_request_headers])
+          .to eq(["accept", "x-custom-header"])
+      end
+
+      it "lowercases the names in response_headers" do
+        config = build_config(:options => { :response_headers => ["Content-Type"] })
+
+        expect(config[:response_headers]).to eq(["content-type"])
+        expect(config.override_config[:response_headers]).to eq(["content-type"])
+      end
+
+      it "does not override a value that is already lowercase" do
+        config = build_config(:options => { :keep_request_headers => ["accept"] })
+
+        expect(config[:keep_request_headers]).to eq(["accept"])
+        expect(config.override_config).to_not have_key(:keep_request_headers)
+      end
+
+      it "does not override the default" do
+        config = build_config
+
+        expect(config.override_config).to_not have_key(:keep_request_headers)
+        expect(config.override_config).to_not have_key(:response_headers)
+      end
+
+      it "leaves the Rack environment names in keep_request_environment alone" do
+        config = build_config(
+          :options => { :keep_request_environment => ["QUERY_STRING"] }
+        )
+
+        expect(config[:keep_request_environment]).to eq(["QUERY_STRING"])
+        expect(config.override_config).to_not have_key(:keep_request_environment)
+      end
+    end
+
     describe "push_api_key" do
       let(:config_options) { { :push_api_key => push_api_key, :request_headers => [] } }
       before { config.validate }
@@ -1912,6 +1962,203 @@ describe Appsignal::Config do
     end
   end
 
+  describe "the collector-mode header allowlists" do
+    let(:collector_endpoint) { "http://collector.example.test:4318" }
+    let(:options) { {} }
+    let(:config) do
+      build_config(
+        :options => { :collector_endpoint => collector_endpoint }.merge(options)
+      )
+    end
+
+    context "in collector mode" do
+      it "leaves the defaults alone when request_headers is set to its default" do
+        config = build_config(
+          :options => {
+            :collector_endpoint => collector_endpoint,
+            :request_headers => Appsignal::Config::DEFAULT_CONFIG[:request_headers]
+          }
+        )
+
+        expect(config.derived_config).to_not have_key(:keep_request_headers)
+      end
+
+      it "leaves the defaults alone when request_headers isn't configured" do
+        expect(config[:keep_request_headers])
+          .to eq(Appsignal::Config::DEFAULT_CONFIG[:keep_request_headers])
+        expect(config[:keep_request_environment]).to eq([])
+        expect(config.derived_config).to_not have_key(:keep_request_headers)
+        expect(config.derived_config).to_not have_key(:keep_request_environment)
+      end
+
+      it "has defaults that agree with what request_headers derives to" do
+        headers, environment = Appsignal::Utils::RequestHeaders.split(
+          Appsignal::Config::DEFAULT_CONFIG[:request_headers].to_h { |key| [key, nil] }
+        )
+        translated = Appsignal::Utils::RequestHeaders::TRANSLATED_ENV_KEYS
+
+        expect(Appsignal::Config::DEFAULT_CONFIG[:keep_request_headers])
+          .to eq(headers.keys)
+        expect(Appsignal::Config::DEFAULT_CONFIG[:keep_request_environment])
+          .to eq(environment.keys - translated)
+      end
+
+      context "with a customised request_headers" do
+        let(:options) do
+          {
+            :request_headers => %w[HTTP_ACCEPT CONTENT_TYPE PATH_INFO MY_CUSTOM_KEY]
+          }
+        end
+
+        it "splits it into headers and environment values" do
+          expect(config[:keep_request_headers]).to eq(["accept", "content-type"])
+          expect(config[:keep_request_environment]).to eq(["MY_CUSTOM_KEY"])
+        end
+
+        it "reports the derived values in the derived source" do
+          expect(config.derived_config[:keep_request_headers])
+            .to eq(["accept", "content-type"])
+          expect(config.derived_config[:keep_request_environment])
+            .to eq(["MY_CUSTOM_KEY"])
+          expect(config.override_config).to be_empty
+        end
+
+        it "derives the same values when it derives them again" do
+          config.apply_overrides
+
+          expect(config[:keep_request_headers]).to eq(["accept", "content-type"])
+          expect(config.derived_config[:keep_request_headers])
+            .to eq(["accept", "content-type"])
+        end
+      end
+
+      context "with keep_request_headers set" do
+        let(:options) { { :keep_request_headers => ["date"] } }
+
+        it "doesn't derive a value for it" do
+          expect(config[:keep_request_headers]).to eq(["date"])
+          expect(config.derived_config).to_not have_key(:keep_request_headers)
+        end
+      end
+
+      context "with a loader that sets a replacement" do
+        let(:options) { { :request_headers => %w[MY_CUSTOM_KEY] } }
+        before do
+          define_loader(:test_loader) do
+            def on_load
+              register_config_defaults(:keep_request_environment => ["OTHER_KEY"])
+            end
+          end
+          load_loader(:test_loader)
+        end
+
+        it "keeps what the loader asked for rather than deriving a value" do
+          expect(config[:keep_request_environment]).to eq(["OTHER_KEY"])
+          expect(config.derived_config).to_not have_key(:keep_request_environment)
+        end
+      end
+
+      context "with keep_request_environment set to an empty list" do
+        let(:options) do
+          {
+            :request_headers => %w[MY_CUSTOM_KEY],
+            :keep_request_environment => []
+          }
+        end
+
+        it "keeps the empty list rather than deriving one" do
+          expect(config[:keep_request_environment]).to eq([])
+          expect(config.derived_config).to_not have_key(:keep_request_environment)
+        end
+      end
+    end
+
+    context "in agent mode" do
+      let(:collector_endpoint) { nil }
+      let(:options) { { :request_headers => %w[HTTP_ACCEPT REMOTE_ADDR] } }
+
+      it "derives the same values, so a report answers what a switch would do" do
+        expect(config[:keep_request_headers]).to eq(["accept"])
+        expect(config[:keep_request_environment]).to eq(["REMOTE_ADDR"])
+      end
+
+      it "doesn't warn about the values it worked out" do
+        logs = capture_logs { config }
+
+        expect(logs).to_not include("only used by the collector")
+      end
+    end
+  end
+
+  describe "the collector-mode params options" do
+    let(:collector_endpoint) { "http://collector.example.test:4318" }
+    let(:options) { {} }
+    let(:config) do
+      build_config(
+        :options => { :collector_endpoint => collector_endpoint }.merge(options)
+      )
+    end
+
+    context "in collector mode" do
+      context "with a customised filter_parameters" do
+        let(:options) { { :filter_parameters => ["password"] } }
+
+        it "derives every filter option from it" do
+          expect(config[:filter_request_payload]).to eq(["password"])
+          expect(config[:filter_function_parameters]).to eq(["password"])
+          expect(config[:filter_request_query_parameters]).to eq(["password"])
+        end
+      end
+
+      context "with a customised send_params" do
+        let(:options) { { :send_params => false } }
+
+        it "derives every send option from it" do
+          expect(config[:send_request_payload]).to be(false)
+          expect(config[:send_request_query_parameters]).to be(false)
+          expect(config[:send_function_parameters]).to be(false)
+        end
+      end
+
+      context "with one replacement set" do
+        let(:options) do
+          {
+            :filter_parameters => ["password"],
+            :filter_request_payload => ["token"]
+          }
+        end
+
+        it "derives the other replacements and keeps the one that was set" do
+          expect(config[:filter_request_payload]).to eq(["token"])
+          expect(config[:filter_function_parameters]).to eq(["password"])
+          expect(config[:filter_request_query_parameters]).to eq(["password"])
+        end
+      end
+
+      it "leaves the defaults alone when neither option is configured" do
+        expect(config[:filter_request_payload]).to eq([])
+        expect(config.derived_config).to_not have_key(:filter_request_payload)
+        expect(config.derived_config).to_not have_key(:send_request_payload)
+      end
+    end
+
+    context "in agent mode" do
+      let(:collector_endpoint) { nil }
+      let(:options) { { :filter_parameters => ["password"], :send_params => false } }
+
+      it "derives the same values, so a report answers what a switch would do" do
+        expect(config[:filter_request_payload]).to eq(["password"])
+        expect(config[:send_request_payload]).to be(false)
+      end
+
+      it "doesn't warn about the values it worked out" do
+        logs = capture_logs { config }
+
+        expect(logs).to_not include("only used by the collector")
+      end
+    end
+  end
+
   describe "#warn_for_mode_mismatch" do
     let(:options) { {} }
     let(:config) { build_config(:options => options) }
@@ -1928,7 +2175,14 @@ describe Appsignal::Config do
             build_config(:options => collector_options.merge(:filter_parameters => ["password"]))
           end
         expect(logs).to include("filter_parameters")
-        expect(logs).to include("only used by the agent")
+        expect(logs).to include("deprecated in collector mode")
+        expect(logs).to include(
+          %(It is replaced by 'filter_request_payload', ) +
+            %('filter_function_parameters' and 'filter_request_query_parameters'.)
+        )
+        expect(logs).to include(%(\n  filter_request_payload: ["password"]))
+        expect(logs).to include(%(\n  filter_function_parameters: ["password"]))
+        expect(logs).to include(%(\n  filter_request_query_parameters: ["password"]))
       end
 
       it "warns when send_params is set" do
@@ -1937,7 +2191,18 @@ describe Appsignal::Config do
             build_config(:options => collector_options.merge(:send_params => false))
           end
         expect(logs).to include("send_params")
-        expect(logs).to include("only used by the agent")
+        expect(logs).to include("deprecated in collector mode")
+        expect(logs).to include(%(\n  send_request_payload: false))
+      end
+
+      it "does not warn when filter_metadata is set" do
+        # It filters the metadata AppSignal collects itself, in both modes.
+        logs =
+          capture_logs do
+            build_config(:options => collector_options.merge(:filter_metadata => ["path"]))
+          end
+        expect(logs).to_not include("will be ignored")
+        expect(logs).to_not include("deprecated in collector mode")
       end
 
       it "does not warn when only filter_attributes is set" do
@@ -1945,8 +2210,43 @@ describe Appsignal::Config do
           capture_logs do
             build_config(:options => collector_options.merge(:filter_attributes => ["password"]))
           end
-        expect(logs).to_not include("only used by the agent")
         expect(logs).to_not include("only used by the collector")
+      end
+
+      it "warns when request_headers is set" do
+        logs =
+          capture_logs do
+            build_config(
+              :options => collector_options.merge(
+                :request_headers => %w[HTTP_ACCEPT REMOTE_ADDR]
+              )
+            )
+          end
+        expect(logs).to include("request_headers")
+        expect(logs).to include("deprecated in collector mode")
+        expect(logs).to include("'keep_request_headers' and 'keep_request_environment'")
+        expect(logs).to include(%(\n  keep_request_headers: ["accept"]))
+        expect(logs).to include(%(\n  keep_request_environment: ["REMOTE_ADDR"]))
+      end
+
+      it "leaves out the value of a replacement the application set itself" do
+        logs =
+          capture_logs do
+            build_config(
+              :options => collector_options.merge(
+                :request_headers => %w[HTTP_ACCEPT REMOTE_ADDR],
+                :keep_request_headers => ["date"]
+              )
+            )
+          end
+        expect(logs).to include(%(\n  keep_request_environment: ["REMOTE_ADDR"]))
+        expect(logs).to_not include("\n  keep_request_headers:")
+      end
+
+      it "does not warn when request_headers is left at its default" do
+        logs = capture_logs { build_config(:options => collector_options) }
+
+        expect(logs).to_not include("deprecated in collector mode")
       end
 
       it "does not warn when an agent-only option is explicitly set to its default" do
@@ -1956,7 +2256,6 @@ describe Appsignal::Config do
           capture_logs do
             build_config(:options => collector_options.merge(:send_params => true))
           end
-        expect(logs).to_not include("only used by the agent")
         expect(logs).to_not include("only used by the collector")
       end
     end
@@ -1985,7 +2284,23 @@ describe Appsignal::Config do
           capture_logs do
             build_config(:options => { :filter_parameters => ["password"] })
           end
-        expect(logs).to_not include("only used by the agent")
+        expect(logs).to_not include("only used by the collector")
+      end
+
+      it "does not warn when request_headers is set" do
+        logs =
+          capture_logs do
+            build_config(:options => { :request_headers => ["HTTP_ACCEPT"] })
+          end
+        expect(logs).to_not include("deprecated in collector mode")
+      end
+
+      it "does not warn about a collector-only option a loader set" do
+        # A loader supplying a default is AppSignal's own code, not the
+        # application asking for the option, so there is no line to point at.
+        described_class.add_loader_defaults(:loader1, :filter_attributes => ["password"])
+        logs = capture_logs { build_config }
+
         expect(logs).to_not include("only used by the collector")
       end
 
@@ -1997,7 +2312,6 @@ describe Appsignal::Config do
           capture_logs do
             build_config(:options => { :filter_attributes => [] })
           end
-        expect(logs).to_not include("only used by the agent")
         expect(logs).to_not include("only used by the collector")
       end
     end
@@ -2019,6 +2333,10 @@ describe Appsignal::Config do
         end
 
         options.each do |option, value|
+          # An unset array option reads as an empty array, so that appending
+          # to it works.
+          value = [] if value.nil? && Appsignal::Config::ARRAY_OPTIONS.key?(option)
+
           expect(dsl.send(option)).to eq(value)
         end
       end
@@ -2106,6 +2424,36 @@ describe Appsignal::Config do
       dsl.cpu_count = 1
 
       expect(dsl.cpu_count).to eq(1.0)
+    end
+
+    it "keeps an array option unset when it's set to nil" do
+      dsl.ignore_actions = nil
+
+      expect(dsl.ignore_actions).to be_nil
+      expect(dsl.dsl_options).to eq(:ignore_actions => nil)
+    end
+
+    it "doesn't set options that are only read" do
+      expect(dsl.push_api_key).to eq("abc") # Loaded from file
+      expect(dsl.ignore_actions).to eq([])
+
+      expect(dsl.dsl_options).to be_empty
+    end
+
+    context "with an unset array option" do
+      let(:options) { { :ignore_actions => nil } }
+
+      it "reads as an empty array so it can be appended to" do
+        dsl.ignore_actions << "my ignored action"
+
+        expect(dsl.dsl_options).to eq(:ignore_actions => ["my ignored action"])
+      end
+
+      it "stays unset when it's only read" do
+        expect(dsl.ignore_actions).to eq([])
+
+        expect(dsl.dsl_options).to be_empty
+      end
     end
 
     describe "#activate_if_environment" do

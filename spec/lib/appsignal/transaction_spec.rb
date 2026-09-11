@@ -57,6 +57,14 @@ describe Appsignal::Transaction do
             :params => :params,
             :request_payload => :params,
             :function_parameters => :params
+          },
+          :headers_mapping => {
+            :request_headers => [:environment, nil],
+            :request_environment => [:environment, nil]
+          },
+          :headers_allowlist => { :environment => :request_headers },
+          :params_options => {
+            :params => { :filter => :filter_parameters, :send => :send_params }
           }
         )
       end
@@ -1253,6 +1261,79 @@ describe Appsignal::Transaction do
       end
     end
 
+    context "with a filter option per kind of params" do
+      let(:options) do
+        {
+          :filter_parameters => %w[blanket],
+          :filter_request_payload => %w[payload_key],
+          :filter_function_parameters => %w[function_key]
+        }
+      end
+
+      def perform
+        transaction.add_request_payload("payload_key" => "a", "blanket" => "b")
+        transaction.add_function_parameters("function_key" => "c", "blanket" => "d")
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        # The per-kind options do nothing here. `filter_parameters` filters the
+        # one bucket every kind merges into.
+        expect(transaction).to include_params(
+          "payload_key" => "a",
+          "function_key" => "c",
+          "blanket" => "[FILTERED]"
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        # Each bucket is filtered by its own option, and by nothing else.
+        expect(JSON.parse(root_span.attributes["appsignal.request.payload"]))
+          .to eq("payload_key" => "[FILTERED]", "blanket" => "b")
+        expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+          .to eq("function_key" => "[FILTERED]", "blanket" => "d")
+      end
+    end
+
+    context "with a send option per kind of params" do
+      let(:options) { { :send_function_parameters => false } }
+
+      def perform
+        transaction.add_request_payload("payload_key" => "a")
+        transaction.add_function_parameters("function_key" => "c")
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        # The per-kind option does nothing here, and `send_params` reports
+        # both kinds.
+        expect(transaction).to include_params(
+          "payload_key" => "a",
+          "function_key" => "c"
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(JSON.parse(root_span.attributes["appsignal.request.payload"]))
+          .to eq("payload_key" => "a")
+        expect(root_span.attributes).to_not have_key("appsignal.function.parameters")
+      end
+    end
+
     context "with AppSignal filtering" do
       let(:options) { { :filter_parameters => %w[foo] } }
 
@@ -1588,6 +1669,62 @@ describe Appsignal::Transaction do
 
         expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
           .to eq("original" => "value")
+      end
+    end
+
+    describe "#add_function_parameters_if_nil guards its own channel only" do
+      def perform
+        transaction.add_request_payload("payload" => "value")
+        transaction.add_function_parameters_if_nil("arguments" => "value")
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        # Setting the request payload does not count as setting the function
+        # parameters, even though both end up in one bucket here.
+        expect(transaction).to include_params(
+          "payload" => "value",
+          "arguments" => "value"
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(JSON.parse(root_span.attributes["appsignal.request.payload"]))
+          .to eq("payload" => "value")
+        expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+          .to eq("arguments" => "value")
+      end
+    end
+
+    describe "#add_params guards the request payload channel" do
+      def perform
+        transaction.add_params("legacy" => "value")
+        transaction.add_request_payload_if_nil("payload" => "value")
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_params("legacy" => "value")
+        expect(transaction).to_not include_params("payload" => "value")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(JSON.parse(root_span.attributes["appsignal.request.payload"]))
+          .to eq("legacy" => "value")
       end
     end
 
@@ -2220,6 +2357,95 @@ describe Appsignal::Transaction do
       end
     end
 
+    describe "evaluating the given block once, although it feeds two channels" do
+      let(:calls) { [] }
+
+      def perform
+        transaction.add_headers do
+          calls << :called
+          { "HTTP_ACCEPT" => "text/html", "REMOTE_ADDR" => "127.0.0.1" }
+        end
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(calls.length).to eq(1)
+        expect(transaction).to include_environment("HTTP_ACCEPT" => "text/html")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(calls.length).to eq(1)
+        expect(root_span.attributes["http.request.header.accept"]).to eq("text/html")
+      end
+    end
+
+    context "with an empty allowlist" do
+      let(:options) do
+        { :request_headers => [], :keep_request_headers => [] }
+      end
+
+      def perform
+        transaction.add_headers("HTTP_ACCEPT" => "text/html")
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to_not include_environment
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(root_span.attributes.keys)
+          .to_not include(a_string_starting_with("http.request.header."))
+      end
+    end
+
+    context "with keep_request_environment asking for a value the request describes" do
+      let(:options) do
+        {
+          :request_headers => %w[PATH_INFO],
+          :keep_request_environment => %w[PATH_INFO]
+        }
+      end
+
+      def perform
+        transaction.add_headers("PATH_INFO" => "/users")
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        # `keep_request_environment` does nothing here. Agent mode filters by
+        # `request_headers`, which also allows the value.
+        expect(transaction).to include_environment("PATH_INFO" => "/users")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        # The derived allowlist leaves this key out, because `url.path`
+        # describes it better. An application that asks for it anyway gets it.
+        expect(root_span.attributes["appsignal.environment.PATH_INFO"]).to eq("/users")
+      end
+    end
+
     describe "merging the headers on the transaction" do
       def perform
         transaction.add_headers("HTTP_ACCEPT" => "text/html")
@@ -2509,6 +2735,171 @@ describe Appsignal::Transaction do
           environment_keys = root_span.attributes.keys.grep(/\Aappsignal\.environment\./)
           expect(environment_keys).to be_empty
         end
+      end
+    end
+  end
+
+  describe "#add_request_headers" do
+    let(:transaction) { new_transaction }
+
+    describe "adding the headers under their OpenTelemetry names" do
+      def perform
+        transaction.add_request_headers("accept" => "text/html", "content-length" => "12")
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        # Agent mode reports the Rack names, which is what `request_headers`
+        # allows and what the environment panel has always shown.
+        expect(transaction).to include_environment(
+          "HTTP_ACCEPT" => "text/html",
+          "CONTENT_LENGTH" => "12"
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(root_span.attributes["http.request.header.accept"]).to eq("text/html")
+        expect(root_span.attributes["http.request.header.content-length"]).to eq("12")
+      end
+    end
+
+    describe "adding the headers with a block" do
+      def perform
+        transaction.add_request_headers { { "accept" => "text/html" } }
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_environment("HTTP_ACCEPT" => "text/html")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(root_span.attributes["http.request.header.accept"]).to eq("text/html")
+      end
+    end
+  end
+
+  describe "#add_request_environment" do
+    let(:transaction) { new_transaction }
+    let(:options) { { :request_headers => %w[REMOTE_ADDR] } }
+
+    describe "adding the values under their Rack names" do
+      def perform
+        transaction.add_request_environment("REMOTE_ADDR" => "127.0.0.1")
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_environment("REMOTE_ADDR" => "127.0.0.1")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(root_span.attributes["appsignal.environment.REMOTE_ADDR"]).to eq("127.0.0.1")
+      end
+    end
+  end
+
+  describe "#add_request_headers_if_nil and #add_request_environment_if_nil" do
+    let(:transaction) { new_transaction }
+    let(:options) { { :request_headers => %w[HTTP_ACCEPT REMOTE_ADDR] } }
+
+    describe "letting the application's own headers win" do
+      def perform
+        transaction.add_request_headers("accept" => "application/json")
+        transaction.add_request_headers_if_nil("accept" => "text/html")
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_environment("HTTP_ACCEPT" => "application/json")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(root_span.attributes["http.request.header.accept"]).to eq("application/json")
+      end
+    end
+
+    describe "guarding each channel on its own" do
+      def perform
+        transaction.add_request_headers("accept" => "application/json")
+        transaction.add_request_environment_if_nil("REMOTE_ADDR" => "127.0.0.1")
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        # Setting the headers does not count as setting the environment, even
+        # though both end up in one bucket here.
+        expect(transaction).to include_environment(
+          "HTTP_ACCEPT" => "application/json",
+          "REMOTE_ADDR" => "127.0.0.1"
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(root_span.attributes["http.request.header.accept"]).to eq("application/json")
+        expect(root_span.attributes["appsignal.environment.REMOTE_ADDR"]).to eq("127.0.0.1")
+      end
+    end
+
+    describe "letting a legacy add_headers call guard both channels" do
+      def perform
+        transaction.add_headers("HTTP_ACCEPT" => "application/json")
+        transaction.add_request_headers_if_nil("accept" => "text/html")
+        transaction.add_request_environment_if_nil("REMOTE_ADDR" => "127.0.0.1")
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        # `add_headers` feeds both channels, so it guards both.
+        expect(transaction).to include_environment("HTTP_ACCEPT" => "application/json")
+        expect(transaction).to_not include_environment("REMOTE_ADDR" => "127.0.0.1")
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(root_span.attributes["http.request.header.accept"]).to eq("application/json")
+        expect(root_span.attributes).to_not have_key("appsignal.environment.REMOTE_ADDR")
       end
     end
   end
