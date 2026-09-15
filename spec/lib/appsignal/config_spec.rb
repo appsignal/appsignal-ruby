@@ -1660,6 +1660,23 @@ describe Appsignal::Config do
           expect(config.override_config[:sidekiq_report_errors]).to eq("all")
         end
       end
+
+      context "when an array option holds nil" do
+        it "corrects it to an empty list" do
+          config = build_config(
+            :options => { :filter_parameters => nil, :ignore_actions => nil }
+          )
+
+          expect(config[:filter_parameters]).to eq([])
+          expect(config[:ignore_actions]).to eq([])
+        end
+
+        it "corrects a value worked out from one, because it runs after" do
+          config = build_config(:options => { :filter_parameters => nil })
+
+          expect(config[:filter_request_payload]).to eq([])
+        end
+      end
     end
 
     describe "push_api_key" do
