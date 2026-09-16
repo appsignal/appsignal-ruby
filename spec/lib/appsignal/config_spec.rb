@@ -1668,6 +1668,55 @@ describe Appsignal::Config do
           expect(config.override_config[:sidekiq_report_errors]).to eq("all")
         end
       end
+
+      context "when an array option holds nil" do
+        it "corrects it to an empty list" do
+          config = build_config(
+            :options => { :filter_parameters => nil, :ignore_actions => nil }
+          )
+
+          expect(config[:filter_parameters]).to eq([])
+          expect(config[:ignore_actions]).to eq([])
+        end
+
+        it "corrects a value worked out from one, because it runs after" do
+          config = build_config(:options => { :filter_parameters => nil })
+
+          expect(config[:filter_request_payload]).to eq([])
+        end
+
+        it "corrects an allowlist too, so it names no header at all" do
+          config = build_config(
+            :options => {
+              :keep_request_headers => nil,
+              :keep_request_environment => nil,
+              :response_headers => nil
+            }
+          )
+
+          expect(config[:keep_request_headers]).to eq([])
+          expect(config[:keep_request_environment]).to eq([])
+          expect(config[:response_headers]).to eq([])
+        end
+      end
+    end
+
+    context "request_headers assigned nil" do
+      it "is the empty list it has always been" do
+        config = build_config(:options => { :request_headers => nil })
+
+        expect(config[:request_headers]).to eq([])
+      end
+
+      it "works the collector-mode allowlists out from it the same way" do
+        # Agent mode compares the Rack environment against `request_headers`
+        # and collector mode against the two worked out from it, so the two
+        # modes have to agree about what an empty list means.
+        config = build_config(:options => { :request_headers => nil })
+
+        expect(config[:keep_request_headers]).to eq([])
+        expect(config[:keep_request_environment]).to eq([])
+      end
     end
 
     describe "push_api_key" do
