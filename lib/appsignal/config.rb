@@ -318,6 +318,22 @@ module Appsignal
       :service_name
     ].freeze
 
+    # The agent-mode option to point an application at for each collector-only
+    # option that has one, so that a warning says what to set instead of only
+    # what is ignored. `filter_attributes`, `response_headers` and
+    # `service_name` have no agent equivalent, so there is nothing to name.
+    # @!visibility private
+    COLLECTOR_ONLY_REPLACED_OPTIONS = {
+      :filter_function_parameters => :filter_parameters,
+      :filter_request_payload => :filter_parameters,
+      :filter_request_query_parameters => :filter_parameters,
+      :keep_request_environment => :request_headers,
+      :keep_request_headers => :request_headers,
+      :send_function_parameters => :send_params,
+      :send_request_payload => :send_params,
+      :send_request_query_parameters => :send_params
+    }.freeze
+
     # Options that are deprecated in collector mode, mapped to the options
     # that replace them and, for each one, to the method that works its value
     # out from the option it replaces. Collector mode still reads them, to
@@ -742,11 +758,7 @@ module Appsignal
           deprecated_collector_option_message(option)
         end
       else
-        warn_user_modified(COLLECTOR_ONLY_OPTIONS) do |option|
-          "The agent is in use. The '#{option}' configuration option is " \
-            "only used by the collector and will be ignored. Set " \
-            "'collector_endpoint' to use the collector."
-        end
+        warn_collector_only_options
       end
     end
 
@@ -802,6 +814,29 @@ module Appsignal
     # An option nobody asked for, or one asked for and left at its default, is
     # not worth a warning: there is either no line to point at or no effect to
     # describe.
+    # Warn for each collector-only option the application configured, naming
+    # the agent-mode option to use instead where there is one, and say once how
+    # to use the collector. Saying it once keeps the way out of the warning
+    # from being repeated on every line of it.
+    def warn_collector_only_options
+      options = COLLECTOR_ONLY_OPTIONS.select { |option| configured?(option) }
+      return if options.empty?
+
+      options.each do |option|
+        logger.warn(
+          "The agent is in use. The '#{option}' configuration option is " \
+            "only used by the collector and will be ignored."
+        )
+
+        replacement = COLLECTOR_ONLY_REPLACED_OPTIONS[option]
+        logger.warn("Use the '#{replacement}' option instead.") if replacement
+      end
+
+      logger.info(
+        "To use the collector, set the 'collector_endpoint' configuration option."
+      )
+    end
+
     def warn_user_modified(options)
       options.each do |option|
         next unless configured?(option)

@@ -2286,6 +2286,48 @@ describe Appsignal::Config do
         expect(logs).to include("only used by the collector")
       end
 
+      it "names the agent option that replaces the one being ignored" do
+        logs =
+          capture_logs do
+            build_config(:options => { :filter_request_payload => ["password"] })
+          end
+
+        expect(logs).to include("Use the 'filter_parameters' option instead.")
+      end
+
+      it "points the collector-mode header options at request_headers" do
+        logs =
+          capture_logs do
+            build_config(:options => { :keep_request_headers => ["accept"] })
+          end
+
+        expect(logs).to include("Use the 'request_headers' option instead.")
+      end
+
+      it "names no replacement for an option that has none" do
+        logs =
+          capture_logs do
+            build_config(:options => { :filter_attributes => ["password"] })
+          end
+
+        expect(logs).to_not include("option instead")
+      end
+
+      it "says how to use the collector once, however many options are set" do
+        logs =
+          capture_logs do
+            build_config(
+              :options => {
+                :filter_attributes => ["password"],
+                :service_name => "my-service"
+              }
+            )
+          end
+
+        expect(logs.scan("set the 'collector_endpoint' configuration option").length)
+          .to eq(1)
+      end
+
       it "does not warn when only filter_parameters is set" do
         logs =
           capture_logs do
