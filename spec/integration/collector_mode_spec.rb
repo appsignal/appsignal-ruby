@@ -44,7 +44,6 @@ if DependencyHelper.opentelemetry_present?
         .to eq(["background"])
       expect(attrs["appsignal.config.send_request_payload"].bool_value).to eq(false)
 
-      # AppSignal defaults that still route into the resource.
       expect(attrs["appsignal.config.request_headers"].array_value.values.map(&:string_value))
         .to include("HTTP_ACCEPT")
       expect(attrs["appsignal.config.send_request_session_data"].bool_value).to eq(true)

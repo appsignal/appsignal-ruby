@@ -2018,9 +2018,6 @@ describe Appsignal do
       context "with transaction" do
         let(:transaction) { http_request_transaction }
 
-        # Uses true HTTP headers (rather than CGI vars like PATH_INFO) because
-        # collector mode only emits the HTTP_*/CONTENT_* headers as
-        # http.request.header.* attributes and drops the rest.
         describe "merging the request headers if called multiple times" do
           def perform
             set_current_transaction(transaction)

@@ -287,9 +287,6 @@ module Appsignal
     # @!visibility private
     MIN_RUBY_VERSION_FOR_COLLECTOR_MODE = "3.1"
 
-    # Configuration options that only have an effect when the integration is
-    # in collector mode. When the agent is in use, setting any of these emits
-    # a warning at startup.
     # @!visibility private
     COLLECTOR_ONLY_OPTIONS = [
       :filter_attributes,
@@ -943,13 +940,18 @@ module Appsignal
     #   https://docs.appsignal.com/ruby/configuration.html
     class ConfigDSL
       # @!visibility private
-      # @return [Hash] Hash containing the DSL option values
-      attr_reader :dsl_options
-
-      # @!visibility private
       def initialize(config)
         @config = config
         @dsl_options = {}
+        @assigned_options = Set.new
+      end
+
+      # @!visibility private
+      # @return [Hash] Hash containing the DSL option values
+      def dsl_options
+        @dsl_options.reject do |key, value|
+          !@assigned_options.include?(key) && unchanged_option?(key, value)
+        end
       end
 
       # Returns the application's root path.
@@ -1189,12 +1191,21 @@ module Appsignal
         if @dsl_options.key?(key)
           @dsl_options[key]
         else
-          @dsl_options[key] = @config[key].dup
+          @dsl_options[key] = initial_option_value(key)
         end
       end
 
       def update_option(key, value)
+        @assigned_options << key
         @dsl_options[key] = value
+      end
+
+      def initial_option_value(key)
+        @config[key].dup
+      end
+
+      def unchanged_option?(key, value)
+        value == initial_option_value(key)
       end
 
       # Parse tags from various input formats and validate values

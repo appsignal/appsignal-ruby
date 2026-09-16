@@ -2009,6 +2009,33 @@ describe Appsignal::Config do
     let(:config) { build_config(:env => env, :options => options) }
     let(:dsl) { described_class.new(config) }
 
+    describe "#dsl_options" do
+      it "keeps an empty array the block assigned" do
+        dsl.response_headers = []
+
+        expect(dsl.dsl_options).to eq(:response_headers => [])
+      end
+
+      it "drops an option the block only read" do
+        dsl.ignore_actions
+        dsl.request_headers
+
+        expect(dsl.dsl_options).to eq({})
+      end
+
+      it "keeps an option the block appended to" do
+        dsl.ignore_actions << "an-action"
+
+        expect(dsl.dsl_options).to eq(:ignore_actions => ["an-action"])
+      end
+
+      it "keeps an option assigned the value it already held" do
+        dsl.request_headers = Appsignal::Config::DEFAULT_CONFIG[:request_headers]
+
+        expect(dsl.dsl_options.keys).to eq([:request_headers])
+      end
+    end
+
     describe "default options" do
       let(:env) { :unknown_env }
 
@@ -2106,6 +2133,23 @@ describe Appsignal::Config do
       dsl.cpu_count = 1
 
       expect(dsl.cpu_count).to eq(1.0)
+    end
+
+    it "reads nil as the empty list an array option means" do
+      dsl.ignore_actions = nil
+      dsl.response_headers = nil
+
+      expect(dsl.ignore_actions).to eq([])
+      expect(dsl.response_headers).to eq([])
+      expect(dsl.dsl_options)
+        .to eq(:ignore_actions => [], :response_headers => [])
+    end
+
+    it "doesn't set options that are only read" do
+      expect(dsl.push_api_key).to eq("abc") # Loaded from file
+      expect(dsl.ignore_actions).to eq([])
+
+      expect(dsl.dsl_options).to be_empty
     end
 
     describe "#activate_if_environment" do
