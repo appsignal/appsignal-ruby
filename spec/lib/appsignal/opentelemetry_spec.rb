@@ -616,6 +616,24 @@ if DependencyHelper.opentelemetry_present?
         end
       end
 
+      it "sends the request header allowlist under the collector's name for it" do
+        resource = described_class.build_resource(
+          build_config(
+            :options => {
+              :name => "my-app",
+              :push_api_key => "abc",
+              :request_headers => ["HTTP_ACCEPT"],
+              :keep_request_headers => ["accept", "date"]
+            }
+          )
+        )
+        attrs = resource_attrs(resource)
+
+        # The collector matches this attribute against the OpenTelemetry names
+        # in `keep_request_headers`, not the Rack names in `request_headers`.
+        expect(attrs["appsignal.config.request_headers"]).to eq(["accept", "date"])
+      end
+
       it "omits attributes whose underlying option is nil or empty" do
         resource = described_class.build_resource(
           build_config(
