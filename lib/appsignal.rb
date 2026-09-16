@@ -2,6 +2,7 @@
 
 require "json"
 require "securerandom"
+require "set"
 require "stringio"
 
 require "appsignal/logger"

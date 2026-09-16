@@ -943,13 +943,33 @@ module Appsignal
     #   https://docs.appsignal.com/ruby/configuration.html
     class ConfigDSL
       # @!visibility private
-      # @return [Hash] Hash containing the DSL option values
-      attr_reader :dsl_options
-
-      # @!visibility private
       def initialize(config)
         @config = config
         @dsl_options = {}
+        @assigned_options = Set.new
+      end
+
+      # The options the block set, without the ones it only read.
+      #
+      # Reading an option memoizes the config's current value for it, so that
+      # appending to it works. An option the block only read is therefore left
+      # out, so that it is not reported as set by the block and, for an option
+      # whose value is worked out from another, so that the derivation still
+      # runs.
+      #
+      # An option the block assigned is kept whatever it was assigned, because
+      # assigning the value an option already holds still says the application
+      # asked for it. That matters for an array option holding `nil`, where a
+      # read starts from an empty array: without this, assigning an empty array
+      # to it would look like a read and be dropped, leaving the option unset
+      # and meaning the opposite of what was asked for.
+      #
+      # @!visibility private
+      # @return [Hash] Hash containing the DSL option values
+      def dsl_options
+        @dsl_options.reject do |key, value|
+          !@assigned_options.include?(key) && unchanged_option?(key, value)
+        end
       end
 
       # Returns the application's root path.
@@ -1189,12 +1209,26 @@ module Appsignal
         if @dsl_options.key?(key)
           @dsl_options[key]
         else
-          @dsl_options[key] = @config[key].dup
+          @dsl_options[key] = initial_option_value(key)
         end
       end
 
       def update_option(key, value)
+        @assigned_options << key
         @dsl_options[key] = value
+      end
+
+      # The value the block starts out from.
+      def initial_option_value(key)
+        @config[key].dup
+      end
+
+      # Whether the value is the one the config already held before the
+      # block ran. Reading an option memoizes its current value, so without
+      # this check a block that only reads an option would record it as one
+      # the block set.
+      def unchanged_option?(key, value)
+        value == initial_option_value(key)
       end
 
       # Parse tags from various input formats and validate values
