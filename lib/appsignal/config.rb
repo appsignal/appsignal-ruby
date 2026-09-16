@@ -973,6 +973,12 @@ module Appsignal
         config[:sidekiq_report_errors] = "all"
       end
 
+      # A config file holding a YAML null gives an array option a `nil`, which
+      # nothing downstream expects. Correct it to the empty list the option means.
+      ARRAY_OPTIONS.each_key do |option|
+        config[option] = [] if config_hash[option].nil?
+      end
+
       config
     end
 
