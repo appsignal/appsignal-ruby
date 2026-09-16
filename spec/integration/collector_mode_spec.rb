@@ -45,7 +45,7 @@ if DependencyHelper.opentelemetry_present?
       expect(attrs["appsignal.config.send_request_payload"].bool_value).to eq(false)
 
       expect(attrs["appsignal.config.request_headers"].array_value.values.map(&:string_value))
-        .to include("HTTP_ACCEPT")
+        .to include("accept")
       expect(attrs["appsignal.config.send_request_session_data"].bool_value).to eq(true)
 
       # OTel SDK metadata, kept by merging the AppSignal resource with `Resource.default`.

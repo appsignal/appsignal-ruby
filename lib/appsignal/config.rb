@@ -134,6 +134,11 @@ module Appsignal
       :instrument_sequel => true,
       :instrument_shoryuken => true,
       :instrument_sidekiq => true,
+      :keep_request_environment => [],
+      :keep_request_headers => %w[
+        accept accept-charset accept-encoding accept-language cache-control
+        connection content-length range
+      ],
       :log => "file",
       :logging_endpoint => "https://appsignal-endpoint.net",
       :ownership_set_namespace => false,
@@ -266,6 +271,8 @@ module Appsignal
       :ignore_errors => "APPSIGNAL_IGNORE_ERRORS",
       :ignore_logs => "APPSIGNAL_IGNORE_LOGS",
       :ignore_namespaces => "APPSIGNAL_IGNORE_NAMESPACES",
+      :keep_request_environment => "APPSIGNAL_KEEP_REQUEST_ENVIRONMENT",
+      :keep_request_headers => "APPSIGNAL_KEEP_REQUEST_HEADERS",
       :request_headers => "APPSIGNAL_REQUEST_HEADERS",
       :response_headers => "APPSIGNAL_RESPONSE_HEADERS"
     }.freeze
@@ -293,6 +300,8 @@ module Appsignal
       :filter_function_parameters,
       :filter_request_payload,
       :filter_request_query_parameters,
+      :keep_request_environment,
+      :keep_request_headers,
       :response_headers,
       :send_function_parameters,
       :send_request_payload,
@@ -311,6 +320,23 @@ module Appsignal
     ].freeze
 
     # @!visibility private
+    DEPRECATED_COLLECTOR_OPTIONS = {
+      :request_headers => {
+        :keep_request_headers => :derived_header_names,
+        :keep_request_environment => :derived_environment_keys
+      }
+    }.freeze
+
+    # @!visibility private
+    SOURCE_ORDER = [
+      :default, :derived, :system, :loaders, :initial, :file, :env, :override,
+      :dsl
+    ].freeze
+
+    # @!visibility private
+    APPLICATION_SOURCES = [:initial, :file, :env, :dsl].freeze
+
+    # @!visibility private
     attr_reader :root_path, :env, :config_hash
 
     # List of config option sources. If a config option was set by a source,
@@ -321,8 +347,23 @@ module Appsignal
     #
     # Used by the diagnose report to list which value was read from which source.
     # @!visibility private
-    attr_reader :system_config, :loaders_config, :initial_config, :file_config,
-      :env_config, :override_config, :dsl_config
+    attr_reader :derived_config, :system_config, :loaders_config,
+      :initial_config, :file_config, :env_config, :override_config, :dsl_config
+
+    # @!visibility private
+    def config_sources
+      {
+        :default => DEFAULT_CONFIG,
+        :derived => derived_config,
+        :system => system_config,
+        :loaders => loaders_config,
+        :initial => initial_config,
+        :file => file_config,
+        :env => env_config,
+        :override => override_config,
+        :dsl => dsl_config
+      }
+    end
 
     # Initialize a new AppSignal configuration object.
     #
@@ -358,6 +399,7 @@ module Appsignal
       @initial_config = {}
       @file_config = {}
       @env_config = {}
+      @derived_config = {}
       @override_config = {}
       @dsl_config = {} # Can be set using `Appsignal.configure`
 
@@ -618,9 +660,11 @@ module Appsignal
       merge(options)
     end
 
-    # Apply any overrides for invalid settings.
     # @!visibility private
     def apply_overrides
+      @derived_config = determine_derived
+      merge(derived_config)
+
       @override_config = determine_overrides
       merge(override_config)
     end
@@ -693,12 +737,9 @@ module Appsignal
 
     private
 
-    # Yield a warning for each option in `options` whose effective value
-    # differs from the default. Setting an option to its default value is
-    # a no-op, so we don't warn about it.
     def warn_user_modified(options)
       options.each do |option|
-        next if config_hash[option] == DEFAULT_CONFIG[option]
+        next unless configured?(option)
 
         logger.warn(yield(option))
       end
@@ -913,6 +954,55 @@ module Appsignal
       end
 
       config
+    end
+
+    def determine_derived
+      derived = {}
+
+      DEPRECATED_COLLECTOR_OPTIONS.each do |option, replacements|
+        next unless configured?(option)
+
+        replacements.each do |replacement, derivation|
+          next if set_above_derived?(replacement)
+
+          derived[replacement] = send(derivation, config_hash[option])
+        end
+      end
+
+      derived
+    end
+
+    def derived_header_names(value)
+      Array(value).filter_map do |key|
+        Appsignal::Utils::RequestHeaders.header_name(key)
+      end
+    end
+
+    def derived_environment_keys(value)
+      Array(value).reject do |key|
+        Appsignal::Utils::RequestHeaders.header_name(key) ||
+          Appsignal::Utils::RequestHeaders::TRANSLATED_ENV_KEYS.include?(key)
+      end
+    end
+
+    def configured?(option)
+      config_hash[option] != DEFAULT_CONFIG[option] && user_set?(option)
+    end
+
+    def user_set?(option)
+      set_by_any?(APPLICATION_SOURCES, option)
+    end
+
+    def set_above_derived?(option)
+      set_by_any?(sources_above_derived, option)
+    end
+
+    def sources_above_derived
+      SOURCE_ORDER[(SOURCE_ORDER.index(:derived) + 1)..] - [:override]
+    end
+
+    def set_by_any?(sources, option)
+      sources.any? { |source| config_sources.fetch(source).key?(option) }
     end
 
     def merge(new_config)
@@ -1137,6 +1227,12 @@ module Appsignal
       #   @return [Array<String>] Ignore log messages by substrings
       # @!attribute [rw] ignore_namespaces
       #   @return [Array<String>] Ignore traces by namespaces
+      # @!attribute [rw] keep_request_environment
+      #   @return [Array<String>] Rack environment keys to report in collector
+      #     mode, named the way Rack names them
+      # @!attribute [rw] keep_request_headers
+      #   @return [Array<String>] HTTP request headers to report in collector
+      #     mode, named the way OpenTelemetry names them
       # @!attribute [rw] request_headers
       #   @return [Array<String>] HTTP request headers to include in error reports
 
