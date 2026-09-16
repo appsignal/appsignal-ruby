@@ -310,6 +310,18 @@ module Appsignal
     ].freeze
 
     # @!visibility private
+    COLLECTOR_ONLY_REPLACED_OPTIONS = {
+      :filter_function_parameters => :filter_parameters,
+      :filter_request_payload => :filter_parameters,
+      :filter_request_query_parameters => :filter_parameters,
+      :keep_request_environment => :request_headers,
+      :keep_request_headers => :request_headers,
+      :send_function_parameters => :send_params,
+      :send_request_payload => :send_params,
+      :send_request_query_parameters => :send_params
+    }.freeze
+
+    # @!visibility private
     DEPRECATED_COLLECTOR_OPTIONS = {
       :filter_parameters => {
         :filter_request_payload => :derived_as_is,
@@ -707,11 +719,7 @@ module Appsignal
           deprecated_collector_option_message(option)
         end
       else
-        warn_user_modified(COLLECTOR_ONLY_OPTIONS) do |option|
-          "The agent is in use. The '#{option}' configuration option is " \
-            "only used by the collector and will be ignored. Set " \
-            "'collector_endpoint' to use the collector."
-        end
+        warn_collector_only_options
       end
     end
 
@@ -755,6 +763,25 @@ module Appsignal
       return names.first if names.length == 1
 
       "#{names[0..-2].join(", ")} and #{names.last}"
+    end
+
+    def warn_collector_only_options
+      options = COLLECTOR_ONLY_OPTIONS.select { |option| configured?(option) }
+      return if options.empty?
+
+      options.each do |option|
+        logger.warn(
+          "The agent is in use. The '#{option}' configuration option is " \
+            "only used by the collector and will be ignored."
+        )
+
+        replacement = COLLECTOR_ONLY_REPLACED_OPTIONS[option]
+        logger.warn("Use the '#{replacement}' option instead.") if replacement
+      end
+
+      logger.info(
+        "To use the collector, set the 'collector_endpoint' configuration option."
+      )
     end
 
     def warn_user_modified(options)
