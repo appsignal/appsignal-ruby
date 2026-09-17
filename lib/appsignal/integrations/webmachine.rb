@@ -49,7 +49,11 @@ module Appsignal
 
         begin
           transaction.add_query_parameters_if_nil { request.query }
-          transaction.add_headers_if_nil { request.headers if request.respond_to?(:headers) }
+          # `Webmachine::Headers` names a header the way OpenTelemetry does, in
+          # lowercase and with dashes, so these are headers and nothing else.
+          transaction.add_request_headers_if_nil do
+            request.headers if request.respond_to?(:headers)
+          end
 
           Appsignal.instrument(
             "process_action.webmachine",

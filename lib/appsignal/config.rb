@@ -134,6 +134,16 @@ module Appsignal
       :instrument_sequel => true,
       :instrument_shoryuken => true,
       :instrument_sidekiq => true,
+      :keep_request_environment => [],
+      # What `request_headers` below holds, keeping only the keys that name a
+      # header and naming each one the way OpenTelemetry does. Kept in step by
+      # a spec, because collector mode falls back to this list and an
+      # application that never configured either option must report the same
+      # headers in both modes.
+      :keep_request_headers => %w[
+        accept accept-charset accept-encoding accept-language cache-control
+        connection content-length range
+      ],
       :log => "file",
       :logging_endpoint => "https://appsignal-endpoint.net",
       :ownership_set_namespace => false,
@@ -266,6 +276,8 @@ module Appsignal
       :ignore_errors => "APPSIGNAL_IGNORE_ERRORS",
       :ignore_logs => "APPSIGNAL_IGNORE_LOGS",
       :ignore_namespaces => "APPSIGNAL_IGNORE_NAMESPACES",
+      :keep_request_environment => "APPSIGNAL_KEEP_REQUEST_ENVIRONMENT",
+      :keep_request_headers => "APPSIGNAL_KEEP_REQUEST_HEADERS",
       :request_headers => "APPSIGNAL_REQUEST_HEADERS",
       :response_headers => "APPSIGNAL_RESPONSE_HEADERS"
     }.freeze
@@ -289,13 +301,16 @@ module Appsignal
 
     # Configuration options that only have an effect when the integration is
     # in collector mode. When the agent is in use, setting any of these emits
-    # a warning at startup.
+    # a warning at startup. There is no list for the other direction: every
+    # option that predates collector mode still has an effect in it.
     # @!visibility private
     COLLECTOR_ONLY_OPTIONS = [
       :filter_attributes,
       :filter_function_parameters,
       :filter_request_payload,
       :filter_request_query_parameters,
+      :keep_request_environment,
+      :keep_request_headers,
       :response_headers,
       :send_function_parameters,
       :send_request_payload,
@@ -303,15 +318,66 @@ module Appsignal
       :service_name
     ].freeze
 
-    # Existing AppSignal options that only affect the agent's handling of
-    # trace data. In collector mode these don't filter anything; users need
-    # their collector-mode equivalents (see COLLECTOR_ONLY_OPTIONS).
+    # The agent-mode option to point an application at for each collector-only
+    # option that has one, so that a warning says what to set instead of only
+    # what is ignored. `filter_attributes`, `response_headers` and
+    # `service_name` have no agent equivalent, so there is nothing to name.
     # @!visibility private
-    AGENT_ONLY_TRACE_OPTIONS = [
-      :filter_metadata,
-      :filter_parameters,
-      :send_params
+    COLLECTOR_ONLY_REPLACED_OPTIONS = {
+      :filter_function_parameters => :filter_parameters,
+      :filter_request_payload => :filter_parameters,
+      :filter_request_query_parameters => :filter_parameters,
+      :keep_request_environment => :request_headers,
+      :keep_request_headers => :request_headers,
+      :send_function_parameters => :send_params,
+      :send_request_payload => :send_params,
+      :send_request_query_parameters => :send_params
+    }.freeze
+
+    # Options that are deprecated in collector mode, mapped to the options
+    # that replace them and, for each one, to the method that works its value
+    # out from the option it replaces. Collector mode still reads them, to
+    # work out a value for their replacements when those are unset, so the
+    # warning says what to set instead rather than saying the option is
+    # ignored.
+    #
+    # Naming a method per replacement is what keeps a new entry here from
+    # silently taking the wrong one.
+    # @!visibility private
+    DEPRECATED_COLLECTOR_OPTIONS = {
+      :filter_parameters => {
+        :filter_request_payload => :derived_as_is,
+        :filter_function_parameters => :derived_as_is,
+        :filter_request_query_parameters => :derived_as_is
+      },
+      :request_headers => {
+        :keep_request_headers => :derived_header_names,
+        :keep_request_environment => :derived_environment_keys
+      },
+      :send_params => {
+        :send_request_payload => :derived_as_is,
+        :send_request_query_parameters => :derived_as_is,
+        :send_function_parameters => :derived_as_is
+      }
+    }.freeze
+
+    # The config sources, by the name the diagnose report gives each one, in
+    # the order that report lists them, which is also the order they rank in:
+    # a source later in the list outranks an earlier one. The overrides are
+    # the exception, because they are worked out last and merged over
+    # everything, whatever their place here.
+    # @!visibility private
+    SOURCE_ORDER = [
+      :default, :derived, :system, :loaders, :initial, :file, :env, :override,
+      :dsl
     ].freeze
+
+    # The sources the application controls. The rest are AppSignal's own doing:
+    # a default, a value the host was detected to need, one a loader asked for,
+    # one worked out from another option, and one that replaced a value the gem
+    # could not use.
+    # @!visibility private
+    APPLICATION_SOURCES = [:initial, :file, :env, :dsl].freeze
 
     # @!visibility private
     attr_reader :root_path, :env, :config_hash
@@ -324,8 +390,24 @@ module Appsignal
     #
     # Used by the diagnose report to list which value was read from which source.
     # @!visibility private
-    attr_reader :system_config, :loaders_config, :initial_config, :file_config,
-      :env_config, :override_config, :dsl_config
+    attr_reader :derived_config, :system_config, :loaders_config,
+      :initial_config, :file_config, :env_config, :override_config, :dsl_config
+
+    # What each source holds, keyed by its name in `SOURCE_ORDER`.
+    # @!visibility private
+    def config_sources
+      {
+        :default => DEFAULT_CONFIG,
+        :derived => derived_config,
+        :system => system_config,
+        :loaders => loaders_config,
+        :initial => initial_config,
+        :file => file_config,
+        :env => env_config,
+        :override => override_config,
+        :dsl => dsl_config
+      }
+    end
 
     # Initialize a new AppSignal configuration object.
     #
@@ -361,6 +443,7 @@ module Appsignal
       @initial_config = {}
       @file_config = {}
       @env_config = {}
+      @derived_config = {}
       @override_config = {}
       @dsl_config = {} # Can be set using `Appsignal.configure`
 
@@ -621,9 +704,18 @@ module Appsignal
       merge(options)
     end
 
-    # Apply any overrides for invalid settings.
+    # Set the config options AppSignal decides for itself, once the
+    # application config is final.
+    #
+    # There are two kinds, so there are two config sources. A derived value is
+    # AppSignal filling in a blank, so the derived source sits just above the
+    # defaults and every other source wins over it. An override replaces a
+    # value that cannot work, so the override source sits above all of them.
     # @!visibility private
     def apply_overrides
+      @derived_config = determine_derived
+      merge(derived_config)
+
       @override_config = determine_overrides
       merge(override_config)
     end
@@ -662,16 +754,11 @@ module Appsignal
     # @!visibility private
     def warn_for_mode_mismatch
       if collector_mode_configured?
-        warn_user_modified(AGENT_ONLY_TRACE_OPTIONS) do |option|
-          "The collector is in use. The '#{option}' configuration option is " \
-            "only used by the agent for trace data and will be ignored."
+        warn_user_modified(DEPRECATED_COLLECTOR_OPTIONS.keys) do |option|
+          deprecated_collector_option_message(option)
         end
       else
-        warn_user_modified(COLLECTOR_ONLY_OPTIONS) do |option|
-          "The agent is in use. The '#{option}' configuration option is " \
-            "only used by the collector and will be ignored. Set " \
-            "'collector_endpoint' to use the collector."
-        end
+        warn_collector_only_options
       end
     end
 
@@ -696,12 +783,63 @@ module Appsignal
 
     private
 
-    # Yield a warning for each option in `options` whose effective value
-    # differs from the default. Setting an option to its default value is
-    # a no-op, so we don't warn about it.
+    # The warning for an option that is deprecated in collector mode. Names the
+    # options that replace it and, for each one AppSignal worked out a value
+    # for, the value to set to keep reporting what the application reports now.
+    def deprecated_collector_option_message(option)
+      replacements = DEPRECATED_COLLECTOR_OPTIONS.fetch(option).keys
+      message = "The collector is in use. The '#{option}' configuration " \
+        "option is deprecated in collector mode. It is replaced by " \
+        "#{quoted_option_list(replacements)}."
+
+      derived = replacements.select { |name| derived_config.key?(name) }
+      return message if derived.empty?
+
+      # A line per option, so that a reader can find the one they are after
+      # without reading past the others.
+      values = derived.map { |name| "\n  #{name}: #{derived_config[name].inspect}" }
+      "#{message} Set these options to keep reporting what this application " \
+        "reports now:#{values.join}"
+    end
+
+    # Joins names for a message: "'a'", "'a' and 'b'", "'a', 'b' and 'c'".
+    def quoted_option_list(names)
+      names = names.map { |name| "'#{name}'" }
+      return names.first if names.length == 1
+
+      "#{names[0..-2].join(", ")} and #{names.last}"
+    end
+
+    # Yield a warning for each option in `options` the application configured.
+    # An option nobody asked for, or one asked for and left at its default, is
+    # not worth a warning: there is either no line to point at or no effect to
+    # describe.
+    # Warn for each collector-only option the application configured, naming
+    # the agent-mode option to use instead where there is one, and say once how
+    # to use the collector. Saying it once keeps the way out of the warning
+    # from being repeated on every line of it.
+    def warn_collector_only_options
+      options = COLLECTOR_ONLY_OPTIONS.select { |option| configured?(option) }
+      return if options.empty?
+
+      options.each do |option|
+        logger.warn(
+          "The agent is in use. The '#{option}' configuration option is " \
+            "only used by the collector and will be ignored."
+        )
+
+        replacement = COLLECTOR_ONLY_REPLACED_OPTIONS[option]
+        logger.warn("Use the '#{replacement}' option instead.") if replacement
+      end
+
+      logger.info(
+        "To use the collector, set the 'collector_endpoint' configuration option."
+      )
+    end
+
     def warn_user_modified(options)
       options.each do |option|
-        next if config_hash[option] == DEFAULT_CONFIG[option]
+        next unless configured?(option)
 
         logger.warn(yield(option))
       end
@@ -915,7 +1053,111 @@ module Appsignal
         config[:sidekiq_report_errors] = "all"
       end
 
+      # A config file holding a YAML null gives an array option a `nil` that
+      # nothing downstream expects: the options that reach the agent are
+      # joined into a string, and the ones read here are searched, so both
+      # raise on it. Correct it to the empty list the option means.
+      ARRAY_OPTIONS.each_key do |option|
+        config[option] = [] if config_hash[option].nil?
+      end
+
       config
+    end
+
+    # Works out a value for each collector-mode option that replaces a
+    # deprecated one the application configured, unless a source above the
+    # derived one already set the replacement.
+    #
+    # So an application that only ever set the deprecated option keeps
+    # reporting the same values once it moves to collector mode, and one that
+    # sets a replacement keeps whatever it set. An application that set
+    # neither is left with the defaults, which already agree with what this
+    # would work out.
+    #
+    # This runs whichever mode is in use. The values have no effect until
+    # collector mode is, but working them out anyway is what lets
+    # `appsignal diagnose` answer "what would I report if I switched" before
+    # the switch rather than after it. It also means the same configuration
+    # describes itself the same way in both modes.
+    def determine_derived
+      derived = {}
+
+      DEPRECATED_COLLECTOR_OPTIONS.each do |option, replacements|
+        next unless configured?(option)
+
+        replacements.each do |replacement, derivation|
+          next if set_above_derived?(replacement)
+
+          derived[replacement] = send(derivation, config_hash[option])
+        end
+      end
+
+      derived
+    end
+
+    # The value a replacement takes as it is, because it and the option it
+    # replaces mean the same thing and differ only in what they reach.
+    def derived_as_is(value)
+      value
+    end
+
+    # The half of `request_headers` that names a request header, named the way
+    # OpenTelemetry names one. `request_headers` names Rack environment keys,
+    # and mixes request headers in with values that are not headers, so it is
+    # split in two and the header names are converted.
+    def derived_header_names(value)
+      Array(value).filter_map do |key|
+        Appsignal::Utils::RequestHeaders.header_name(key)
+      end
+    end
+
+    # The half of `request_headers` that names no request header, without the
+    # keys the instrumentation already describes with a semantic convention
+    # attribute. An application can still ask for one of those by setting
+    # `keep_request_environment` itself.
+    def derived_environment_keys(value)
+      Array(value).reject do |key|
+        Appsignal::Utils::RequestHeaders.header_name(key) ||
+          Appsignal::Utils::RequestHeaders::TRANSLATED_ENV_KEYS.include?(key)
+      end
+    end
+
+    # Whether the application asked for the option and got something for it.
+    #
+    # Both halves matter. Setting an option to its default value changes
+    # nothing, so it is not worth acting on. And a value that came from
+    # somewhere other than the application is not the application asking:
+    # loader defaults are an integration's doing, values detected from the
+    # system are the host's, and the ones an earlier pass through here worked
+    # out are AppSignal's own, which is what makes deriving twice give the same
+    # answer as deriving once.
+    def configured?(option)
+      config_hash[option] != DEFAULT_CONFIG[option] && user_set?(option)
+    end
+
+    # Whether a source the application controls set the option.
+    def user_set?(option)
+      set_by_any?(APPLICATION_SOURCES, option)
+    end
+
+    # Whether a source above the derived one set the option. That is every
+    # source but the defaults, including the two the application does not
+    # control: a value the system was detected to need or a loader asked for
+    # names the option itself, which a value worked out from another option
+    # does not. The overrides are left out because they are worked out after
+    # the derived values and merged over them, so they win either way.
+    def set_above_derived?(option)
+      set_by_any?(sources_above_derived, option)
+    end
+
+    # The sources that outrank the derived one, read from the order itself so
+    # that adding a source does not mean remembering to add it here too.
+    def sources_above_derived
+      SOURCE_ORDER[(SOURCE_ORDER.index(:derived) + 1)..] - [:override]
+    end
+
+    def set_by_any?(sources, option)
+      sources.any? { |source| config_sources.fetch(source).key?(option) }
     end
 
     def merge(new_config)
@@ -943,13 +1185,33 @@ module Appsignal
     #   https://docs.appsignal.com/ruby/configuration.html
     class ConfigDSL
       # @!visibility private
-      # @return [Hash] Hash containing the DSL option values
-      attr_reader :dsl_options
-
-      # @!visibility private
       def initialize(config)
         @config = config
         @dsl_options = {}
+        @assigned_options = Set.new
+      end
+
+      # The options the block set, without the ones it only read.
+      #
+      # Reading an option memoizes the config's current value for it, so that
+      # appending to it works. An option the block only read is therefore left
+      # out, so that it is not reported as set by the block and, for an option
+      # whose value is worked out from another, so that the derivation still
+      # runs.
+      #
+      # An option the block assigned is kept whatever it was assigned, because
+      # assigning the value an option already holds still says the application
+      # asked for it. That matters for an array option holding `nil`, where a
+      # read starts from an empty array: without this, assigning an empty array
+      # to it would look like a read and be dropped, leaving the option unset
+      # and meaning the opposite of what was asked for.
+      #
+      # @!visibility private
+      # @return [Hash] Hash containing the DSL option values
+      def dsl_options
+        @dsl_options.reject do |key, value|
+          !@assigned_options.include?(key) && unchanged_option?(key, value)
+        end
       end
 
       # Returns the application's root path.
@@ -1135,6 +1397,12 @@ module Appsignal
       #   @return [Array<String>] Ignore log messages by substrings
       # @!attribute [rw] ignore_namespaces
       #   @return [Array<String>] Ignore traces by namespaces
+      # @!attribute [rw] keep_request_environment
+      #   @return [Array<String>] Rack environment keys to report in collector
+      #     mode, named the way Rack names them
+      # @!attribute [rw] keep_request_headers
+      #   @return [Array<String>] HTTP request headers to report in collector
+      #     mode, named the way OpenTelemetry names them
       # @!attribute [rw] request_headers
       #   @return [Array<String>] HTTP request headers to include in error reports
 
@@ -1189,12 +1457,26 @@ module Appsignal
         if @dsl_options.key?(key)
           @dsl_options[key]
         else
-          @dsl_options[key] = @config[key].dup
+          @dsl_options[key] = initial_option_value(key)
         end
       end
 
       def update_option(key, value)
+        @assigned_options << key
         @dsl_options[key] = value
+      end
+
+      # The value the block starts out from.
+      def initial_option_value(key)
+        @config[key].dup
+      end
+
+      # Whether the value is the one the config already held before the
+      # block ran. Reading an option memoizes its current value, so without
+      # this check a block that only reads an option would record it as one
+      # the block set.
+      def unchanged_option?(key, value)
+        value == initial_option_value(key)
       end
 
       # Parse tags from various input formats and validate values

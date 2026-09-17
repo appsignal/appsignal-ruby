@@ -201,6 +201,12 @@ module Appsignal
 
           # No config loaded yet, try loading as normal
           Appsignal._load_config!(env_option) unless Appsignal.config
+          # Some options are derived from others once the user config is
+          # final. The report is about the config an application would run
+          # with, so derive them here too, whether the config came from
+          # `Appsignal._load_config!` above or from an initializer that
+          # already ran.
+          Appsignal.config.apply_overrides
           Appsignal._start_logger
           Appsignal.config.write_to_environment
           Appsignal.internal_logger.info("Starting AppSignal diagnose")
@@ -472,16 +478,7 @@ module Appsignal
           config = Appsignal.config
           data[:config] = {
             :options => config.config_hash.merge(:env => config.env),
-            :sources => {
-              :default => Appsignal::Config::DEFAULT_CONFIG,
-              :system => config.system_config,
-              :loaders => config.loaders_config,
-              :initial => config.initial_config,
-              :file => config.file_config,
-              :env => config.env_config,
-              :override => config.override_config,
-              :dsl => config.dsl_config
-            }
+            :sources => config.config_sources
           }
           print_config_options(config)
         end
