@@ -37,6 +37,14 @@ if DependencyHelper.rails_present?
           MyApp::Application.initialize!
         end
       end
+
+      it "starts AppSignal before the app's initializers are loaded" do
+        initializer = described_class.initializers.find do |i|
+          i.name == "appsignal.configure_rails_initialization"
+        end
+
+        expect(initializer.before).to eq(:load_config_initializers)
+      end
     end
 
     describe "initializer" do

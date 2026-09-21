@@ -13,8 +13,10 @@ module Appsignal
       config.appsignal = ActiveSupport::OrderedOptions.new
       config.appsignal.start_at = :on_load
 
-      # Run after the Rails framework is loaded
-      initializer "appsignal.configure_rails_initialization" do |app|
+      # Runs before `load_config_initializers` so that AppSignal has started
+      # when the app's initializers run, and errors they raise are reported.
+      initializer "appsignal.configure_rails_initialization",
+        :before => :load_config_initializers do |app|
         Appsignal::Integrations::Railtie.on_load(app)
       end
 
