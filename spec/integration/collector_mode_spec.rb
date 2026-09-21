@@ -58,8 +58,7 @@ if DependencyHelper.opentelemetry_present?
         appsignal.config.send_function_parameters
         appsignal.config.send_request_query_parameters
       ].each do |key|
-        expect(attrs).to_not have_key(key),
-          "expected #{key.inspect} to be omitted from the resource, got #{attrs[key].inspect}"
+        expect(attrs[key].bool_value).to eq(true)
       end
 
       %w[

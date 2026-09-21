@@ -1159,10 +1159,10 @@ describe Appsignal::Config do
         :response_headers               => [],
         :revision                       => "v2.5.1",
         :send_environment_metadata      => true,
-        :send_function_parameters       => nil,
+        :send_function_parameters       => true,
         :send_params                    => true,
-        :send_request_payload           => nil,
-        :send_request_query_parameters  => nil,
+        :send_request_payload           => true,
+        :send_request_query_parameters  => true,
         :send_session_data              => true,
         :service_name                   => nil,
         :sidekiq_report_errors          => "all",
@@ -1993,18 +1993,6 @@ describe Appsignal::Config do
         expect(config.derived_config).to_not have_key(:keep_request_environment)
       end
 
-      it "has defaults that agree with what request_headers derives to" do
-        headers, environment = Appsignal::Utils::RequestHeaders.split(
-          Appsignal::Config::DEFAULT_CONFIG[:request_headers].to_h { |key| [key, nil] }
-        )
-        translated = Appsignal::Utils::RequestHeaders::TRANSLATED_ENV_KEYS
-
-        expect(Appsignal::Config::DEFAULT_CONFIG[:keep_request_headers])
-          .to eq(headers.keys)
-        expect(Appsignal::Config::DEFAULT_CONFIG[:keep_request_environment])
-          .to eq(environment.keys - translated)
-      end
-
       context "with a customised request_headers" do
         let(:options) do
           {
@@ -2090,6 +2078,25 @@ describe Appsignal::Config do
         expect(logs).to_not include("only used by the collector")
       end
     end
+  end
+
+  describe "the defaults of a deprecated option's replacements" do
+    let(:config) { build_config }
+
+    # Deriving never runs for an option left at its default, so a replacement
+    # has to default to what deriving from that default would give. Otherwise
+    # an application reports one thing while its own default says another.
+    Appsignal::Config::DEPRECATED_COLLECTOR_OPTIONS
+      .each do |option, replacements|
+        replacements.each do |replacement, derivation|
+          it "sets #{replacement} to what #{option} derives to" do
+            default = Appsignal::Config::DEFAULT_CONFIG.fetch(option)
+
+            expect(Appsignal::Config::DEFAULT_CONFIG.fetch(replacement))
+              .to eq(config.send(derivation, default))
+          end
+        end
+      end
   end
 
   describe "the collector-mode params options" do

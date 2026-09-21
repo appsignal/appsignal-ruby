@@ -627,14 +627,7 @@ if DependencyHelper.opentelemetry_present?
         )
         attrs = resource_attrs(resource)
 
-        %w[
-          appsignal.config.platform
-          appsignal.config.send_function_parameters
-          appsignal.config.send_request_query_parameters
-          appsignal.config.send_request_payload
-        ].each do |key|
-          expect(attrs).not_to have_key(key)
-        end
+        expect(attrs).not_to have_key("appsignal.config.platform")
 
         %w[
           appsignal.config.filter_function_parameters
@@ -644,6 +637,14 @@ if DependencyHelper.opentelemetry_present?
           appsignal.config.response_headers
         ].each do |key|
           expect(attrs[key]).to eq([])
+        end
+
+        %w[
+          appsignal.config.send_function_parameters
+          appsignal.config.send_request_query_parameters
+          appsignal.config.send_request_payload
+        ].each do |key|
+          expect(attrs[key]).to be(true)
         end
       end
 
