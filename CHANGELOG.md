@@ -19,6 +19,81 @@ _Published on 2026-08-21._
 
   (minor [84d83b65](https://github.com/appsignal/appsignal-ruby/commit/84d83b657d65a93859ba73f295216a3b0ee9cab1), [90768626](https://github.com/appsignal/appsignal-ruby/commit/9076862677444c7772e6f8fbe1e3d5a646a4849d))
 
+## 4.10.4
+
+_Published on 2026-09-22._
+
+### Fixed
+
+- Start AppSignal before the Rails application's initializers run. Depending on
+  the order in which gems were loaded, AppSignal could start after
+  `config/initializers`. In those applications `Appsignal.active?` returned
+  `false` inside an initializer, errors raised by initializers were not reported,
+  and with `config.appsignal.start_at = :after_initialize` the Rails defaults for
+  `log_path` and `ignore_actions` were not applied.
+
+  (patch [523d8458](https://github.com/appsignal/appsignal-ruby/commit/523d845879cfe8cc6306bdc24d51f88ad979f714))
+
+## 4.10.3
+
+_Published on 2026-09-10._
+
+### Fixed
+
+- Fix the sanitization of function arguments in SQL statements.
+
+  Before this release, SQL sanitization of function arguments stripped out parts of the SQL statement after the function argument list.
+
+  (patch [74f509b0](https://github.com/appsignal/appsignal-ruby/commit/74f509b0e8438140bab79a5189c2ed421bbbdf6d))
+
+## 4.10.2
+
+_Published on 2026-09-09._
+
+### Added
+
+- Add support for Grape 4. On Grape 4, every request through a Grape API raised a `NoMethodError`. Applications on Grape 3 and below were not affected.
+
+  On Grape 4, the action name and the reported path now describe the endpoint's full route, so they include the API prefix, the path version and the mount point. They also no longer end in a trailing slash when the endpoint declares no path of its own, so an endpoint reported as `GET::My::Api#/users/:id/` is now reported as `GET::My::Api#/users/:id`. Action names on Grape 3 and below do not change.
+
+  (patch [bdea5c1b](https://github.com/appsignal/appsignal-ruby/commit/bdea5c1b6f02c902d0ba195eff3544545bee2547))
+
+### Changed
+
+- Update the agent to handle high traffic apps. On high-traffic apps that would exceed the maximum accepted internal payload size, send data to the Push API more frequently. (patch [a1c3033e](https://github.com/appsignal/appsignal-ruby/commit/a1c3033e1b255371a2d71d4519506a67dbfa2b82))
+
+### Fixed
+
+- Load the host Rails application before the `appsignal demo` command reads the
+  AppSignal configuration. This matches the behavior of `appsignal diagnose`.
+
+  Thanks [@Guflly](https://github.com/Guflly) for your contribution!
+
+  (patch [3249a376](https://github.com/appsignal/appsignal-ruby/commit/3249a376a6fb7a10c990e0f49f7907dc40b03a12))
+- Fix events showing as unknown in long-running applications. An application process that kept running for thirty days without restarting could lose the names and queries of the events it recorded, both in slow traces and in the "Slow events" panel. (patch [a1c3033e](https://github.com/appsignal/appsignal-ruby/commit/a1c3033e1b255371a2d71d4519506a67dbfa2b82))
+- Prevent `gc` events from appearing in the "Slow events" panel. (patch [a1c3033e](https://github.com/appsignal/appsignal-ruby/commit/a1c3033e1b255371a2d71d4519506a67dbfa2b82))
+- Report Delayed Job jobs that fail to load. Before this change, a job whose
+  payload could not be deserialized was not reported to AppSignal at all.
+
+  This can happen when a deploy removes or renames a job class while jobs of that
+  class are still queued. Those jobs are now reported as failed, with the
+  `Delayed::DeserializationError` they raised, and are named after the class
+  recorded in the job's handler. When even that cannot be read, they are named
+  `DelayedJobInternal`.
+
+  (patch [ea294440](https://github.com/appsignal/appsignal-ruby/commit/ea29444069ef78347ad1e8266869b7d9aa2caa50))
+- Record a single event for a bulk enqueue of Active Job jobs. Before this change,
+  enqueuing jobs with `ActiveJob.perform_all_later` would record an event for the
+  batch and, if the adapter was instrumented with AppSignal, another event for each
+  job in it. A job that slices a large collection and enqueues it in batches was
+  therefore reported with an event per job enqueued, where before version 4.9.0 it
+  had one event per batch.
+
+  A bulk enqueue is now recorded as a single `enqueue_all.active_job` event, named
+  after the job class when every job in the batch shares one.
+
+  (patch [fe82dc60](https://github.com/appsignal/appsignal-ruby/commit/fe82dc60bc8b52d466c0c9b673adbae29f79449e))
+
 ## 4.10.1
 
 _Published on 2026-08-20._
