@@ -96,6 +96,32 @@ module Appsignal
         PARAMS_MAPPING
       end
 
+      PARAMS_OPTIONS = {
+        :params => { :filter => :filter_parameters, :send => :send_params }
+      }.freeze
+
+      def params_options
+        PARAMS_OPTIONS
+      end
+
+      HEADERS_MAPPING = {
+        :request_headers => [
+          :environment,
+          lambda { |name, value| [Appsignal::Utils::RequestHeaders.rack_name(name), value] }
+        ],
+        :request_environment => [:environment, nil]
+      }.freeze
+
+      def headers_mapping
+        HEADERS_MAPPING
+      end
+
+      HEADERS_ALLOWLIST = { :environment => [:request_headers, false] }.freeze
+
+      def headers_allowlist
+        HEADERS_ALLOWLIST
+      end
+
       # `data` is a raw Ruby Hash/Array; the C extension wants a `Data` object,
       # so serialize it here (mirrors how `set_error` serializes its backtrace).
       def set_sample_data(key, data)

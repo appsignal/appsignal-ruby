@@ -243,7 +243,6 @@ module Appsignal
       @error_set = nil
 
       @session_data = Appsignal::SampleData.new(:session_data, Hash)
-      @headers = Appsignal::SampleData.new(:headers, Hash)
       @custom_data = Appsignal::SampleData.new(:custom_data)
 
       @backend = backend || Appsignal::Backends.transaction.new(
@@ -265,9 +264,18 @@ module Appsignal
       # That symbol is also the sample-data key the backend receives, so it can
       # route the bucket to the right storage.
       @params_mapping = @backend.params_mapping
+      @params_options = @backend.params_options
       @params_buckets = @params_mapping.values.uniq.to_h do |bucket|
         [bucket, Appsignal::SampleData.new(bucket)]
       end
+
+      @headers_mapping = @backend.headers_mapping
+      @headers_allowlist = @backend.headers_allowlist
+      @headers_buckets = @headers_mapping.each_value.map(&:first).uniq.to_h do |bucket|
+        [bucket, Appsignal::SampleData.new(bucket, Hash)]
+      end
+
+      @channels_set = []
 
       run_after_create_hooks
     end
@@ -433,7 +441,7 @@ module Appsignal
     #   Sample data guide
     def add_params(given_params = nil, &block)
       warn_params_deprecation
-      params_data(:params).add(given_params, &block)
+      add_params_channel(:params, given_params, &block)
     end
     alias set_params add_params
 
@@ -491,7 +499,7 @@ module Appsignal
     #
     # @see #add_function_parameters
     def add_request_payload(given_params = nil, &block)
-      params_data(:request_payload).add(given_params, &block)
+      add_params_channel(:request_payload, given_params, &block)
     end
 
     # Add the request payload to the transaction if not already set.
@@ -527,7 +535,7 @@ module Appsignal
     #
     # @see #add_request_payload
     def add_function_parameters(given_params = nil, &block)
-      params_data(:function_parameters).add(given_params, &block)
+      add_params_channel(:function_parameters, given_params, &block)
     end
 
     # Add the function parameters to the transaction if not already set.
@@ -564,7 +572,7 @@ module Appsignal
     #
     # @see #add_request_payload
     def add_query_parameters(given_params = nil, &block)
-      params_data(:query_parameters).add(given_params, &block)
+      add_params_channel(:query_parameters, given_params, &block)
     end
 
     # Add the query parameters to the transaction if not already set.
@@ -648,6 +656,10 @@ module Appsignal
 
     # Add headers to the transaction.
     #
+    # @deprecated Use {#add_request_headers} for request headers and
+    #   {#add_request_environment} for the values a Rack environment holds that
+    #   are not request headers. This method takes both kinds at once, so it
+    #   has to work out which of them each value is.
     # @since 4.0.0
     # @param given_headers [Hash<String, Object>] A hash containing headers.
     # @yield This block is called when the transaction is sampled. The block's
@@ -659,7 +671,19 @@ module Appsignal
     # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
     #   Sample data guide
     def add_headers(given_headers = nil, &block)
-      @headers.add(given_headers, &block)
+      if block
+        headers, environment = Appsignal::Utils::RequestHeaders.split_lazily(&block)
+
+        add_headers_channel(:request_headers, &headers)
+        add_headers_channel(:request_environment, &environment)
+      elsif given_headers.is_a?(Hash)
+        headers, environment = Appsignal::Utils::RequestHeaders.split(given_headers)
+
+        add_headers_channel(:request_headers, headers)
+        add_headers_channel(:request_environment, environment)
+      else
+        add_headers_channel(:request_environment, given_headers)
+      end
     end
     alias set_headers add_headers
 
@@ -668,6 +692,8 @@ module Appsignal
     # When both the `given_headers` and a block is given to this method,
     # the block is leading and the argument will _not_ be used.
     #
+    # @deprecated Use {#add_request_headers_if_nil} or
+    #   {#add_request_environment_if_nil}.
     # @since 4.0.0
     # @param given_headers [Hash<String, Object>] A hash containing headers.
     # @yield This block is called when the transaction is sampled. The block's
@@ -680,9 +706,91 @@ module Appsignal
     # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
     #   Sample data guide
     def add_headers_if_nil(given_headers = nil, &block)
-      add_headers(given_headers, &block) unless @headers.value?
+      return if channel_set?(:request_headers) || channel_set?(:request_environment)
+
+      add_headers(given_headers, &block)
     end
     alias set_headers_if_nil add_headers_if_nil
+
+    # Add request headers to the transaction.
+    #
+    # Name each header the way OpenTelemetry names it, in lowercase and with
+    # dashes, such as `accept` and `content-length`. In agent mode the names
+    # are converted to the Rack spellings the environment uses, such as
+    # `HTTP_ACCEPT`.
+    #
+    # Behaves like {#add_headers}: merges when called multiple times, and a
+    # block takes precedence over the argument.
+    #
+    # @param given_headers [Hash<String, Object>] A hash containing request
+    #   headers.
+    # @yield This block is called when the transaction is sampled. The block's
+    #   return value will become the new request headers.
+    # @yieldreturn [Hash<String, Object>]
+    # @return [void]
+    #
+    # @see #add_request_environment
+    # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
+    #   Sample data guide
+    def add_request_headers(given_headers = nil, &block)
+      add_headers_channel(:request_headers, given_headers, &block)
+    end
+
+    # Add request headers to the transaction if none are already set.
+    #
+    # @param given_headers [Hash<String, Object>] A hash containing request
+    #   headers to set if none are already set.
+    # @yield This block is called when the transaction is sampled. The block's
+    #   return value will become the new request headers.
+    # @yieldreturn [Hash<String, Object>]
+    # @return [void]
+    # @!visibility private
+    #
+    # @see #add_request_headers
+    def add_request_headers_if_nil(given_headers = nil, &block)
+      add_request_headers(given_headers, &block) unless channel_set?(:request_headers)
+    end
+
+    # Add values from the request environment to the transaction.
+    #
+    # These are the values a Rack environment holds that are not request
+    # headers, such as `REMOTE_ADDR` and `QUERY_STRING`. Name each one the way
+    # Rack names it. Use {#add_request_headers} for the request headers.
+    #
+    # Behaves like {#add_headers}: merges when called multiple times, and a
+    # block takes precedence over the argument.
+    #
+    # @param given_environment [Hash<String, Object>] A hash containing request
+    #   environment values.
+    # @yield This block is called when the transaction is sampled. The block's
+    #   return value will become the new request environment.
+    # @yieldreturn [Hash<String, Object>]
+    # @return [void]
+    #
+    # @see #add_request_headers
+    # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
+    #   Sample data guide
+    def add_request_environment(given_environment = nil, &block)
+      add_headers_channel(:request_environment, given_environment, &block)
+    end
+
+    # Add values from the request environment to the transaction if none are
+    # already set.
+    #
+    # @param given_environment [Hash<String, Object>] A hash containing request
+    #   environment values to set if none are already set.
+    # @yield This block is called when the transaction is sampled. The block's
+    #   return value will become the new request environment.
+    # @yieldreturn [Hash<String, Object>]
+    # @return [void]
+    # @!visibility private
+    #
+    # @see #add_request_environment
+    def add_request_environment_if_nil(given_environment = nil, &block)
+      return if channel_set?(:request_environment)
+
+      add_request_environment(given_environment, &block)
+    end
 
     # Add custom data to the transaction.
     #
@@ -984,7 +1092,7 @@ module Appsignal
 
     # @!visibility private
     attr_writer :is_duplicate, :tags, :custom_data, :params_buckets,
-      :session_data, :headers
+      :session_data, :headers_buckets, :channels_set
 
     # @!visibility private
     def internal_set_error(error, &block)
@@ -1037,11 +1145,21 @@ module Appsignal
       @params_buckets.fetch(@params_mapping.fetch(channel))
     end
 
-    # Whether a params channel's bucket has had nothing set yet, so the
-    # `_if_nil` setters do not overwrite params the caller already provided.
+    PARAMS_CHANNEL_ALIASES = { :params => :request_payload }.freeze
+    private_constant :PARAMS_CHANNEL_ALIASES
+
+    def params_channel(channel)
+      PARAMS_CHANNEL_ALIASES.fetch(channel, channel)
+    end
+
+    def add_params_channel(channel, given_params = nil, &block)
+      sample = params_data(channel)
+      sample.add(given_params, &block)
+      mark_channel_set(params_channel(channel)) if sample.value?
+    end
+
     def params_unset?(channel)
-      bucket = params_data(channel)
-      !bucket.value? && !bucket.empty?
+      !channel_set?(params_channel(channel)) && !params_data(channel).empty?
     end
 
     # `add_params`/`set_params` don't say whether the params are a request
@@ -1222,18 +1340,21 @@ module Appsignal
     end
 
     def sample_data
-      data = {
-        :environment => sanitized_request_headers,
+      data = {}
+      @headers_buckets.each do |bucket, sample|
+        data[bucket] = sanitized_headers(bucket, sample)
+      end
+      data.merge!(
         :session_data => sanitized_session_data,
         :tags => sanitized_tags,
         :custom_data => custom_data
-      }
+      )
       # Each params bucket is emitted under its own key. The extension backend
       # has a single `:params` bucket; the OpenTelemetry backend has separate
       # `:request_payload` and `:function_parameters` buckets. The backend maps
       # each key to its storage (C-extension slot or OpenTelemetry attribute).
       @params_buckets.each do |bucket, sample|
-        data[bucket] = sanitized_params(sample)
+        data[bucket] = sanitized_params(bucket, sample)
       end
       data.each do |key, value|
         set_sample_data(key, value)
@@ -1252,7 +1373,8 @@ module Appsignal
         transaction.custom_data = @custom_data.dup
         transaction.params_buckets = @params_buckets.transform_values(&:dup)
         transaction.session_data = @session_data.dup
-        transaction.headers = @headers.dup
+        transaction.headers_buckets = @headers_buckets.transform_values(&:dup)
+        transaction.channels_set = @channels_set.dup
       end
     end
 
@@ -1260,10 +1382,11 @@ module Appsignal
       params_value(params_data(:params))
     end
 
-    def sanitized_params(sample = params_data(:params))
-      return unless Appsignal.config[:send_params]
+    def sanitized_params(bucket, sample)
+      options = @params_options.fetch(bucket)
+      return if Appsignal.config[options.fetch(:send)] == false
 
-      filter_keys = Appsignal.config[:filter_parameters] || []
+      filter_keys = Appsignal.config[options.fetch(:filter)] || []
       Appsignal::Utils::SampleDataSanitizer.sanitize(params_value(sample), filter_keys)
     end
 
@@ -1305,29 +1428,63 @@ module Appsignal
       )
     end
 
-    def request_headers
-      @headers.value
+    def add_headers_channel(channel, given_headers = nil, &block)
+      bucket, transform = @headers_mapping.fetch(channel)
+      sample = @headers_buckets.fetch(bucket)
+
+      if transform.nil?
+        sample.add(given_headers, &block)
+      elsif block
+        sample.add { transform_headers(transform, block.call) }
+      else
+        sample.add(transform_headers(transform, given_headers))
+      end
+
+      mark_channel_set(channel) if sample.value?
+    end
+
+    def transform_headers(transform, headers)
+      return headers unless headers.is_a?(Hash)
+
+      headers.to_h(&transform)
+    end
+
+    def mark_channel_set(channel)
+      @channels_set << channel unless @channels_set.include?(channel)
+    end
+
+    def channel_set?(channel)
+      @channels_set.include?(channel)
+    end
+
+    def headers_value(sample)
+      sample.value
     rescue => e
       Appsignal.internal_logger.error \
         "Exception while fetching headers: #{e.class}: #{e}"
       nil
     end
 
-    # Returns sanitized environment for a transaction.
-    #
-    # The environment of a transaction can contain a lot of information, not
-    # all of it useful for debugging.
-    #
-    # @return [nil] if no environment is present.
-    # @return [Hash<String, Object>]
-    def sanitized_request_headers
-      headers = request_headers
+    def sanitized_headers(bucket, sample)
+      headers = headers_value(sample)
       return unless headers
 
+      option, header_names = @headers_allowlist.fetch(bucket)
+      allowlist = Appsignal.config[option]
+
+      headers = normalized_headers(headers) if header_names
+
       {}.tap do |out|
-        Appsignal.config[:request_headers].each do |key|
+        allowlist.each do |key|
+          key = Appsignal::Utils::RequestHeaders.normalize(key) if header_names
           out[key] = headers[key] if headers[key]
         end
+      end
+    end
+
+    def normalized_headers(headers)
+      headers.to_h do |key, value|
+        [Appsignal::Utils::RequestHeaders.normalize(key), value]
       end
     end
 

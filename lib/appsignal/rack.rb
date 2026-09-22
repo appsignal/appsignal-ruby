@@ -125,9 +125,11 @@ module Appsignal
 
         transaction.add_request_payload { params_for(request) }
         transaction.add_session_data { session_data_for(request) }
-        transaction.add_headers do
+        headers, environment = Appsignal::Utils::RequestHeaders.split_lazily do
           request.env if request.respond_to?(:env)
         end
+        transaction.add_request_headers(&headers)
+        transaction.add_request_environment(&environment)
 
         queue_start = Appsignal::Rack::Utils.queue_start_from(request.env)
         transaction.set_queue_start(queue_start) if queue_start

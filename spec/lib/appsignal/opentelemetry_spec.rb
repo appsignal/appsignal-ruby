@@ -627,21 +627,93 @@ if DependencyHelper.opentelemetry_present?
         )
         attrs = resource_attrs(resource)
 
-        # These all default to nil or [] and should be dropped so the
-        # collector can apply its own defaults.
+        expect(attrs).not_to have_key("appsignal.config.platform")
+
         %w[
           appsignal.config.filter_function_parameters
           appsignal.config.filter_request_query_parameters
           appsignal.config.ignore_errors
           appsignal.config.ignore_logs
-          appsignal.config.platform
           appsignal.config.response_headers
+        ].each do |key|
+          expect(attrs[key]).to eq([])
+        end
+
+        %w[
           appsignal.config.send_function_parameters
           appsignal.config.send_request_query_parameters
           appsignal.config.send_request_payload
         ].each do |key|
-          expect(attrs).not_to have_key(key)
+          expect(attrs[key]).to be(true)
         end
+      end
+
+      it "sends the request header allowlist under the collector's name for it" do
+        resource = described_class.build_resource(
+          build_config(
+            :options => {
+              :name => "my-app",
+              :push_api_key => "abc",
+              :request_headers => ["HTTP_ACCEPT"],
+              :keep_request_headers => ["accept", "date"]
+            }
+          )
+        )
+        attrs = resource_attrs(resource)
+
+        expect(attrs["appsignal.config.request_headers"]).to eq(["accept", "date"])
+      end
+
+      it "names the headers the way the collector receives them" do
+        resource = described_class.build_resource(
+          build_config(
+            :options => {
+              :name => "AppName",
+              :push_api_key => "abc",
+              :keep_request_headers => ["Accept_Encoding", "X-Custom-Header"],
+              :response_headers => ["Content_Type"]
+            }
+          )
+        )
+        attrs = resource_attrs(resource)
+
+        expect(attrs["appsignal.config.request_headers"])
+          .to eq(["accept-encoding", "x-custom-header"])
+        expect(attrs["appsignal.config.response_headers"]).to eq(["content-type"])
+      end
+
+      it "keeps an empty allowlist, so the collector keeps nothing" do
+        resource = described_class.build_resource(
+          build_config(
+            :options => {
+              :name => "my-app",
+              :push_api_key => "abc",
+              :keep_request_headers => [],
+              :response_headers => []
+            }
+          )
+        )
+        attrs = resource_attrs(resource)
+
+        expect(attrs["appsignal.config.request_headers"]).to eq([])
+        expect(attrs["appsignal.config.response_headers"]).to eq([])
+      end
+
+      it "drops an empty string, which is how an unset string option arrives" do
+        resource = described_class.build_resource(
+          build_config(
+            :root_path => "",
+            :options => {
+              :name => "my-app",
+              :push_api_key => "abc",
+              :platform => ""
+            }
+          )
+        )
+        attrs = resource_attrs(resource)
+
+        expect(attrs).not_to have_key("appsignal.config.platform")
+        expect(attrs).not_to have_key("appsignal.config.app_path")
       end
     end
 

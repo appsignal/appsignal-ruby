@@ -98,28 +98,6 @@ module Appsignal
       # queue duration when `queue_start_ms > 946_681_200_000`.
       QUEUE_START_MIN = 946_681_200_000
 
-      # The only two request headers Rack passes without the `HTTP_` prefix,
-      # because CGI reserves the prefixed spelling of them.
-      UNPREFIXED_HEADER_KEYS = %w[CONTENT_LENGTH CONTENT_TYPE].freeze
-
-      # `HTTP_VERSION` is a CGI variable holding the same value as
-      # `SERVER_PROTOCOL`, not a header. A client that sends a real `Version`
-      # header arrives under the same key, so that header is reported as an
-      # environment value rather than as a header. `Version` is not a registered
-      # HTTP header, so that is the cheaper of the two mistakes.
-      NON_HEADER_KEYS = %w[HTTP_VERSION].freeze
-
-      # The environment keys the Rack and Webmachine instrumentation already
-      # describes with a semantic convention attribute, which it reads from the
-      # request itself. Reporting them as environment values as well would say
-      # the same thing twice, in a worse form: `PATH_INFO` drops the mount
-      # prefix that `url.path` keeps, and `SERVER_NAME` ignores the forwarded
-      # host that `server.address` follows.
-      TRANSLATED_ENV_KEYS = %w[
-        PATH_INFO REQUEST_METHOD REQUEST_PATH SERVER_NAME SERVER_PORT
-        SERVER_PROTOCOL
-      ].freeze
-
       # One open event on the event stack. Holds the OpenTelemetry span and the
       # context token attached for it, plus the allocation bookkeeping for the
       # event. `allocation_start` is the allocation counter when the event began
@@ -306,6 +284,43 @@ module Appsignal
         PARAMS_MAPPING
       end
 
+      PARAMS_OPTIONS = {
+        :request_payload => {
+          :filter => :filter_request_payload,
+          :send => :send_request_payload
+        },
+        :function_parameters => {
+          :filter => :filter_function_parameters,
+          :send => :send_function_parameters
+        },
+        :query_parameters => {
+          :filter => :filter_request_query_parameters,
+          :send => :send_request_query_parameters
+        }
+      }.freeze
+
+      def params_options
+        PARAMS_OPTIONS
+      end
+
+      HEADERS_MAPPING = {
+        :request_headers => [:request_headers, nil],
+        :request_environment => [:environment, nil]
+      }.freeze
+
+      def headers_mapping
+        HEADERS_MAPPING
+      end
+
+      HEADERS_ALLOWLIST = {
+        :request_headers => [:keep_request_headers, true],
+        :environment => [:keep_request_environment, false]
+      }.freeze
+
+      def headers_allowlist
+        HEADERS_ALLOWLIST
+      end
+
       # Routes each sample-data category to the attribute the collector reads.
       # The params arrive on one of three channels: `request_payload` (web),
       # `function_parameters` (jobs) and `query_parameters` (a request's query
@@ -327,8 +342,10 @@ module Appsignal
           @span.set_attribute("appsignal.request.session_data", JSON.generate(data))
         when "custom_data"
           @span.set_attribute("appsignal.custom_data", JSON.generate(data))
-        when "environment"
+        when "request_headers"
           write_request_headers(data)
+        when "environment"
+          write_request_environment(data)
         when "tags"
           write_tags(data)
         else
@@ -739,33 +756,15 @@ module Appsignal
         DISPLAY_NAMESPACE.fetch(namespace, namespace)
       end
 
-      # The transaction's "environment" sample data is a Rack/CGI env allowlist
-      # mixing true HTTP headers (HTTP_*, plus CONTENT_LENGTH/CONTENT_TYPE) with
-      # non-header CGI vars (REQUEST_METHOD, REQUEST_PATH, PATH_INFO, SERVER_*).
-      #
-      # A true header becomes `http.request.header.*`, normalized to the
-      # lowercase dashed name that convention uses. Everything else keeps its
-      # own environment name under `appsignal.environment.*`, except for the
-      # keys in `TRANSLATED_ENV_KEYS`, which the instrumentation already
-      # describes from the request itself.
       def write_request_headers(headers)
-        headers.each do |key, value|
-          name = otel_header_name(key)
-          if name
-            @span.set_attribute("http.request.header.#{name}", value.to_s)
-          elsif !TRANSLATED_ENV_KEYS.include?(key)
-            @span.set_attribute("appsignal.environment.#{key}", value.to_s)
-          end
+        headers.each do |name, value|
+          @span.set_attribute("http.request.header.#{name}", value.to_s)
         end
       end
 
-      def otel_header_name(env_key)
-        return if NON_HEADER_KEYS.include?(env_key)
-
-        if env_key.start_with?("HTTP_")
-          env_key.delete_prefix("HTTP_").downcase.tr("_", "-")
-        elsif UNPREFIXED_HEADER_KEYS.include?(env_key)
-          env_key.downcase.tr("_", "-")
+      def write_request_environment(environment)
+        environment.each do |key, value|
+          @span.set_attribute("appsignal.environment.#{key}", value.to_s)
         end
       end
 
