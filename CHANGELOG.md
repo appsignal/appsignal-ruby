@@ -1,5 +1,20 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.10.4
+
+_Published on 2026-09-22._
+
+### Fixed
+
+- Start AppSignal before the Rails application's initializers run. Depending on
+  the order in which gems were loaded, AppSignal could start after
+  `config/initializers`. In those applications `Appsignal.active?` returned
+  `false` inside an initializer, errors raised by initializers were not reported,
+  and with `config.appsignal.start_at = :after_initialize` the Rails defaults for
+  `log_path` and `ignore_actions` were not applied.
+
+  (patch [523d8458](https://github.com/appsignal/appsignal-ruby/commit/523d845879cfe8cc6306bdc24d51f88ad979f714))
+
 ## 4.10.3
 
 _Published on 2026-09-10._
