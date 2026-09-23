@@ -4,6 +4,8 @@
 
 _Published on 2026-09-23._
 
+This release also includes all the changes from AppSignal for Ruby version 4.10.4 and below.
+
 ### Added
 
 - Detect the revision that is being deployed from the environment variables set by Heroku, Render, Kamal and Scalingo: `HEROKU_SLUG_COMMIT`, `RENDER_GIT_COMMIT`, `KAMAL_VERSION` and `CONTAINER_VERSION`. Applications deployed on those platforms now report their revision without setting the `revision` configuration option.
@@ -64,25 +66,6 @@ _Published on 2026-09-23._
 - Report request headers in collector mode. (patch [992a60c8](https://github.com/appsignal/appsignal-ruby/commit/992a60c8d0f68b3edcb00150a1e9f14985619a4f))
 - Report no response headers in collector mode until the `response_headers` configuration option names some. The option had no effect at all, so every response header captured by the application's own OpenTelemetry instrumentation was reported whatever the option said. (patch [992a60c8](https://github.com/appsignal/appsignal-ruby/commit/992a60c8d0f68b3edcb00150a1e9f14985619a4f))
 - Read an array configuration option written as a null in `config/appsignal.yml` as the empty list it means. Options such as `filter_parameters` and `ignore_actions` raised a `NoMethodError` when AppSignal started, and `filter_metadata` and `filter_session_data` raised one while a transaction was sampled. (patch [992a60c8](https://github.com/appsignal/appsignal-ruby/commit/992a60c8d0f68b3edcb00150a1e9f14985619a4f))
-
-## 5.0.0.rc.1
-
-_Published on 2026-08-21._
-
-### Added
-
-- Add a `collector_endpoint` configuration option (`APPSIGNAL_COLLECTOR_ENDPOINT` environment variable) that puts the integration in _collector mode_. In collector mode AppSignal reports traces, metrics and logs to an AppSignal Collector, over OTLP/HTTP.
-
-  Collector mode requires Ruby 3.1 or newer, and the OpenTelemetry gems, which are not installed by default. Add the `appsignal-opentelemetry` gem alongside `appsignal` to install them. When they are missing or too old, AppSignal logs a warning and keeps reporting through its agent.
-
-  (major [84d83b65](https://github.com/appsignal/appsignal-ruby/commit/84d83b657d65a93859ba73f295216a3b0ee9cab1), [90768626](https://github.com/appsignal/appsignal-ruby/commit/9076862677444c7772e6f8fbe1e3d5a646a4849d))
-- Add configuration options that map to OpenTelemetry resource attributes in collector mode: `service_name`, `filter_attributes`, `filter_function_parameters`, `filter_request_query_parameters`, `filter_request_payload`, `response_headers`, `send_function_parameters`, `send_request_query_parameters` and `send_request_payload`.
-
-  In collector mode, existing options are passed to the collector as resource attributes as well: `name`, environment, `hostname`, `revision`, `ignore_actions`, `ignore_errors`, `ignore_namespaces`, `request_headers`, `filter_session_data` and `send_session_data`.
-
-  Setting any of these without `collector_endpoint`, or setting `filter_parameters`, `filter_metadata` or `send_params` with it, logs a warning at startup.
-
-  (minor [84d83b65](https://github.com/appsignal/appsignal-ruby/commit/84d83b657d65a93859ba73f295216a3b0ee9cab1), [90768626](https://github.com/appsignal/appsignal-ruby/commit/9076862677444c7772e6f8fbe1e3d5a646a4849d))
 
 ## 4.10.4
 
@@ -158,6 +141,25 @@ _Published on 2026-09-09._
   after the job class when every job in the batch shares one.
 
   (patch [fe82dc60](https://github.com/appsignal/appsignal-ruby/commit/fe82dc60bc8b52d466c0c9b673adbae29f79449e))
+
+## 5.0.0.rc.1
+
+_Published on 2026-08-21._
+
+### Added
+
+- Add a `collector_endpoint` configuration option (`APPSIGNAL_COLLECTOR_ENDPOINT` environment variable) that puts the integration in _collector mode_. In collector mode AppSignal reports traces, metrics and logs to an AppSignal Collector, over OTLP/HTTP.
+
+  Collector mode requires Ruby 3.1 or newer, and the OpenTelemetry gems, which are not installed by default. Add the `appsignal-opentelemetry` gem alongside `appsignal` to install them. When they are missing or too old, AppSignal logs a warning and keeps reporting through its agent.
+
+  (major [84d83b65](https://github.com/appsignal/appsignal-ruby/commit/84d83b657d65a93859ba73f295216a3b0ee9cab1), [90768626](https://github.com/appsignal/appsignal-ruby/commit/9076862677444c7772e6f8fbe1e3d5a646a4849d))
+- Add configuration options that map to OpenTelemetry resource attributes in collector mode: `service_name`, `filter_attributes`, `filter_function_parameters`, `filter_request_query_parameters`, `filter_request_payload`, `response_headers`, `send_function_parameters`, `send_request_query_parameters` and `send_request_payload`.
+
+  In collector mode, existing options are passed to the collector as resource attributes as well: `name`, environment, `hostname`, `revision`, `ignore_actions`, `ignore_errors`, `ignore_namespaces`, `request_headers`, `filter_session_data` and `send_session_data`.
+
+  Setting any of these without `collector_endpoint`, or setting `filter_parameters`, `filter_metadata` or `send_params` with it, logs a warning at startup.
+
+  (minor [84d83b65](https://github.com/appsignal/appsignal-ruby/commit/84d83b657d65a93859ba73f295216a3b0ee9cab1), [90768626](https://github.com/appsignal/appsignal-ruby/commit/9076862677444c7772e6f8fbe1e3d5a646a4849d))
 
 ## 4.10.1
 
