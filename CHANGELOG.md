@@ -1,5 +1,70 @@
 # AppSignal for Ruby gem Changelog
 
+## 5.0.0.rc.2
+
+_Published on 2026-09-23._
+
+### Added
+
+- Detect the revision that is being deployed from the environment variables set by Heroku, Render, Kamal and Scalingo: `HEROKU_SLUG_COMMIT`, `RENDER_GIT_COMMIT`, `KAMAL_VERSION` and `CONTAINER_VERSION`. Applications deployed on those platforms now report their revision without setting the `revision` configuration option.
+
+  This affects collector mode, where deploys were reported as `unknown` when the revision was not configured.
+
+  (patch [bf606432](https://github.com/appsignal/appsignal-ruby/commit/bf606432aab96d3f9b3a20cbb4b0c48aa7748702))
+- Detect the hostname of the machine the application runs on. On Heroku this is the name of the dyno, and everywhere else it is the name the host reports for itself. Set the `hostname` configuration option to report a different name.
+
+  This affects collector mode, where all data was reported for a host named `unknown` when the hostname was not configured.
+
+  (patch [bf606432](https://github.com/appsignal/appsignal-ruby/commit/bf606432aab96d3f9b3a20cbb4b0c48aa7748702))
+- Report the host, the port and the HTTP version of an incoming web request in collector mode. These are sent as the `server.address`, `server.port` and `network.protocol.version` OpenTelemetry attributes. The host is read from the `Forwarded` and `X-Forwarded-Host` headers when a proxy sets them, so it is the host the client used rather than the one the proxy connected to. (patch [85460ff3](https://github.com/appsignal/appsignal-ruby/commit/85460ff3d8ae5235515fe291b9a6baea6ad0c47c))
+- Report the request environment in collector mode. The `request_headers` configuration option is an allowlist of Rack environment names, and some of those names are not request headers. Those values are now reported as `appsignal.environment.*` OpenTelemetry attributes and shown in the request's Environment panel, instead of being left out.
+
+  Values that describe the request itself are not repeated there, because they are already reported as the request's method, path, host, port and protocol version.
+
+  (patch [85460ff3](https://github.com/appsignal/appsignal-ruby/commit/85460ff3d8ae5235515fe291b9a6baea6ad0c47c))
+- Add the `keep_request_headers` and `keep_request_environment` configuration options, which are used in collector mode. They replace `request_headers`, which is deprecated in collector mode.
+
+  `keep_request_headers` lists the request headers to report, using the names OpenTelemetry uses for them, such as `accept` and `content-length`. `keep_request_environment` lists the Rack environment values to report that are not request headers, using the names Rack uses for them, such as `REMOTE_ADDR`.
+
+  Both options default to a value derived from `request_headers`, which lists Rack environment keys and mixes the two kinds together. So an application that only ever set `request_headers` keeps reporting the same values when it moves to collector mode.
+
+  The `request_headers` configuration option is deprecated in collector mode, and a warning will be emitted at startup, containing the values of `keep_request_headers` and `keep_request_environment` that should be used to replace it.
+
+  In agent mode, `request_headers` still lists every Rack environment key to report, and the two new options have no effect.
+
+  (patch [992a60c8](https://github.com/appsignal/appsignal-ruby/commit/992a60c8d0f68b3edcb00150a1e9f14985619a4f))
+- Add the `Appsignal.add_request_headers` and `Appsignal.add_request_environment` helpers.
+
+  Use `add_request_headers` to report request headers, naming each header in lowercase and with dashes, such as `content-length`. Use `add_request_environment` to report the values a Rack environment holds that are not request headers, naming each one the way Rack names it, such as `REMOTE_ADDR`.
+
+  In agent mode, both write to the "Environment" sample data, formatted as Rack environment keys. In collector mode, they write different span attributes.
+
+  Together they replace `Appsignal.add_headers`, which is now deprecated, as it accepts Rack environment keys and works out which ones are headers.
+
+  (patch [992a60c8](https://github.com/appsignal/appsignal-ruby/commit/992a60c8d0f68b3edcb00150a1e9f14985619a4f))
+- Report request headers for Webmachine applications. (patch [fcfb7a0d](https://github.com/appsignal/appsignal-ruby/commit/fcfb7a0d2545a2144aa61efa61d445c0e11c7749), [b47f5bd2](https://github.com/appsignal/appsignal-ruby/commit/b47f5bd2b4611f5a6089bff28f91d47eac94422f), [992a60c8](https://github.com/appsignal/appsignal-ruby/commit/992a60c8d0f68b3edcb00150a1e9f14985619a4f))
+
+### Changed
+
+- Report `app` instead of `unknown` as the OpenTelemetry service name when the `service_name` configuration option is not set and collector mode is in use. (patch [7078181c](https://github.com/appsignal/appsignal-ruby/commit/7078181ccfc5aa5bb1200d99aa7c612c5acbbd00))
+- The `filter_parameters` and `send_params` configuration options are deprecated in collector mode. Use `filter_request_payload`, `filter_function_parameters` and `filter_request_query_parameters` to filter different kinds of parameters, and `send_request_payload`, `send_request_query_parameters` and `send_function_parameters` to choose which kinds of parameters to report.
+
+  In collector mode, each kind of parameter is now filtered and reported according to its own options, and the deprecated options' values are only used to fill in values when the new options are unset. AppSignal logs which values to set to keep reporting what it reports now.
+
+  In agent mode, `filter_parameters` and `send_params` still apply to every kind of parameter, and the new options have no effect.
+
+  (patch [992a60c8](https://github.com/appsignal/appsignal-ruby/commit/992a60c8d0f68b3edcb00150a1e9f14985619a4f))
+
+### Fixed
+
+- The `ignore_logs` option now filters out the log lines that match its patterns in collector mode. (patch [bf606432](https://github.com/appsignal/appsignal-ruby/commit/bf606432aab96d3f9b3a20cbb4b0c48aa7748702))
+- In collector mode, backtrace lines from your own application are now shown as paths relative to your application's root, and are recognized as your application's code. (patch [bf606432](https://github.com/appsignal/appsignal-ruby/commit/bf606432aab96d3f9b3a20cbb4b0c48aa7748702))
+- The `ca_file_path` and `http_proxy` options now apply to the data sent to the collector in collector mode. Before this change they only applied to the data sent by the agent, so a custom certificate authority file or a proxy had no effect in collector mode. (patch [e99c6b68](https://github.com/appsignal/appsignal-ruby/commit/e99c6b689b20fb433ecdcdc9fb8c6173e1ea8cda))
+- Remove an incorrect warning about the `filter_metadata` configuration option being ignored in collector mode. (patch [992a60c8](https://github.com/appsignal/appsignal-ruby/commit/992a60c8d0f68b3edcb00150a1e9f14985619a4f))
+- Report request headers in collector mode. (patch [992a60c8](https://github.com/appsignal/appsignal-ruby/commit/992a60c8d0f68b3edcb00150a1e9f14985619a4f))
+- Report no response headers in collector mode until the `response_headers` configuration option names some. The option had no effect at all, so every response header captured by the application's own OpenTelemetry instrumentation was reported whatever the option said. (patch [992a60c8](https://github.com/appsignal/appsignal-ruby/commit/992a60c8d0f68b3edcb00150a1e9f14985619a4f))
+- Read an array configuration option written as a null in `config/appsignal.yml` as the empty list it means. Options such as `filter_parameters` and `ignore_actions` raised a `NoMethodError` when AppSignal started, and `filter_metadata` and `filter_session_data` raised one while a transaction was sampled. (patch [992a60c8](https://github.com/appsignal/appsignal-ruby/commit/992a60c8d0f68b3edcb00150a1e9f14985619a4f))
+
 ## 5.0.0.rc.1
 
 _Published on 2026-08-21._
