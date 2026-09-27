@@ -54,7 +54,10 @@ def install
 rescue => error
   fail_installation_with_error(error)
 ensure
-  create_dummy_makefile unless installation_succeeded?
+  unless installation_succeeded?
+    warn_installation_failure
+    create_dummy_makefile
+  end
   write_report
 end
 

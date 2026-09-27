@@ -106,6 +106,15 @@ def installation_succeeded?
   report["result"]["status"] == "success"
 end
 
+def warn_installation_failure
+  result = report["result"]
+  reason = (result["message"] || result["error"]).to_s.lines.first&.strip
+  reason = ": #{reason}" unless reason.nil? || reason.empty?
+
+  warn "WARNING: AppSignal extension installation failed#{reason}"
+  warn "The gem will be installed without the extension. Run `appsignal diagnose` for details."
+end
+
 def check_architecture
   APPSIGNAL_AGENT_CONFIG["triples"].key?(TARGET_TRIPLE) || abort_installation(
       "AppSignal currently does not support your system architecture (#{TARGET_TRIPLE})." \

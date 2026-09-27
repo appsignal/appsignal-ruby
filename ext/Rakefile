@@ -39,6 +39,9 @@ task :default do
 rescue StandardError, LoadError => e
   fail_installation_with_error(e)
 ensure
-  create_dummy_makefile unless installation_succeeded?
+  unless installation_succeeded?
+    warn_installation_failure
+    create_dummy_makefile
+  end
   write_report
 end
