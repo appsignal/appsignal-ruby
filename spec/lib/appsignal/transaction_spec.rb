@@ -3769,11 +3769,12 @@ describe Appsignal::Transaction do
         expect(event.timestamp)
           .to eq((Time.at(queue_start / 1000.0).to_r * 1_000_000_000).to_i)
 
-        # The "http_request" namespace is emitted as "web".
+        # The "http_request" namespace is emitted as "web", prefixed with the
+        # default service name.
         snapshot = metric_snapshot("transaction_queue_duration")
         expect(snapshot.data_points.map(&:attributes)).to contain_exactly(
-          { "namespace" => "web" },
-          { "namespace" => "web", "hostname" => an_instance_of(String) }
+          { "namespace" => "app/web" },
+          { "namespace" => "app/web", "hostname" => an_instance_of(String) }
         )
         expect(snapshot.data_points.map(&:sum)).to all(be_within(1_000).of(5_000))
       end

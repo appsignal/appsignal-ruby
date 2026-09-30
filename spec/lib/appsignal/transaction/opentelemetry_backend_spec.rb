@@ -14,6 +14,7 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
   end
 
   before do
+    configure
     ::OpenTelemetry.tracer_provider = tracer_provider
     @backends_created = []
     # Warn-once state is process-wide, so clear it between examples.
@@ -464,11 +465,11 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
       queue_start = ((start_time.to_f * 1000) - 5_000).round
 
       expect(metrics).to receive(:add_distribution_value).with(
-        "transaction_queue_duration", be_within(1_000).of(5_000), :namespace => "background"
+        "transaction_queue_duration", be_within(1_000).of(5_000), :namespace => "app/background"
       )
       expect(metrics).to receive(:add_distribution_value).with(
         "transaction_queue_duration", be_within(1_000).of(5_000),
-        :namespace => "background", :hostname => an_instance_of(String)
+        :namespace => "app/background", :hostname => an_instance_of(String)
       )
 
       backend.set_queue_start(queue_start)
@@ -662,11 +663,29 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
       @allocations = 300
 
       expect(metrics).to receive(:increment_counter).with(
-        "transaction_allocation_count", 200, :namespace => "web"
+        "transaction_allocation_count", 200, :namespace => "app/web"
       )
       expect(metrics).to receive(:increment_counter).with(
         "transaction_allocation_count", 200,
-        :namespace => "web", :action => "PagesController#show"
+        :namespace => "app/web", :action => "PagesController#show"
+      )
+
+      backend.complete
+    end
+
+    it "prefixes the allocation count metric namespace with the configured service name" do
+      configure(:options => { :enable_allocation_tracking => true, :service_name => "inventory" })
+      @allocations = 100
+      backend = create_backend
+      backend.set_action("PagesController#show")
+      @allocations = 300
+
+      expect(metrics).to receive(:increment_counter).with(
+        "transaction_allocation_count", 200, :namespace => "inventory/web"
+      )
+      expect(metrics).to receive(:increment_counter).with(
+        "transaction_allocation_count", 200,
+        :namespace => "inventory/web", :action => "PagesController#show"
       )
 
       backend.complete
@@ -681,11 +700,11 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
       @allocations = 300
 
       expect(metrics).to receive(:increment_counter).with(
-        "transaction_allocation_count", 200, :namespace => "web"
+        "transaction_allocation_count", 200, :namespace => "app/web"
       )
       expect(metrics).to receive(:increment_counter).with(
         "transaction_allocation_count", 200,
-        :namespace => "web", :action => "[unnamed action]"
+        :namespace => "app/web", :action => "[unnamed action]"
       )
 
       backend.set_error("ExampleException", "uh oh", ["line 1"], [], false)
@@ -1336,12 +1355,12 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
         expect(Appsignal::Metrics::OpenTelemetryBackend)
           .to receive(:add_distribution_value).with(
             "transaction_queue_duration", be_within(1_000).of(5_000),
-            :namespace => "background"
+            :namespace => "app/background"
           )
         expect(Appsignal::Metrics::OpenTelemetryBackend)
           .to receive(:add_distribution_value).with(
             "transaction_queue_duration", be_within(1_000).of(5_000),
-            :namespace => "background", :hostname => an_instance_of(String)
+            :namespace => "app/background", :hostname => an_instance_of(String)
           )
 
         backend.set_queue_start(((start_time.to_f * 1000) - 5_000).round)
