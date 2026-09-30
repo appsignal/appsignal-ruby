@@ -888,10 +888,10 @@ describe Appsignal::Rack::EventHandler do
 
             snapshot = metric_snapshot("response_status")
             expect(snapshot).not_to be_nil
-            expect(snapshot.data_points.first.value).to eq(1.0)
-            expect(snapshot.data_points.first.attributes).to eq(
-              "status" => 500,
-              "namespace" => "web"
+            expect(snapshot.data_points.map(&:value)).to eq([1.0, 1.0])
+            expect(snapshot.data_points.map(&:attributes)).to contain_exactly(
+              { "status" => 500, "namespace" => "web" },
+              { "status" => 500, "namespace" => "web", "service" => "app" }
             )
           end
         end
@@ -1108,10 +1108,10 @@ describe Appsignal::Rack::EventHandler do
 
             snapshot = metric_snapshot("response_status")
             expect(snapshot).not_to be_nil
-            expect(snapshot.data_points.first.value).to eq(1.0)
-            expect(snapshot.data_points.first.attributes).to eq(
-              "status" => 200,
-              "namespace" => "web"
+            expect(snapshot.data_points.map(&:value)).to eq([1.0, 1.0])
+            expect(snapshot.data_points.map(&:attributes)).to contain_exactly(
+              { "status" => 200, "namespace" => "web" },
+              { "status" => 200, "namespace" => "web", "service" => "app" }
             )
           end
         end
@@ -1177,10 +1177,10 @@ describe Appsignal::Rack::EventHandler, "response status counter" do
 
       snapshot = metric_snapshot("response_status")
       expect(snapshot).not_to be_nil
-      expect(snapshot.data_points.first.value).to eq(1.0)
-      expect(snapshot.data_points.first.attributes).to eq(
-        "status" => 200,
-        "namespace" => "web"
+      expect(snapshot.data_points.map(&:value)).to eq([1.0, 1.0])
+      expect(snapshot.data_points.map(&:attributes)).to contain_exactly(
+        { "status" => 200, "namespace" => "web" },
+        { "status" => 200, "namespace" => "web", "service" => "app" }
       )
     end
   end
@@ -1210,10 +1210,10 @@ describe Appsignal::Rack::EventHandler, "response status counter" do
 
       snapshot = metric_snapshot("response_status")
       expect(snapshot).not_to be_nil
-      expect(snapshot.data_points.first.value).to eq(1.0)
-      expect(snapshot.data_points.first.attributes).to eq(
-        "status" => 500,
-        "namespace" => "web"
+      expect(snapshot.data_points.map(&:value)).to eq([1.0, 1.0])
+      expect(snapshot.data_points.map(&:attributes)).to contain_exactly(
+        { "status" => 500, "namespace" => "web" },
+        { "status" => 500, "namespace" => "web", "service" => "app" }
       )
     end
   end
