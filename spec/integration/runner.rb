@@ -93,10 +93,33 @@ class Runner
     raise "Runner '#{@script_file}' did not exit successfully (#{@status}).\n" \
       "Output:\n#{@output}"
   ensure
+    # The agent the script started outlives it and keeps writing into the
+    # working directory, so it has to exit before the directory is removed.
+    stop_agent
     FileUtils.remove_entry(@working_dir) if @working_dir && File.exist?(@working_dir)
   end
 
   private
+
+  def stop_agent
+    lock_file = File.join(@working_dir, "agent.lock")
+    return unless File.exist?(lock_file)
+
+    pid = File.read(lock_file).split(";")[2].to_i
+    return unless pid.positive?
+
+    Process.kill("KILL", pid)
+    Timeout.timeout(@finish_timeout) { sleep 0.01 while process_alive?(pid) }
+  rescue Errno::ESRCH, Timeout::Error
+    nil
+  end
+
+  def process_alive?(pid)
+    Process.kill(0, pid)
+    true
+  rescue Errno::ESRCH
+    false
+  end
 
   def read_output
     Timeout.timeout(@read_timeout) do
