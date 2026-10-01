@@ -575,7 +575,7 @@ if DependencyHelper.opentelemetry_present?
         expect(attrs["appsignal.config.ignore_logs"]).to eq(["^Started GET"])
       end
 
-      it "falls back to defaults for empty revision, service_name, and hostname" do
+      it "falls back to defaults for empty revision and hostname" do
         # Other specs in the suite set `ENV["APP_REVISION"]` without clearing
         # it (the spec_helper before-block only resets APPSIGNAL_* and
         # _APPSIGNAL_* prefixed vars). Clear it locally so this test is
@@ -588,7 +588,6 @@ if DependencyHelper.opentelemetry_present?
               :name => "my-app",
               :push_api_key => "abc",
               :revision => nil,
-              :service_name => nil,
               :hostname => nil
             }
           )

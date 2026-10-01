@@ -324,12 +324,11 @@ module Appsignal
 
       # Build the OpenTelemetry Resource that carries AppSignal config to the
       # collector. Attributes whose underlying option is nil or an empty array
-      # are omitted so the collector applies its own defaults. The revision,
-      # service name and host name are the exception: they fall back to a
-      # value here, so they are always sent.
+      # are omitted so the collector applies its own defaults. The revision and
+      # host name are the exception: they fall back to a value here, so they
+      # are always sent.
       def build_resource(config)
         revision = config[:revision].to_s.empty? ? "unknown" : config[:revision]
-        service_name = config[:service_name].to_s.empty? ? "app" : config[:service_name]
         host_name = config[:hostname].to_s.empty? ? "unknown" : config[:hostname]
 
         attrs = {
@@ -340,7 +339,7 @@ module Appsignal
           "appsignal.config.app_path" => config.root_path&.to_s,
           "appsignal.config.platform" => config[:platform],
           "appsignal.config.language_integration" => "ruby",
-          "service.name" => service_name,
+          "service.name" => config[:service_name],
           "host.name" => host_name,
           "appsignal.config.filter_attributes" => config[:filter_attributes],
           "appsignal.config.filter_function_parameters" => config[:filter_function_parameters],

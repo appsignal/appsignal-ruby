@@ -540,7 +540,7 @@ module Appsignal
         duration_ms = (@start_time.to_f * 1000) - @queue_start
         return if duration_ms.negative?
 
-        namespace = display_namespace(@namespace)
+        namespace = service_namespace
         Appsignal::Metrics::OpenTelemetryBackend.add_distribution_value(
           "transaction_queue_duration", duration_ms, :namespace => namespace
         )
@@ -577,7 +577,7 @@ module Appsignal
 
         return unless should_report? && count.positive?
 
-        namespace = display_namespace(@namespace)
+        namespace = service_namespace
         Appsignal::Metrics::OpenTelemetryBackend.increment_counter(
           "transaction_allocation_count", count, :namespace => namespace
         )
@@ -754,6 +754,10 @@ module Appsignal
 
       def display_namespace(namespace)
         DISPLAY_NAMESPACE.fetch(namespace, namespace)
+      end
+
+      def service_namespace
+        "#{Appsignal.config&.[](:service_name)}/#{display_namespace(@namespace)}"
       end
 
       def write_request_headers(headers)

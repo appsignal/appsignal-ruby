@@ -173,12 +173,16 @@ module Appsignal
             end
           if response_status
             transaction.add_tags(:response_status => response_status)
-            Appsignal.increment_counter(
-              :response_status,
-              1,
+            tags = {
               :status => response_status,
               :namespace => format_namespace(transaction.namespace)
-            )
+            }
+            Appsignal.increment_counter(:response_status, 1, **tags)
+            Appsignal::OpenTelemetry.if_started do
+              Appsignal.increment_counter(
+                :response_status, 1, **tags, :service => Appsignal.config[:service_name]
+              )
+            end
           end
         end
 
