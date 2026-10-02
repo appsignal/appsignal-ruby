@@ -1,5 +1,19 @@
 # AppSignal for Ruby gem Changelog
 
+## 5.0.1
+
+_Published on 2026-10-02._
+
+### Added
+
+- In collector mode, also report the `response_status` counter with a `service` tag. Response statuses can then be graphed per service when several services report to one app. (patch [51981add](https://github.com/appsignal/appsignal-ruby/commit/51981add4c006403b0afddab78cfb608a32ec2c3))
+
+### Fixed
+
+- Improve handling of the extension internal queue when full. (patch [78123581](https://github.com/appsignal/appsignal-ruby/commit/7812358175fc1e591e7f29026cd16df6db70e589))
+- Fix issues in the extension that lead to gaps in data reporting. (patch [f3c72857](https://github.com/appsignal/appsignal-ruby/commit/f3c72857a00e3fb4ad8b9760f53d14a85fb32ed2))
+- In collector mode, report allocation counts and queue durations per service and namespace. This fixes an issue where these metrics were reported by namespace alone, causing the "Performance" > "Allocations" page to link to performance pages that did not exist. (patch [51981add](https://github.com/appsignal/appsignal-ruby/commit/51981add4c006403b0afddab78cfb608a32ec2c3))
+
 ## 5.0.0
 
 _Published on 2026-09-28._
