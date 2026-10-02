@@ -812,10 +812,10 @@ module Appsignal
 
         hash[:enable_at_exit_hook] = "always" if Appsignal::Extension.running_in_container?
 
-        # Set the revision from a REVISION file in the project root, which
-        # helps with Capistrano and Hatchbox.io deployments, or from the
-        # environment variable the deployment platform sets.
-        revision = detect_revision_from_file || detect_revision_from_platform
+        # Set the revision from the environment variable the deployment
+        # platform sets, or from a REVISION file in the project root, which
+        # helps with Capistrano and Hatchbox.io deployments.
+        revision = detect_revision_from_platform || detect_revision_from_file
         hash[:revision] = revision if revision
 
         hostname = detect_hostname
