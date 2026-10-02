@@ -318,7 +318,7 @@ Also see our [SUPPORT.md file](SUPPORT.md).
 [custom-instrumentation]: https://docs.appsignal.com/ruby/instrumentation.html
 [front-end-monitoring]: https://docs.appsignal.com/front-end.html
 [exception-handling]: https://docs.appsignal.com/ruby/instrumentation/exception-handling.html
-[tagging]: https://docs.appsignal.com/guides/custom-data/tagging-request.html
+[tagging]: https://docs.appsignal.com/guides/tagging#ruby
 [host-metrics]: https://docs.appsignal.com/metrics/host.html
 [custom-metrics]: https://docs.appsignal.com/metrics/custom.html
 
