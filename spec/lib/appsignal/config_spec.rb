@@ -508,10 +508,10 @@ describe Appsignal::Config do
         context "when the REVISION file is present as well" do
           before { File.write(revision_file_path, "from-file") }
 
-          it "prefers the REVISION file" do
+          it "prefers the deployment platform revision" do
             ENV["RENDER_GIT_COMMIT"] = "from-render"
 
-            expect(config[:revision]).to eq("from-file")
+            expect(config[:revision]).to eq("from-render")
           end
         end
       end
