@@ -16,6 +16,7 @@ end
 Appsignal.start
 
 puts "Waiting for USR1 signal..."
+File.write(File.join(ENV.fetch("APPSIGNAL_WORKING_DIRECTORY_PATH"), "ready"), "")
 # Wait to keep the script alive
 loop do
   sleep 0.1

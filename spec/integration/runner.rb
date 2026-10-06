@@ -57,6 +57,18 @@ class Runner
     @finished
   end
 
+  # Waits until the script creates a `ready` file in its working directory,
+  # for specs that have to interact with the script after it has booted. On
+  # a timeout it returns, so that `run` reports how the script exited.
+  def wait_until_ready(timeout: 30)
+    ready_file = File.join(@working_dir, "ready")
+    deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + timeout
+    until File.exist?(ready_file) ||
+        Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
+      sleep 0.05
+    end
+  end
+
   def run
     raise "Can't run runner more than once!" if @has_run
 

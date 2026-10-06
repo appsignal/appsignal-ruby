@@ -140,7 +140,8 @@ RSpec.describe "Puma plugin" do
     ENV["APPSIGNAL_STATSD_PORT"] = @statsd.port.to_s
     @server_thread = Thread.new { @statsd.start }
     @server_thread.abort_on_exception = true
-    @client_thread = Thread.new { start_plugin(plugin) }
+    plugin_instance = start_plugin(plugin)
+    @client_thread = Thread.new { plugin_instance.in_background_block.call }
     @client_thread.abort_on_exception = true
     wait_for(:puma_client_wait, &block)
   ensure
@@ -166,7 +167,7 @@ RSpec.describe "Puma plugin" do
     # interval.
     allow(plugin).to receive(:sleep_time).and_return(0.01)
     plugin.start(launcher)
-    plugin.in_background_block.call
+    plugin
   end
 
   def logs
