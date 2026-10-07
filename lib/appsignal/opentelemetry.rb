@@ -8,6 +8,7 @@ require "appsignal/opentelemetry/http_method"
 require "appsignal/opentelemetry/http_response"
 require "appsignal/opentelemetry/http_server_request"
 require "appsignal/opentelemetry/messaging"
+require "appsignal/opentelemetry/process_resource"
 require "appsignal/opentelemetry/proxied_exporter"
 require "appsignal/opentelemetry/rendering"
 require "appsignal/opentelemetry/sql_db_system"
@@ -59,7 +60,9 @@ module Appsignal
         # `LoggerProvider` take a `resource:` kwarg that replaces (not
         # merges), so we do the merge ourselves and use the same merged
         # resource for the tracer provider to keep all three in sync.
-        resource = ::OpenTelemetry::SDK::Resources::Resource.default.merge(build_resource(config))
+        resource = ProcessResource.resource
+          .merge(::OpenTelemetry::SDK::Resources::Resource.default)
+          .merge(build_resource(config))
 
         span_exporter = build_exporter(
           ::OpenTelemetry::Exporter::OTLP::Exporter,
@@ -103,6 +106,7 @@ module Appsignal
         )
 
         @started = true
+        ProcessResource.attach_fork_hook
       rescue LoadError => e
         @started = false
         Appsignal::Utils::StdoutAndLoggerMessage.error(
