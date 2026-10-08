@@ -316,26 +316,30 @@ module Appsignal
         return
       end
 
-      # If the transaction is a duplicate, we don't want to finish it,
-      # because we want its finish time to be the finish time of the
-      # original transaction.
-      # Duplicate transactions should always be sampled, as we only
-      # create duplicates for errors, which are always sampled.
-      should_sample = true
+      begin
+        # If the transaction is a duplicate, we don't want to finish it,
+        # because we want its finish time to be the finish time of the
+        # original transaction.
+        # Duplicate transactions should always be sampled, as we only
+        # create duplicates for errors, which are always sampled.
+        should_sample = true
 
-      unless duplicate?
-        self.class.last_errors = @errors.to_a
-        should_sample = @backend.finish
+        unless duplicate?
+          self.class.last_errors = @errors.to_a
+          should_sample = @backend.finish
+        end
+
+        report_errors
+
+        run_before_complete_hooks
+
+        sample_data if should_sample
+      ensure
+        # Release backend resources even when sample data cannot be collected
+        # or serialized. In collector mode this also detaches the span context.
+        @completed = true
+        @backend.complete
       end
-
-      report_errors
-
-      run_before_complete_hooks
-
-      sample_data if should_sample
-
-      @completed = true
-      @backend.complete
     end
 
     # @!visibility private

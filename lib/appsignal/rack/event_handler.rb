@@ -38,6 +38,15 @@ module Appsignal
       end
 
       # @api private
+      def self.complete_transaction(transaction)
+        safe_execution("Appsignal::Rack::EventHandler#complete_transaction") do
+          transaction.complete
+        end
+      ensure
+        Appsignal::Transaction.clear_current_transaction!
+      end
+
+      # @api private
       attr_reader :id
       attr_writer :using_appsignal_event_middleware
 
@@ -68,6 +77,32 @@ module Appsignal
             :opentelemetry_context => Appsignal::OpenTelemetry.extract_rack_context(request.env),
             :opentelemetry_scope => ["appsignal-ruby/rack", Appsignal::VERSION]
           )
+          # Register cleanup before request instrumentation can raise.
+          request.env[APPSIGNAL_TRANSACTION] = transaction
+
+          request.env[RACK_AFTER_REPLY] ||= []
+          request.env[RACK_AFTER_REPLY] << proc do
+            next unless event_handler.request_handler?(request.env[APPSIGNAL_EVENT_HANDLER_ID])
+
+            Appsignal::Rack::EventHandler
+              .safe_execution("Appsignal::Rack::EventHandler's after_reply") do
+              transaction.finish_event("process_request.rack", "callback: after_reply", "")
+              queue_start = Appsignal::Rack::Utils.queue_start_from(request.env)
+              transaction.set_queue_start(queue_start) if queue_start
+            end
+
+            # Make sure the current transaction is always closed when the request
+            # is finished. This is a fallback for in case the `on_finish`
+            # callback is not called. This is supported by servers like Puma and
+            # Unicorn.
+            #
+            # The EventHandler.on_finish callback should be called first, this is
+            # just a fallback if that doesn't get called.
+            #
+            # One such scenario is when a Puma "lowlevel_error" occurs.
+            Appsignal::Rack::EventHandler.complete_transaction(transaction)
+          end
+
           # Describes the transaction's span as an incoming HTTP request.
           # Together with the SERVER span kind the transaction already carries,
           # this is what the trace timeline reads to recognize a web request.
@@ -91,31 +126,6 @@ module Appsignal
           transaction.start_event(
             :opentelemetry_scope => ["appsignal-ruby/rack", Appsignal::VERSION]
           )
-          request.env[APPSIGNAL_TRANSACTION] = transaction
-
-          request.env[RACK_AFTER_REPLY] ||= []
-          request.env[RACK_AFTER_REPLY] << proc do
-            next unless event_handler.request_handler?(request.env[APPSIGNAL_EVENT_HANDLER_ID])
-
-            Appsignal::Rack::EventHandler
-              .safe_execution("Appsignal::Rack::EventHandler's after_reply") do
-              transaction.finish_event("process_request.rack", "callback: after_reply", "")
-              queue_start = Appsignal::Rack::Utils.queue_start_from(request.env)
-              transaction.set_queue_start(queue_start) if queue_start
-            end
-
-            # Make sure the current transaction is always closed when the request
-            # is finished. This is a fallback for in case the `on_finish`
-            # callback is not called. This is supported by servers like Puma and
-            # Unicorn.
-            #
-            # The EventHandler.on_finish callback should be called first, this is
-            # just a fallback if that doesn't get called.
-            #
-            # One such scenario is when a Puma "lowlevel_error" occurs.
-            transaction.complete
-            Appsignal::Transaction.clear_current_transaction!
-          end
         end
       end
 
@@ -188,8 +198,7 @@ module Appsignal
 
         # Make sure the current transaction is always closed when the request
         # is finished
-        transaction.complete
-        Appsignal::Transaction.clear_current_transaction!
+        self.class.complete_transaction(transaction)
       end
 
       private

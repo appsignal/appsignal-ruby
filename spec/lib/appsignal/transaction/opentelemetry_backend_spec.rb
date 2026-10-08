@@ -1291,6 +1291,22 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
       expect(::OpenTelemetry::Trace.current_span).to eq(::OpenTelemetry::Trace::Span::INVALID)
     end
 
+    it "releases open spans and restores the context when completion fails" do
+      previous_context = ::OpenTelemetry::Context.current
+      backend = create_backend
+      span = backend.instance_variable_get(:@span)
+      backend.start_event
+      expect(backend).to receive(:resolve_missing_action)
+        .and_raise(ExampleStandardError, "completion failed")
+
+      expect { backend.complete }.to raise_error(ExampleStandardError, "completion failed")
+      expect(backend._completed?).to be(true)
+      expect(::OpenTelemetry::Context.current).to eq(previous_context)
+      expect(finished_span(span)).to_not be_nil
+      expect(span_exporter.finished_spans.length).to eq(2)
+      expect { backend.complete }.to_not raise_error
+    end
+
     it "toggles _completed? from false to true" do
       backend = create_backend
       expect(backend._completed?).to eq(false)
