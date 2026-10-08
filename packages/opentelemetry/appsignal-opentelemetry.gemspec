@@ -41,7 +41,7 @@ Gem::Specification.new do |gem|
     "source_code_uri" => "https://github.com/appsignal/appsignal-ruby"
   }
 
-  gem.add_dependency "appsignal", "5.0.2"
+  gem.add_dependency "appsignal", "5.0.3"
 
   # Add the OpenTelemetry gems by looping over the shared list instead of
   # listing them here. This keeps `REQUIRED_GEMS` the single source of truth,

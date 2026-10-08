@@ -2,5 +2,5 @@
 
 module AppsignalOpentelemetry
   # @return [String]
-  VERSION = "5.0.2"
+  VERSION = "5.0.3"
 end

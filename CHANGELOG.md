@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 5.0.3
+
+_Published on 2026-10-08._
+
+### Fixed
+
+- In collector mode, report counter metrics correctly from processes forked after AppSignal starts, such as Puma workers when using `preload_app!`. Before this change, applications running several forked processes would lose data points or report incorrect values for them. (patch [4e5a3e78](https://github.com/appsignal/appsignal-ruby/commit/4e5a3e781b4ce2b2620b172a15198a2a59e0ebee))
+
 ## 5.0.2
 
 _Published on 2026-10-06._
