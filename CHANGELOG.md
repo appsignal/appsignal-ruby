@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 5.0.4
+
+_Published on 2026-10-09._
+
+### Fixed
+
+- Fix an issue where transactions would be reused across requests when an error happened before the transaction could be closed, which would lead to errors being returned by the app itself. (patch [65ff0be0](https://github.com/appsignal/appsignal-ruby/commit/65ff0be0c3d4dea2eb9ed5bdb81004e899e6edf4))
+
 ## 5.0.3
 
 _Published on 2026-10-08._
