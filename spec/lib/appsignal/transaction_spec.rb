@@ -1913,6 +1913,7 @@ describe Appsignal::Transaction do
       it_in_both_modes "does nothing" do
         expect { transaction.add_opentelemetry_attributes }.to_not raise_error
         expect { transaction.add_opentelemetry_attributes(nil) }.to_not raise_error
+        transaction.complete
       end
     end
   end
@@ -1939,6 +1940,7 @@ describe Appsignal::Transaction do
 
       transaction.add_params("key" => "value")
       transaction.add_params("key2" => "value")
+      transaction.complete
     end
   end
 

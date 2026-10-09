@@ -321,6 +321,165 @@ describe Appsignal::Rack::EventHandler do
     end
   end
 
+  describe "cleanup after instrumentation failures" do
+    def finish_request(given_request)
+      if completion_callback == :on_finish
+        event_handler_instance.on_finish(given_request, nil)
+      else
+        given_request.env.fetch(Appsignal::Rack::RACK_AFTER_REPLY).each(&:call)
+      end
+    end
+
+    def expect_setup_failure_cleanup(method)
+      use_test_logger
+      transaction = new_transaction
+      set_current_transaction(transaction)
+      allow(transaction).to receive(method).and_call_original
+      expect(transaction).to receive(method)
+        .and_raise(ExampleStandardError, "setup failed")
+
+      on_start
+      expect(request.env[Appsignal::Rack::APPSIGNAL_TRANSACTION]).to eq(transaction)
+      expect { finish_request(request) }.not_to raise_error
+      expect(transaction).to be_completed
+      expect(current_transaction?).to be(false)
+    end
+
+    def expect_completion_failure_cleanup
+      use_test_logger
+      keep_transactions do
+        on_start
+        transaction = last_transaction
+        expect(transaction).to receive(:sample_data)
+          .and_raise(ExampleStandardError, "sampling failed")
+
+        expect { finish_request(request) }.not_to raise_error
+        expect(Appsignal::Transaction.current?).to be(false)
+        expect(transaction).to be_completed
+        expect(logs).to contains_log(:error, /.*ExampleStandardError: sampling failed/)
+
+        next_request = Rack::Request.new(Rack::MockRequest.env_for("/up"))
+        event_handler_instance.on_start(next_request, nil)
+        next_transaction = Appsignal::Transaction.current
+        expect(next_transaction).not_to eq(transaction)
+        expect { finish_request(next_request) }.not_to raise_error
+        expect(next_transaction).to be_completed
+        expect(Appsignal::Transaction.current?).to be(false)
+      end
+    end
+
+    def expect_serialization_failure_cleanup
+      use_test_logger
+      previous_context = ::OpenTelemetry::Context.current
+      on_start
+      transaction = last_transaction
+      transaction.set_action("GET /up")
+      transaction.add_custom_data("invalid" => "\xFF".dup.force_encoding("UTF-8"))
+
+      expect { finish_request(request) }.not_to raise_error
+      expect(Appsignal::Transaction.current?).to be(false)
+      expect(::OpenTelemetry::Context.current).to eq(previous_context)
+      expect(root_span).not_to be_nil
+      expect(logs).to contains_log(:error, /.*JSON::GeneratorError/)
+
+      # Puma can invoke the fallback after on_finish. It must not retry the
+      # failed serialization or detach an already released context.
+      expect { request.env[Appsignal::Rack::RACK_AFTER_REPLY].each(&:call) }.not_to raise_error
+      expect(span_exporter.finished_spans.count { |span| span.kind == :server }).to eq(1)
+
+      next_request = Rack::Request.new(Rack::MockRequest.env_for("/up"))
+      event_handler_instance.on_start(next_request, nil)
+      expect(Appsignal::Transaction.current).not_to eq(transaction)
+      expect { finish_request(next_request) }.not_to raise_error
+      expect(Appsignal::Transaction.current?).to be(false)
+      expect(::OpenTelemetry::Context.current).to eq(previous_context)
+      expect(span_exporter.finished_spans.count { |span| span.kind == :server }).to eq(2)
+    end
+
+    # Each dual-mode call site must define exactly two examples so the coverage
+    # audit can verify that both modes ran.
+    context "when completing through on_finish" do
+      let(:completion_callback) { :on_finish }
+
+      it_in_both_modes "cleans up when add_opentelemetry_attributes fails during setup" do
+        expect_setup_failure_cleanup(:add_opentelemetry_attributes)
+      end
+
+      it_in_both_modes "cleans up when start_event fails during setup" do
+        expect_setup_failure_cleanup(:start_event)
+      end
+
+      it_in_both_modes "logs completion failures and allows the next request to complete" do
+        expect_completion_failure_cleanup
+      end
+
+      it "releases the collector context when serialization fails", :collector_mode do
+        start_collector_agent
+        expect_serialization_failure_cleanup
+      end
+    end
+
+    context "when completing through after_reply" do
+      let(:completion_callback) { :after_reply }
+
+      it_in_both_modes "cleans up when add_opentelemetry_attributes fails during setup" do
+        expect_setup_failure_cleanup(:add_opentelemetry_attributes)
+      end
+
+      it_in_both_modes "cleans up when start_event fails during setup" do
+        expect_setup_failure_cleanup(:start_event)
+      end
+
+      it_in_both_modes "logs completion failures and allows the next request to complete" do
+        expect_completion_failure_cleanup
+      end
+
+      it "releases the collector context when serialization fails", :collector_mode do
+        start_collector_agent
+        expect_serialization_failure_cleanup
+      end
+    end
+
+    it "preserves successful responses across a collector completion failure", :collector_mode do
+      start_collector_agent
+      use_test_logger
+      previous_context = ::OpenTelemetry::Context.current
+      requests = 0
+      middleware = Appsignal::Rack::EventMiddleware.new(lambda do |_env|
+        requests += 1
+        Appsignal.set_action("GET /up")
+        Appsignal.add_custom_data("invalid" => "\xFF".dup.force_encoding("UTF-8")) if requests == 1
+        [200, {}, ["ok"]]
+      end)
+
+      2.times do
+        result = Rack::MockRequest.new(middleware).get("/up")
+        expect(result.status).to eq(200)
+        expect(result.body).to eq("ok")
+        expect(Appsignal::Transaction.current?).to be(false)
+        expect(::OpenTelemetry::Context.current).to eq(previous_context)
+      end
+      expect(span_exporter.finished_spans.count { |span| span.kind == :server }).to eq(2)
+    end
+
+    it "preserves an application exception when collector completion also fails", :collector_mode do
+      start_collector_agent
+      use_test_logger
+      previous_context = ::OpenTelemetry::Context.current
+      error = ExampleStandardError.new("application failed")
+      middleware = Appsignal::Rack::EventMiddleware.new(lambda do |_env|
+        Appsignal.add_custom_data("invalid" => "\xFF".dup.force_encoding("UTF-8"))
+        raise error
+      end)
+
+      expect { middleware.call(Rack::MockRequest.env_for("/up")) }.to raise_error(error)
+      expect(Appsignal::Transaction.current?).to be(false)
+      expect(::OpenTelemetry::Context.current).to eq(previous_context)
+      expect(exception_events.map { |event| event.attributes["exception.message"] })
+        .to include("application failed")
+    end
+  end
+
   describe "#on_error" do
     describe "reports the error" do
       def perform

@@ -446,6 +446,7 @@ module Appsignal
           emit_queue_duration_metric if should_report?
           report_allocation_count
         end
+      ensure
         teardown
       end
 
