@@ -491,7 +491,7 @@ describe Appsignal::Config do
         end
 
         it "ignores a variable that is set to an empty string" do
-          ENV["HEROKU_SLUG_COMMIT"] = ""
+          ENV["HEROKU_BUILD_COMMIT"] = ""
           ENV["RENDER_GIT_COMMIT"] = "from-render"
 
           expect(config[:revision]).to eq("from-render")
