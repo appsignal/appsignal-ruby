@@ -181,6 +181,7 @@ module Appsignal
     # @!visibility private
     PLATFORM_REVISION_ENV_VARS = [
       "HEROKU_BUILD_COMMIT",
+      "HEROKU_SLUG_COMMIT",
       "RENDER_GIT_COMMIT",
       "KAMAL_VERSION",
       "CONTAINER_VERSION" # Scalingo
