@@ -1,6 +1,6 @@
 ---
 bump: minor
-type: deprecate
+type: add
 ---
 
 Automatically detect the application's revision from the `HEROKU_BUILD_COMMIT`
