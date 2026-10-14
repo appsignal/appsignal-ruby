@@ -1,5 +1,24 @@
 # AppSignal for Ruby gem Changelog
 
+## 5.0.5
+
+_Published on 2026-10-14._
+
+### Added
+
+- Automatically detect the application's revision from the `HEROKU_BUILD_COMMIT`
+  environment variable, which is set by Heroku at build time [when the
+  `runtime-dyno-build-metadata` Heroku Labs
+  feature](https://devcenter.heroku.com/articles/dyno-metadata) is enabled.
+
+  (patch [ab022837](https://github.com/appsignal/appsignal-ruby/commit/ab022837c17b85dcd213fde755ae456231fdba9a))
+- Automatically detect the application's revision from the `HEROKU_BUILD_COMMIT`
+  environment variable, which is set by Heroku at build time [when the
+  `runtime-dyno-build-metadata` Heroku Labs
+  feature](https://devcenter.heroku.com/articles/dyno-metadata) is enabled.
+
+  (patch [6fb3cd87](https://github.com/appsignal/appsignal-ruby/commit/6fb3cd872ad9e3950fa12772f02fbab98fa6cce5))
+
 ## 5.0.4
 
 _Published on 2026-10-09._
