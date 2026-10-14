@@ -308,7 +308,7 @@ Also see our [SUPPORT.md file](SUPPORT.md).
 [appsignal]: https://www.appsignal.com/ruby
 [appsignal-sign-up]: https://appsignal.com/users/sign_up
 [contact]: mailto:support@appsignal.com
-[coc]: https://docs.appsignal.com/appsignal/code-of-conduct.html
+[coc]: https://docs.appsignal.com/appsignal/contributing/code-of-conduct
 [waffles-page]: https://www.appsignal.com/waffles
 [docs]: https://docs.appsignal.com
 [ruby-doc]: https://www.rubydoc.info/gems/appsignal
@@ -319,7 +319,7 @@ Also see our [SUPPORT.md file](SUPPORT.md).
 [front-end-monitoring]: https://docs.appsignal.com/front-end.html
 [exception-handling]: https://docs.appsignal.com/ruby/instrumentation/exception-handling.html
 [tagging]: https://docs.appsignal.com/guides/tagging#ruby
-[host-metrics]: https://docs.appsignal.com/metrics/host.html
+[host-metrics]: https://docs.appsignal.com/metrics/host-metrics
 [custom-metrics]: https://docs.appsignal.com/metrics/custom.html
 
 [semver]: http://semver.org/

@@ -180,6 +180,7 @@ module Appsignal
     # revision that is being deployed, in the order they are read.
     # @!visibility private
     PLATFORM_REVISION_ENV_VARS = [
+      "HEROKU_BUILD_COMMIT",
       "HEROKU_SLUG_COMMIT",
       "RENDER_GIT_COMMIT",
       "KAMAL_VERSION",
