@@ -4074,9 +4074,10 @@ describe Appsignal::Transaction do
         perform
         logs = capture_logs { transaction.complete }
 
-        expect(root_span.attributes).to_not have_key("appsignal.request.payload")
+        expect(JSON.parse(root_span.attributes["appsignal.request.payload"]))
+          .to eq("[UNSERIALIZABLE VALUE]" => 1)
         expect(logs).to contains_log :error,
-          "Error generating data (RuntimeError: foo) for"
+          /Unable to serialize value: #<.+: to_s raised RuntimeError: foo>/
       end
     end
   end
@@ -4149,9 +4150,10 @@ describe Appsignal::Transaction do
 
     context "when the data cannot be converted" do
       # The direct call skips sanitization, so the raw object reaches the
-      # backend serializer (`Data.generate` in agent mode, `JSON.generate` in
-      # collector mode); both call `to_s` and rescue the resulting error.
-      describe "not updating the sample data" do
+      # backend serializer. In agent mode `Data.generate` raises and the
+      # transaction rescues the error; in collector mode `Utils::JSON` writes a
+      # placeholder instead.
+      describe "storing data that can't be converted" do
         let(:unserializable) do
           Class.new do
             def to_s
@@ -4178,9 +4180,10 @@ describe Appsignal::Transaction do
           logs = capture_logs { perform }
           transaction.complete
 
-          expect(root_span.attributes).to_not have_key("appsignal.request.payload")
+          expect(JSON.parse(root_span.attributes["appsignal.params"]))
+            .to eq("[UNSERIALIZABLE VALUE]" => 1)
           expect(logs).to contains_log :error,
-            "Error generating data (RuntimeError: foo) for"
+            /Unable to serialize value: #<.+: to_s raised RuntimeError: foo>/
         end
       end
     end
