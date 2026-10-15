@@ -804,7 +804,7 @@ module Appsignal
     # @return [void]
     #
     # @see Helpers::Instrumentation#add_custom_data
-    # @see https://docs.appsignal.com/guides/custom-data/sample-data.html
+    # @see https://docs.appsignal.com/guides/custom-data/custom-data
     #   Sample data guide
     def add_custom_data(data)
       @custom_data.add(data)
@@ -1328,9 +1328,11 @@ module Appsignal
       # Pass raw Ruby through to the backend. ExtensionBackend serializes to a
       # C-extension `Data` object; OpenTelemetryBackend reads the Hash/Array
       # directly. The `RuntimeError` rescue still covers ExtensionBackend's
-      # `Data.generate`, which now runs inside the backend call.
+      # `Data.generate`, which now runs inside the backend call. The
+      # `JSON::JSONError` rescue covers OpenTelemetryBackend's JSON
+      # serialization.
       @backend.set_sample_data(key.to_s, data)
-    rescue RuntimeError => e
+    rescue RuntimeError, JSON::JSONError => e
       begin
         inspected_data = data.inspect
         Appsignal.internal_logger.error(
