@@ -4184,6 +4184,29 @@ describe Appsignal::Transaction do
         end
       end
     end
+
+    context "when the JSON generation fails" do
+      describe "not updating the sample data" do
+        let(:data) { { "key" => "value" } }
+
+        def perform
+          silence { transaction.send(:set_sample_data, "custom_data", data) }
+        end
+
+        it "in collector mode", :collector_mode do
+          start_collector_agent
+          allow(JSON).to receive(:generate).and_call_original
+          allow(JSON).to receive(:generate).with(data)
+            .and_raise(JSON::GeneratorError, "foo")
+          logs = capture_logs { perform }
+          transaction.complete
+
+          expect(root_span.attributes).to_not have_key("appsignal.custom_data")
+          expect(logs).to contains_log :error,
+            "Error generating data (JSON::GeneratorError: foo) for"
+        end
+      end
+    end
   end
 
   describe "#add_error" do
