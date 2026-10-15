@@ -418,6 +418,17 @@ describe Appsignal::Transaction::OpenTelemetryBackend,
     end
   end
 
+  describe "#set_sample_data with invalid UTF-8" do
+    it "replaces the invalid bytes instead of raising" do
+      backend = create_backend
+      backend.set_sample_data("custom_data", "key" => "value\xFF")
+      backend.complete
+      attributes = span_exporter.finished_spans.first.attributes
+
+      expect(attributes["appsignal.custom_data"]).to eq(%({"key":"value�"}))
+    end
+  end
+
   describe "#start_event with opentelemetry_kind" do
     def event_span_named(name)
       span_exporter.finished_spans.find { |s| s.name == name }
