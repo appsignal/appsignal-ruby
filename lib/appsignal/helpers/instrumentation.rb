@@ -149,17 +149,13 @@ module Appsignal
         end
 
         transaction =
-          if has_parent_transaction
-            Appsignal::Transaction.current
-          else
-            Appsignal::Transaction.create(
-              namespace || Appsignal::Transaction::HTTP_REQUEST,
-              :opentelemetry_context => opentelemetry_context,
-              :opentelemetry_scope => opentelemetry_scope,
-              :opentelemetry_kind => opentelemetry_kind,
-              :opentelemetry_relationship => opentelemetry_relationship
-            )
-          end
+          Appsignal::Transaction.create(
+            namespace || Appsignal::Transaction::HTTP_REQUEST,
+            :opentelemetry_context => opentelemetry_context,
+            :opentelemetry_scope => opentelemetry_scope,
+            :opentelemetry_kind => opentelemetry_kind,
+            :opentelemetry_relationship => opentelemetry_relationship
+          )
 
         begin
           yield if block_given?
