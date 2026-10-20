@@ -1425,6 +1425,46 @@ describe Appsignal do
         end
       end
 
+      describe "when setting the action fails" do
+        def stub_set_action_to_raise
+          allow(Appsignal::Transaction).to receive(:new)
+            .and_wrap_original do |original, *args, **kwargs|
+              original.call(*args, **kwargs).tap do |transaction|
+                allow(transaction).to receive(:set_action_if_nil)
+                  .and_raise(ExampleStandardError, "set action failed")
+              end
+            end
+        end
+
+        it_in_both_modes "logs the error, completes, and clears the transaction" do
+          stub_set_action_to_raise
+
+          logs =
+            capture_logs do
+              expect(Appsignal.monitor(:action => "MyAction") { :return_value })
+                .to eq(:return_value)
+            end
+
+          transaction = last_transaction
+          expect(logs).to contains_log :error,
+            "Error finalizing transaction ##{transaction.transaction_id}: " \
+              "ExampleStandardError: set action failed"
+          expect(transaction).to be_completed
+          expect(current_transaction?).to be(false)
+        end
+
+        it_in_both_modes "raises the block's error instead of the action error" do
+          stub_set_action_to_raise
+
+          expect do
+            Appsignal.monitor(:action => "MyAction") { raise ExampleException, "block failed" }
+          end.to raise_error(ExampleException, "block failed")
+
+          expect(last_transaction).to be_completed
+          expect(current_transaction?).to be(false)
+        end
+      end
+
       context "with an already active transaction" do
         let(:err_stream) { std_stream }
         let(:stderr) { err_stream.read }
