@@ -168,6 +168,89 @@ module Appsignal
         clear_current_transaction!
       end
 
+      # Run the given block with a transaction as the current transaction, and
+      # clean it up afterwards.
+      #
+      # Everything an integration does with the transaction after creating it
+      # belongs in the block, so an error raised while setting it up cannot
+      # skip the cleanup.
+      #
+      # When `finalize` is given, it runs that after the block, even when the
+      # block raised. Any error raised by `finalize` is rescued and logged.
+      # These do not skip the cleanup nor replace the block's own error.
+      #
+      # When `existing` is given, the block joins that transaction instead. It
+      # is not completed or cleared here, because whoever created it owns that.
+      #
+      # When `complete_on_error` is false, an error raised by the block leaves
+      # the transaction current and incomplete, for an error handler that runs
+      # after the block to complete it.
+      #
+      # @param namespace [String] Namespace of the transaction to create.
+      # @param existing [Transaction, nil] Transaction to join instead of
+      #   creating one.
+      # @param finalize [#call, nil] Called with the transaction after the
+      #   block, even when the block raised.
+      # @param complete_on_error [Boolean] Whether to complete the transaction
+      #   when the block raises.
+      # @yieldparam transaction [Transaction]
+      # @return [Object] The return value of the block.
+      # @!visibility private
+      def run( # rubocop:disable Metrics/ParameterLists
+        namespace,
+        existing: nil,
+        finalize: nil,
+        complete_on_error: true,
+        opentelemetry_context: nil,
+        opentelemetry_scope: nil,
+        opentelemetry_kind: nil,
+        opentelemetry_relationship: nil
+      )
+        owner = existing.nil?
+        transaction = existing || create(
+          namespace,
+          :opentelemetry_context => opentelemetry_context,
+          :opentelemetry_scope => opentelemetry_scope,
+          :opentelemetry_kind => opentelemetry_kind,
+          :opentelemetry_relationship => opentelemetry_relationship
+        )
+        raised = false
+        begin
+          yield transaction
+        rescue Exception
+          raised = true
+          raise
+        ensure
+          begin
+            finalize&.call(transaction)
+          rescue => error
+            Appsignal.internal_logger.error(
+              "Error finalizing transaction ##{transaction.transaction_id}: " \
+                "#{error.class}: #{error.message}"
+            )
+          ensure
+            complete_and_clear(transaction) if owner && (complete_on_error || !raised)
+          end
+        end
+      end
+
+      # Complete the given transaction and unset the current transaction. An
+      # error raised while completing is logged, not raised, and the current
+      # transaction is cleared either way.
+      #
+      # @param transaction [Transaction, NilTransaction]
+      # @return [void]
+      # @!visibility private
+      def complete_and_clear(transaction)
+        transaction.complete
+      rescue => e
+        Appsignal.internal_logger.error(
+          "Failed to complete transaction ##{transaction.transaction_id}. #{e.message}"
+        )
+      ensure
+        clear_current_transaction!
+      end
+
       # Remove current transaction from current Thread.
       # @!visibility private
       def clear_current_transaction!
