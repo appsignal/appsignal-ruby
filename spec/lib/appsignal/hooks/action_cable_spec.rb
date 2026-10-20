@@ -60,6 +60,22 @@ describe Appsignal::Hooks::ActionCableHook do
         end
         around { |example| keep_transactions { example.run } }
 
+        def stub_set_metadata_to_raise
+          allow(Appsignal::Transaction).to receive(:new)
+            .and_wrap_original do |original, *args, **kwargs|
+            original.call(*args, **kwargs).tap do |transaction|
+              allow(transaction).to receive(:set_metadata)
+                .and_raise(ExampleStandardError, "set metadata failed")
+            end
+          end
+        end
+
+        def expect_finalize_error_logged(logs, transaction)
+          expect(logs).to contains_log :error,
+            "Error finalizing transaction ##{transaction.transaction_id}: " \
+              "ExampleStandardError: set metadata failed"
+        end
+
         describe "#perform_action" do
           describe "creates a transaction for an action" do
             def perform
@@ -222,22 +238,6 @@ describe Appsignal::Hooks::ActionCableHook do
           end
 
           context "when setting the metadata fails" do
-            def stub_set_metadata_to_raise
-              allow(Appsignal::Transaction).to receive(:new)
-                .and_wrap_original do |original, *args, **kwargs|
-                original.call(*args, **kwargs).tap do |transaction|
-                  allow(transaction).to receive(:set_metadata)
-                    .and_raise(ExampleStandardError, "set metadata failed")
-                end
-              end
-            end
-
-            def expect_finalize_error_logged(logs, transaction)
-              expect(logs).to contains_log :error,
-                "Error finalizing transaction ##{transaction.transaction_id}: " \
-                  "ExampleStandardError: set metadata failed"
-            end
-
             it_in_both_modes "logs the error, completes, and clears the transaction" do
               stub_set_metadata_to_raise
 
@@ -409,6 +409,22 @@ describe Appsignal::Hooks::ActionCableHook do
                 expect(root_span.attributes).not_to have_key("queue_start")
                 expect(last_transaction).to be_completed
               end
+            end
+          end
+
+          context "when setting the metadata fails" do
+            it_in_both_modes "logs the error, completes, and clears the transaction" do
+              stub_set_metadata_to_raise
+
+              logs =
+                capture_logs do
+                  expect { instance.subscribe_to_channel }.to_not raise_error
+                end
+
+              transaction = last_transaction
+              expect_finalize_error_logged(logs, transaction)
+              expect(transaction).to be_completed
+              expect(current_transaction?).to be(false)
             end
           end
 
@@ -619,6 +635,22 @@ describe Appsignal::Hooks::ActionCableHook do
                 expect(root_span.attributes).not_to have_key("queue_start")
                 expect(last_transaction).to be_completed
               end
+            end
+          end
+
+          context "when setting the metadata fails" do
+            it_in_both_modes "logs the error, completes, and clears the transaction" do
+              stub_set_metadata_to_raise
+
+              logs =
+                capture_logs do
+                  expect { instance.unsubscribe_from_channel }.to_not raise_error
+                end
+
+              transaction = last_transaction
+              expect_finalize_error_logged(logs, transaction)
+              expect(transaction).to be_completed
+              expect(current_transaction?).to be(false)
             end
           end
 
