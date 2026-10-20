@@ -220,6 +220,40 @@ describe Appsignal::Hooks::ActionCableHook do
               end
             end
           end
+
+          context "when setting the metadata fails" do
+            def stub_set_metadata_to_raise
+              allow(Appsignal::Transaction).to receive(:new)
+                .and_wrap_original do |original, *args, **kwargs|
+                original.call(*args, **kwargs).tap do |transaction|
+                  allow(transaction).to receive(:set_metadata)
+                    .and_raise(ExampleStandardError, "set metadata failed")
+                end
+              end
+            end
+
+            def expect_finalize_error_logged(logs, transaction)
+              expect(logs).to contains_log :error,
+                "Error finalizing transaction ##{transaction.transaction_id}: " \
+                  "ExampleStandardError: set metadata failed"
+            end
+
+            it_in_both_modes "logs the error, completes, and clears the transaction" do
+              stub_set_metadata_to_raise
+
+              logs =
+                capture_logs do
+                  expect do
+                    instance.perform_action("message" => "foo", "action" => "speak")
+                  end.to_not raise_error
+                end
+
+              transaction = last_transaction
+              expect_finalize_error_logged(logs, transaction)
+              expect(transaction).to be_completed
+              expect(current_transaction?).to be(false)
+            end
+          end
         end
 
         describe "subscribe callback" do
