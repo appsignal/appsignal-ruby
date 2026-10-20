@@ -159,13 +159,7 @@ module Appsignal
       #
       # @return [void]
       def complete_current!
-        current.complete
-      rescue => e
-        Appsignal.internal_logger.error(
-          "Failed to complete transaction ##{current.transaction_id}. #{e.message}"
-        )
-      ensure
-        clear_current_transaction!
+        complete_and_clear(current)
       end
 
       # Run the given block with a transaction as the current transaction, and
