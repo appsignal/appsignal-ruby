@@ -1926,7 +1926,7 @@ module Appsignal
     # 
     # _@see_ `Helpers::Instrumentation#add_custom_data`
     # 
-    # _@see_ `https://docs.appsignal.com/guides/custom-data/sample-data.html` — Sample data guide
+    # _@see_ `https://docs.appsignal.com/guides/custom-data/custom-data` — Sample data guide
     def add_custom_data: ((::Hash[Object, Object] | ::Array[Object]) data) -> void
 
     # Add breadcrumbs to the transaction.
