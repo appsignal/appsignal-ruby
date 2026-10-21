@@ -138,28 +138,11 @@ module Appsignal
 
       def self.invoke_with_instrumentation(job, block)
         job_data = active_job_data(job)
-        transaction = create_perform_transaction(job, job_data)
-
-        begin
-          Appsignal.instrument(
-            "perform_job.delayed_job",
-            :opentelemetry_scope => ["appsignal-ruby/delayed_job", Appsignal::VERSION]
-          ) do
-            Appsignal::Transaction.current.add_opentelemetry_attributes(
-              Appsignal::OpenTelemetry::Messaging
-                .perform_attributes("delayed_job", :destination => queue_name(job))
-            )
-            block.call(job)
-          end
-        rescue Exception => error
-          transaction.set_error(error)
-          raise
-        ensure
+        finalize = lambda do |transaction|
           # Delayed Job raises when a job's handler will not deserialize, and it
-          # raises again on every further attempt to read it. Reading the payload
-          # here without a guard therefore replaces the error the job already
-          # failed with, and skips the rest of this block, so the transaction is
-          # never completed and the failure is never reported.
+          # raises again on every further attempt to read it.  The guard ensures
+          # that such a failure is still reported with an action name (see
+          # `action_name_without_payload`) and with the job's metadata.
           begin
             payload = job.payload_object
             if payload.respond_to? :job_data
@@ -178,8 +161,45 @@ module Appsignal
           end
 
           add_job_metadata(transaction, job)
+        end
 
-          Appsignal::Transaction.complete_current!
+        run_perform_transaction(job, job_data, finalize) do |transaction|
+          Appsignal.instrument(
+            "perform_job.delayed_job",
+            :opentelemetry_scope => ["appsignal-ruby/delayed_job", Appsignal::VERSION]
+          ) do
+            Appsignal::Transaction.current.add_opentelemetry_attributes(
+              Appsignal::OpenTelemetry::Messaging
+                .perform_attributes("delayed_job", :destination => queue_name(job))
+            )
+            block.call(job)
+          end
+        rescue Exception => error
+          transaction.set_error(error)
+          raise
+        end
+      end
+
+      # Runs the block with the transaction a performed job is reported under,
+      # and completes it afterwards. See {Appsignal::Transaction.run}. The job
+      # data is passed in rather than read here, because the payload it would be
+      # read from is the one a job that cannot be loaded failed on.
+      def self.run_perform_transaction(job, job_data, finalize)
+        Appsignal::Transaction.run(
+          Appsignal::Transaction::BACKGROUND_JOB,
+          :opentelemetry_context =>
+            Appsignal::OpenTelemetry.extract_active_job_context(job_data),
+          :opentelemetry_scope => ["appsignal-ruby/delayed_job", Appsignal::VERSION],
+          :opentelemetry_kind => :consumer,
+          :opentelemetry_relationship =>
+            Appsignal::OpenTelemetry.active_job_relationship(job_data),
+          :finalize => finalize
+        ) do |transaction|
+          transaction.add_opentelemetry_attributes(
+            Appsignal::OpenTelemetry::Messaging
+              .perform_attributes("delayed_job", :destination => queue_name(job))
+          )
+          yield transaction
         end
       end
 
