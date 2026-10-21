@@ -329,6 +329,44 @@ if DependencyHelper.sidekiq_present?
         end
       end
     end
+
+    context "when reporting the error raises" do
+      let(:options) { { :sidekiq_report_errors => "all" } }
+
+      def stub_set_error_to_raise
+        allow(Appsignal::Transaction).to receive(:new)
+          .and_wrap_original do |original, *args, **kwargs|
+          original.call(*args, **kwargs).tap do |transaction|
+            allow(transaction).to receive(:set_error)
+              .and_raise(ExampleStandardError, "set error failed")
+          end
+        end
+      end
+
+      it_in_both_modes "completes and clears the transaction it created for an internal error" do
+        stub_set_error_to_raise
+
+        expect do
+          described_class.new.call(exception, :context => "Sidekiq internal error!")
+        end.to raise_error(ExampleStandardError, "set error failed")
+
+        expect(last_transaction).to be_completed
+        expect(current_transaction?).to be(false)
+      end
+
+      it_in_both_modes "completes and clears the transaction of the failed job" do
+        stub_set_error_to_raise
+        job_transaction = background_job_transaction
+        set_current_transaction(job_transaction)
+
+        expect do
+          described_class.new.call(exception, :job => {})
+        end.to raise_error(ExampleStandardError, "set error failed")
+
+        expect(job_transaction).to be_completed
+        expect(current_transaction?).to be(false)
+      end
+    end
   end
 
   describe Appsignal::Integrations::SidekiqClientMiddleware do

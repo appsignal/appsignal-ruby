@@ -52,7 +52,9 @@ module Appsignal
           transaction.add_function_parameters_if_nil(:jobstr => sidekiq_context[:jobstr])
           transaction.set_error(exception)
         end
-
+      ensure
+        # Complete the transaction of the failed job, or the one created above
+        # for an internal error, even when reporting the error raised.
         Appsignal::Transaction.complete_current!
       end
     end
