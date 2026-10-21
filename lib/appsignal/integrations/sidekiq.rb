@@ -177,39 +177,7 @@ module Appsignal
         # Read trace context off the job so the transaction links back to the
         # enqueuer. No-op outside collector mode.
         job_data = active_job_data(item)
-        transaction = Appsignal::Transaction.create(
-          Appsignal::Transaction::BACKGROUND_JOB,
-          :opentelemetry_context => extract_context(item, job_data),
-          :opentelemetry_scope => ["appsignal-ruby/sidekiq", Appsignal::VERSION],
-          :opentelemetry_kind => :consumer,
-          :opentelemetry_relationship =>
-            Appsignal::OpenTelemetry.active_job_relationship(job_data)
-        )
-        transaction.add_opentelemetry_attributes(
-          Appsignal::OpenTelemetry::Messaging
-            .perform_attributes("sidekiq", :destination => item["queue"])
-        )
-        transaction.set_action_if_nil(action_name)
-
-        formatted_metadata(item).each do |key, value|
-          transaction.set_metadata key, value
-        end
-
-        begin
-          Appsignal.instrument(
-            "perform_job.sidekiq",
-            :opentelemetry_scope => ["appsignal-ruby/sidekiq", Appsignal::VERSION]
-          ) do
-            Appsignal::Transaction.current.add_opentelemetry_attributes(
-              Appsignal::OpenTelemetry::Messaging
-                .perform_attributes("sidekiq", :destination => item["queue"])
-            )
-            block.call
-          end
-        rescue Exception => exception
-          job_status = :failed
-          raise exception
-        ensure
+        finalize = lambda do |transaction|
           transaction.add_function_parameters_if_nil { parse_arguments(item) }
           enqueued_at = item["enqueued_at"]
           queue_start =
@@ -221,26 +189,65 @@ module Appsignal
             end
           transaction.set_queue_start(queue_start)
           transaction.add_tags(:request_id => item["jid"])
-          Appsignal::Transaction.complete_current! unless exception
+        end
 
-          queue = item["queue"] || "unknown"
+        # When the job raises, the transaction is left current and incomplete.
+        # Sidekiq then calls `SidekiqErrorHandler`, which reports the error on
+        # the transaction and completes it.
+        Appsignal::Transaction.run(
+          Appsignal::Transaction::BACKGROUND_JOB,
+          :opentelemetry_context => extract_context(item, job_data),
+          :opentelemetry_scope => ["appsignal-ruby/sidekiq", Appsignal::VERSION],
+          :opentelemetry_kind => :consumer,
+          :opentelemetry_relationship =>
+            Appsignal::OpenTelemetry.active_job_relationship(job_data),
+          :complete_on_error => false,
+          :finalize => finalize
+        ) do |transaction|
+          transaction.add_opentelemetry_attributes(
+            Appsignal::OpenTelemetry::Messaging
+              .perform_attributes("sidekiq", :destination => item["queue"])
+          )
+          transaction.set_action_if_nil(action_name)
 
-          if job_status
+          formatted_metadata(item).each do |key, value|
+            transaction.set_metadata key, value
+          end
+
+          begin
+            Appsignal.instrument(
+              "perform_job.sidekiq",
+              :opentelemetry_scope => ["appsignal-ruby/sidekiq", Appsignal::VERSION]
+            ) do
+              Appsignal::Transaction.current.add_opentelemetry_attributes(
+                Appsignal::OpenTelemetry::Messaging
+                  .perform_attributes("sidekiq", :destination => item["queue"])
+              )
+              block.call
+            end
+          rescue Exception => exception
+            job_status = :failed
+            raise exception
+          ensure
+            queue = item["queue"] || "unknown"
+
+            if job_status
+              increment_counter "queue_job_count", 1,
+                :queue => queue,
+                :status => job_status
+              increment_counter "worker_job_count", 1,
+                :worker => action_name,
+                :queue => queue,
+                :status => job_status
+            end
             increment_counter "queue_job_count", 1,
               :queue => queue,
-              :status => job_status
+              :status => :processed
             increment_counter "worker_job_count", 1,
               :worker => action_name,
               :queue => queue,
-              :status => job_status
+              :status => :processed
           end
-          increment_counter "queue_job_count", 1,
-            :queue => queue,
-            :status => :processed
-          increment_counter "worker_job_count", 1,
-            :worker => action_name,
-            :queue => queue,
-            :status => :processed
         end
       end
 
