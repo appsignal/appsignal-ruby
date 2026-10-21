@@ -262,10 +262,14 @@ module Appsignal
             end
 
           job_status = nil
-          has_wrapper_transaction = Appsignal::Transaction.current?
-          transaction =
-            if has_wrapper_transaction
-              Appsignal::Transaction.current
+          # When ActiveJob is wrapped in another supported integration, such as
+          # Sidekiq, that integration's transaction is joined. It is not
+          # completed here, because that integration completes it.
+          wrapper_transaction =
+            (Appsignal::Transaction.current if Appsignal::Transaction.current?)
+          opentelemetry_options =
+            if wrapper_transaction
+              {}
             else
               # No standalone integration started before ActiveJob integration.
               # We don't have a separate integration for this QueueAdapter like
@@ -278,71 +282,71 @@ module Appsignal
               # extract a second time.
               #
               # Prefer job_id from provider, instead of ActiveJob's internal ID.
-              Appsignal::Transaction.create(
-                Appsignal::Transaction::BACKGROUND_JOB,
+              {
                 :opentelemetry_context => Appsignal::OpenTelemetry.extract_job_context(job),
                 :opentelemetry_scope => ["appsignal-ruby/active_job", Appsignal::VERSION],
                 :opentelemetry_kind => :consumer,
                 :opentelemetry_relationship =>
                   Appsignal::OpenTelemetry.active_job_relationship(job)
+              }
+            end
+
+          Appsignal::Transaction.run(
+            Appsignal::Transaction::BACKGROUND_JOB,
+            :existing => wrapper_transaction,
+            :finalize => lambda do |transaction|
+              # Present in Rails 6 and up
+              transaction.set_queue_start((queue_start.to_f * 1_000).to_i) if queue_start
+            end,
+            **opentelemetry_options
+          ) do |transaction|
+            unless wrapper_transaction
+              # Describes this span as a job being performed. The messaging
+              # system is what the trace timeline reads to recognize background
+              # job work, and `active_job` is the value OpenTelemetry's own Active
+              # Job instrumentation uses.
+              #
+              # Only set when this hook created the transaction. When an adapter
+              # integration created it, that adapter already named itself, and its
+              # answer is the more specific one.
+              transaction.add_opentelemetry_attributes(
+                Appsignal::OpenTelemetry::Messaging
+                  .perform_attributes("active_job", :destination => job["queue_name"])
               )
             end
 
-          unless has_wrapper_transaction
-            # Describes this span as a job being performed. The messaging
-            # system is what the trace timeline reads to recognize background
-            # job work, and `active_job` is the value OpenTelemetry's own Active
-            # Job instrumentation uses.
-            #
-            # Only set when this hook created the transaction. When an adapter
-            # integration created it, that adapter already named itself, and its
-            # answer is the more specific one.
-            transaction.add_opentelemetry_attributes(
-              Appsignal::OpenTelemetry::Messaging
-                .perform_attributes("active_job", :destination => job["queue_name"])
-            )
-          end
+            begin
+              transaction.add_function_parameters_if_nil(job["arguments"])
 
-          begin
-            transaction.add_function_parameters_if_nil(job["arguments"])
+              transaction_tags = ActiveJobHelpers.transaction_tags_for(job)
+              transaction.add_tags(transaction_tags)
 
-            transaction_tags = ActiveJobHelpers.transaction_tags_for(job)
-            transaction.add_tags(transaction_tags)
+              transaction.set_action(ActiveJobHelpers.action_name(job))
 
-            transaction.set_action(ActiveJobHelpers.action_name(job))
-
-            super
-          rescue Exception => exception
-            job_status = :failed
-            transaction_set_error(transaction, exception)
-            raise exception
-          ensure
-            # Present in Rails 6 and up
-            transaction.set_queue_start((queue_start.to_f * 1_000).to_i) if queue_start
-
-            unless has_wrapper_transaction
-              # Only complete transaction if ActiveJob is not wrapped in
-              # another supported integration, such as Sidekiq.
-              Appsignal::Transaction.complete_current!
-            end
-
-            metrics = ActiveJobHelpers.metrics_for(job)
-            metrics.each do |(metric_name, tags)|
-              if job_status
+              super
+            rescue Exception => exception
+              job_status = :failed
+              transaction_set_error(transaction, exception)
+              raise exception
+            ensure
+              metrics = ActiveJobHelpers.metrics_for(job)
+              metrics.each do |(metric_name, tags)|
+                if job_status
+                  ActiveJobHelpers.increment_counter metric_name, 1,
+                    tags.merge(:status => job_status)
+                end
                 ActiveJobHelpers.increment_counter metric_name, 1,
-                  tags.merge(:status => job_status)
+                  tags.merge(:status => :processed)
               end
-              ActiveJobHelpers.increment_counter metric_name, 1,
-                tags.merge(:status => :processed)
-            end
 
-            queue_name = job["queue_name"]
-            if queue_time && queue_name
-              ActiveJobHelpers.add_distribution_value(
-                "queue_time",
-                queue_time,
-                :queue => queue_name
-              )
+              queue_name = job["queue_name"]
+              if queue_time && queue_name
+                ActiveJobHelpers.add_distribution_value(
+                  "queue_time",
+                  queue_time,
+                  :queue => queue_name
+                )
+              end
             end
           end
         end
