@@ -317,15 +317,13 @@ module Appsignal
             transaction_set_error(transaction, exception)
             raise exception
           ensure
-            if transaction
-              # Present in Rails 6 and up
-              transaction.set_queue_start((queue_start.to_f * 1_000).to_i) if queue_start
+            # Present in Rails 6 and up
+            transaction.set_queue_start((queue_start.to_f * 1_000).to_i) if queue_start
 
-              unless has_wrapper_transaction
-                # Only complete transaction if ActiveJob is not wrapped in
-                # another supported integration, such as Sidekiq.
-                Appsignal::Transaction.complete_current!
-              end
+            unless has_wrapper_transaction
+              # Only complete transaction if ActiveJob is not wrapped in
+              # another supported integration, such as Sidekiq.
+              Appsignal::Transaction.complete_current!
             end
 
             metrics = ActiveJobHelpers.metrics_for(job)
