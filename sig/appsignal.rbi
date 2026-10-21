@@ -2094,7 +2094,7 @@ module Appsignal
     # 
     # _@see_ `Helpers::Instrumentation#add_custom_data`
     # 
-    # _@see_ `https://docs.appsignal.com/guides/custom-data/sample-data.html` — Sample data guide
+    # _@see_ `https://docs.appsignal.com/guides/custom-data/custom-data` — Sample data guide
     sig { params(data: T.any(T::Hash[Object, Object], T::Array[Object])).void }
     def add_custom_data(data); end
 
