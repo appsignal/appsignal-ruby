@@ -610,6 +610,44 @@ describe Appsignal::Rack::AbstractMiddleware do
         end
       end
 
+      context "when setting up the transaction fails" do
+        it_in_both_modes "raises the error, completes, and clears the transaction" do
+          allow(Appsignal::Transaction).to receive(:new)
+            .and_wrap_original do |original, *args, **kwargs|
+            original.call(*args, **kwargs).tap do |transaction|
+              allow(transaction).to receive(:add_opentelemetry_attributes)
+                .and_raise(ExampleStandardError, "setup failed")
+            end
+          end
+
+          make_request_with_error(ExampleStandardError, "setup failed")
+
+          expect(app).to_not be_called
+          expect(last_transaction).to be_completed
+          expect(current_transaction?).to be(false)
+        end
+      end
+
+      context "when adding the request metadata fails" do
+        it_in_both_modes "logs the error, completes, and clears the transaction" do
+          allow(middleware).to receive(:add_transaction_metadata_after)
+            .and_raise(ExampleStandardError, "metadata failed")
+
+          logs =
+            capture_logs do
+              expect { make_request }.to_not raise_error
+            end
+
+          transaction = last_transaction
+          expect(logs).to contains_log :error,
+            "Error finalizing transaction ##{transaction.transaction_id}: " \
+              "ExampleStandardError: metadata failed"
+          expect(app).to be_called
+          expect(transaction).to be_completed
+          expect(current_transaction?).to be(false)
+        end
+      end
+
       context "with parent instrumentation" do
         let(:transaction) { http_request_transaction }
 

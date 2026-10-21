@@ -33,26 +33,42 @@ module Appsignal
           # Supported nested instrumentation middlewares by checking if there's
           # already a transaction active for this request.
           wrapped_instrumentation = env.key?(Appsignal::Rack::APPSIGNAL_TRANSACTION)
-          transaction =
+          # The top instrumentation middleware creates and completes the
+          # transaction. Nested ones join it and leave it for that middleware
+          # to complete.
+          parent_transaction =
+            (env[Appsignal::Rack::APPSIGNAL_TRANSACTION] if wrapped_instrumentation)
+          opentelemetry_options =
             if wrapped_instrumentation
-              env[Appsignal::Rack::APPSIGNAL_TRANSACTION]
+              {}
             else
-              Appsignal::Transaction.create(
-                Appsignal::Transaction::HTTP_REQUEST,
+              {
                 :opentelemetry_context => Appsignal::OpenTelemetry.extract_rack_context(env),
                 :opentelemetry_scope => @opentelemetry_scope
-              )
+              }
             end
+          finalize = lambda do |transaction|
+            add_transaction_metadata_after(transaction, request)
 
-          unless wrapped_instrumentation
-            # Set transaction on the request environment so other nested
-            # middleware can detect if there is parent instrumentation
-            # middleware active.
-            env[Appsignal::Rack::APPSIGNAL_TRANSACTION] = transaction
-            add_opentelemetry_request_attributes(transaction, request)
+            unless wrapped_instrumentation
+              add_opentelemetry_response_attributes(transaction, request)
+            end
           end
 
-          begin
+          Appsignal::Transaction.run(
+            Appsignal::Transaction::HTTP_REQUEST,
+            :existing => parent_transaction,
+            :finalize => finalize,
+            **opentelemetry_options
+          ) do |transaction|
+            unless wrapped_instrumentation
+              # Set transaction on the request environment so other nested
+              # middleware can detect if there is parent instrumentation
+              # middleware active.
+              env[Appsignal::Rack::APPSIGNAL_TRANSACTION] = transaction
+              add_opentelemetry_request_attributes(transaction, request)
+            end
+
             add_transaction_metadata_before(transaction, request)
             # Report errors if the :report_errors option is set to true or when
             # there is no parent instrumentation that can rescue and report the error.
@@ -64,16 +80,6 @@ module Appsignal
               )
             else
               instrument_app_call(request.env, transaction)
-            end
-          ensure
-            add_transaction_metadata_after(transaction, request)
-
-            unless wrapped_instrumentation
-              add_opentelemetry_response_attributes(transaction, request)
-
-              # Complete transaction because this is the top instrumentation
-              # middleware.
-              Appsignal::Transaction.complete_current!
             end
           end
         else
