@@ -109,11 +109,11 @@ module Appsignal
 
         # No job data: the payload it would have been read from is the one that
         # just failed to load.
-        transaction = create_perform_transaction(job, nil)
-        transaction.set_action_if_nil(action_name_without_payload(job))
-        transaction.set_error(error)
-        add_job_metadata(transaction, job)
-        Appsignal::Transaction.complete_current!
+        finalize = lambda { |transaction| add_job_metadata(transaction, job) }
+        run_perform_transaction(job, nil, finalize) do |transaction|
+          transaction.set_action_if_nil(action_name_without_payload(job))
+          transaction.set_error(error)
+        end
       end
 
       # The serialized Active Job job data inside a Delayed Job job, or nil when
@@ -181,9 +181,10 @@ module Appsignal
       end
 
       # Runs the block with the transaction a performed job is reported under,
-      # and completes it afterwards. See {Appsignal::Transaction.run}. The job
-      # data is passed in rather than read here, because the payload it would be
-      # read from is the one a job that cannot be loaded failed on.
+      # and completes it afterwards. See {Appsignal::Transaction.run}.
+      # It takes the job data as an argument instead of reading the job's
+      # payload, so that setting up the transaction does not raise when a job
+      # has a payload that cannot be deserialized.
       def self.run_perform_transaction(job, job_data, finalize)
         Appsignal::Transaction.run(
           Appsignal::Transaction::BACKGROUND_JOB,
@@ -201,27 +202,6 @@ module Appsignal
           )
           yield transaction
         end
-      end
-
-      # The transaction a performed job is reported under. Shared by the two
-      # callbacks that can report a job, so both describe it the same way. The
-      # job data is passed in rather than read here, because the payload it
-      # would be read from is the one a job that cannot be loaded failed on.
-      def self.create_perform_transaction(job, job_data)
-        transaction = Appsignal::Transaction.create(
-          Appsignal::Transaction::BACKGROUND_JOB,
-          :opentelemetry_context =>
-            Appsignal::OpenTelemetry.extract_active_job_context(job_data),
-          :opentelemetry_scope => ["appsignal-ruby/delayed_job", Appsignal::VERSION],
-          :opentelemetry_kind => :consumer,
-          :opentelemetry_relationship =>
-            Appsignal::OpenTelemetry.active_job_relationship(job_data)
-        )
-        transaction.add_opentelemetry_attributes(
-          Appsignal::OpenTelemetry::Messaging
-            .perform_attributes("delayed_job", :destination => queue_name(job))
-        )
-        transaction
       end
 
       def self.add_job_metadata(transaction, job)
