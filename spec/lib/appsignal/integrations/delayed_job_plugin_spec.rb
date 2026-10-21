@@ -810,6 +810,21 @@ if DependencyHelper.delayed_job_present?
             expect(event.attributes["exception.type"])
               .to eq("Delayed::DeserializationError")
           end
+
+          context "when setting the job metadata fails" do
+            it_in_both_modes "logs the error, completes, and clears the transaction" do
+              stub_transaction_method_to_raise(:add_tags, "set tags failed")
+
+              logs = capture_logs { work_off_one_job }
+
+              transaction = last_transaction
+              expect(logs).to contains_log :error,
+                "Error finalizing transaction ##{transaction.transaction_id}: " \
+                  "ExampleStandardError: set tags failed"
+              expect(transaction).to be_completed
+              expect(current_transaction?).to be(false)
+            end
+          end
         end
 
         # Delayed Job cannot name this job either, and its own failure handling
