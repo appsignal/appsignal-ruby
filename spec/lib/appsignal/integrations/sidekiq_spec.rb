@@ -1194,6 +1194,82 @@ if DependencyHelper.sidekiq_present?
       end
     end
 
+    def stub_transaction_method_to_raise(method_name, message)
+      allow(Appsignal::Transaction).to receive(:new)
+        .and_wrap_original do |original, *args, **kwargs|
+        original.call(*args, **kwargs).tap do |transaction|
+          allow(transaction).to receive(method_name)
+            .and_raise(ExampleStandardError, message)
+        end
+      end
+    end
+
+    # Calls the middleware the way Sidekiq does, without the error handler
+    # Sidekiq calls when the middleware raises, so the state the middleware
+    # leaves behind can be checked.
+    def call_middleware(&block)
+      plugin.call(worker, item, queue, &block || proc {})
+    end
+
+    def call_error_handler(exception)
+      Appsignal::Integrations::SidekiqErrorHandler.new.call(exception, :job => item)
+    end
+
+    context "when the job raises" do
+      it_in_both_modes "leaves the transaction for the error handler to complete" do
+        error = ExampleException.new("job failed")
+
+        expect { call_middleware { raise error } }.to raise_error(error)
+
+        transaction = last_transaction
+        expect(transaction).to_not be_completed
+        expect(current_transaction).to eq(transaction)
+
+        call_error_handler(error)
+
+        expect(transaction).to be_completed
+        expect(current_transaction?).to be(false)
+      end
+    end
+
+    context "when setting up the transaction fails" do
+      it_in_both_modes "leaves the transaction for the error handler to complete" do
+        stub_transaction_method_to_raise(:add_opentelemetry_attributes, "setup failed")
+        job_performed = false
+
+        expect { call_middleware { job_performed = true } }
+          .to raise_error(ExampleStandardError, "setup failed")
+
+        transaction = last_transaction
+        expect(job_performed).to be(false)
+        expect(transaction).to_not be_completed
+        expect(current_transaction).to eq(transaction)
+
+        call_error_handler(ExampleStandardError.new("setup failed"))
+
+        expect(transaction).to be_completed
+        expect(current_transaction?).to be(false)
+      end
+    end
+
+    context "when setting the queue start fails" do
+      it_in_both_modes "logs the error, completes, and clears the transaction" do
+        stub_transaction_method_to_raise(:set_queue_start, "set queue start failed")
+
+        logs =
+          capture_logs do
+            expect { call_middleware }.to_not raise_error
+          end
+
+        transaction = last_transaction
+        expect(logs).to contains_log :error,
+          "Error finalizing transaction ##{transaction.transaction_id}: " \
+            "ExampleStandardError: set queue start failed"
+        expect(transaction).to be_completed
+        expect(current_transaction?).to be(false)
+      end
+    end
+
     def perform_sidekiq_job
       Timecop.freeze(Time.parse("2001-01-01 10:01:00UTC")) do
         exception = nil
