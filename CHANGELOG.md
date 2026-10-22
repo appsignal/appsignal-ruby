@@ -1,5 +1,18 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.10.5
+
+_Published on 2026-10-22._
+
+### Fixed
+
+- Fix issues in the extension that lead to gaps in data reporting. (patch [051c1069](https://github.com/appsignal/appsignal-ruby/commit/051c1069432da6ea1145bbc4cff6541b240ec530))
+- Improve handling of the extension internal queue when full. (patch [8b0779ba](https://github.com/appsignal/appsignal-ruby/commit/8b0779ba9e542689e75b6a8cc51656c70ec70654))
+
+### Security
+
+- Stop trusting certificates issued under the eMudhra intermediate certificate authorities whose private keys were [compromised in October 2026](https://bugzilla.mozilla.org/show_bug.cgi?id=2083449). The bundled CA certificates no longer include the emSign ECC Root CA - G3 root certificate, which those intermediates chain to. (patch [a52c55d9](https://github.com/appsignal/appsignal-ruby/commit/a52c55d969a1e8f450e5066ced2a61a468567b4d), [c8e8ee7e](https://github.com/appsignal/appsignal-ruby/commit/c8e8ee7e7d8984134381b662f0403e946b82704e), [bd8b99ee](https://github.com/appsignal/appsignal-ruby/commit/bd8b99ee97555717c98655afca7380dbd1589f0e))
+
 ## 4.10.4
 
 _Published on 2026-09-22._
