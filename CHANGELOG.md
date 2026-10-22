@@ -1,5 +1,13 @@
 # AppSignal for Ruby gem Changelog
 
+## 5.0.6
+
+_Published on 2026-10-22._
+
+### Security
+
+- Stop trusting certificates issued under the eMudhra intermediate certificate authorities whose private keys were [compromised in October 2026](https://bugzilla.mozilla.org/show_bug.cgi?id=2083449). The bundled CA certificates no longer include the emSign ECC Root CA - G3 root certificate, which those intermediates chain to. (patch [a52c55d9](https://github.com/appsignal/appsignal-ruby/commit/a52c55d969a1e8f450e5066ced2a61a468567b4d), [c8e8ee7e](https://github.com/appsignal/appsignal-ruby/commit/c8e8ee7e7d8984134381b662f0403e946b82704e), [4282fa01](https://github.com/appsignal/appsignal-ruby/commit/4282fa017ae31d548bfb660a35818a723595243c))
+
 ## 5.0.5
 
 _Published on 2026-10-14._
