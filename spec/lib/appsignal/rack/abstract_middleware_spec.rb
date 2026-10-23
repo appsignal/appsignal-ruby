@@ -648,6 +648,25 @@ describe Appsignal::Rack::AbstractMiddleware do
         end
       end
 
+      context "with a stale current transaction" do
+        it_in_both_modes "discards it and creates a new transaction" do
+          stale_transaction = create_transaction
+
+          logs = capture_logs { make_request }
+
+          transaction = env[Appsignal::Rack::APPSIGNAL_TRANSACTION]
+          expect(transaction).to_not eq(stale_transaction)
+          expect(transaction).to be_completed
+          expect(stale_transaction).to be_discarded
+          expect(current_transaction?).to be(false)
+          expect(logs).to contains_log :warn,
+            Regexp.new(
+              "Discarding transaction '#{stale_transaction.transaction_id}' .* " \
+                "when Appsignal::Rack::AbstractMiddleware#call started"
+            )
+        end
+      end
+
       context "with parent instrumentation" do
         let(:transaction) { http_request_transaction }
 
@@ -663,6 +682,14 @@ describe Appsignal::Rack::AbstractMiddleware do
           make_request
 
           expect { make_request }.to_not(change { created_transactions.count })
+        end
+
+        it_in_both_modes "does not discard the parent transaction" do
+          setup_parent_transaction
+          make_request
+
+          expect(transaction).to_not be_discarded
+          expect(current_transaction).to eq(transaction)
         end
 
         describe "wraps the response body in a BodyWrapper subclass" do
