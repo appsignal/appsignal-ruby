@@ -256,6 +256,48 @@ module Appsignal
         clear_current_transaction!
       end
 
+      # Discard the current transaction, if there is one, and unset it as the
+      # current transaction.
+      #
+      # Called where a new request starts and no transaction can be current yet.
+      # A transaction that is current was left there by earlier work on the same
+      # thread.
+      #
+      # Completed transactions are unset with no warning.  They are not
+      # discarded.
+      #
+      # Incomplete transactions are discarded, and not completed, because they
+      # were not finished: their data is incomplete.  A warning is logged with
+      # the details of the discarded transaction.
+      #
+      # Errors raised while discarding are logged, not re-raised.  The current
+      # transaction is unset regardless.
+      #
+      # @param entry_point [String] Name of the request entry point, used in the
+      #   warning.
+      # @return [void]
+      # @!visibility private
+      def discard_stale_current!(entry_point)
+        transaction = Thread.current[:appsignal_transaction]
+        return unless transaction
+
+        clear_current_transaction!
+        return if transaction.completed?
+
+        Appsignal.internal_logger.warn(
+          "Discarding transaction '#{transaction.transaction_id}' " \
+            "(namespace: #{transaction.namespace}, action: #{transaction.action.inspect}) " \
+            "that was still current when #{entry_point} started. " \
+            "It was not completed and is not reported."
+        )
+        transaction.discard!
+        transaction.complete
+      rescue => e
+        Appsignal.internal_logger.error(
+          "Failed to discard transaction ##{transaction.transaction_id}. #{e.message}"
+        )
+      end
+
       # Remove current transaction from current Thread.
       # @!visibility private
       def clear_current_transaction!
