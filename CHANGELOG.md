@@ -1,5 +1,18 @@
 # AppSignal for Ruby gem Changelog
 
+## 5.0.7
+
+_Published on 2026-10-23._
+
+### Security
+
+- Bump the bundled certificates that the agent uses when it can't open the
+  configured CA file. They no longer include the emSign ECC Root CA - G3 and AAA
+  Certificate Services root certificates, which [compromised eMudhra intermediate
+  certificates](https://bugzilla.mozilla.org/show_bug.cgi?id=2083449) chain to.
+
+  (patch [a52c55d9](https://github.com/appsignal/appsignal-ruby/commit/a52c55d969a1e8f450e5066ced2a61a468567b4d), [c8e8ee7e](https://github.com/appsignal/appsignal-ruby/commit/c8e8ee7e7d8984134381b662f0403e946b82704e), [4282fa01](https://github.com/appsignal/appsignal-ruby/commit/4282fa017ae31d548bfb660a35818a723595243c), [6cd56225](https://github.com/appsignal/appsignal-ruby/commit/6cd56225e633b4cf04d4bceee0d39577d1573f05), [16972b8a](https://github.com/appsignal/appsignal-ruby/commit/16972b8a71c17e5515255ed2fad8ae95cf200eec), [78969f02](https://github.com/appsignal/appsignal-ruby/commit/78969f0263a9fa8ea3ee58955a088bde03aaf8b0))
+
 ## 5.0.6
 
 _Published on 2026-10-22._
