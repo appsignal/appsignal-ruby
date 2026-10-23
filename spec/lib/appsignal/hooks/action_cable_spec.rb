@@ -76,6 +76,26 @@ describe Appsignal::Hooks::ActionCableHook do
               "ExampleStandardError: set metadata failed"
         end
 
+        # Runs the block with an existing current transaction, as earlier work on
+        # the thread would, and checks that the given `ActionCable::Channel::Base`
+        # method discards it instead of reusing it.
+        def expect_stale_transaction_discarded(method_name, &block)
+          stale_transaction = create_transaction
+          logs = capture_logs(&block)
+
+          transaction = last_transaction
+          expect(transaction).to_not eq(stale_transaction)
+          expect(transaction.namespace).to eq(Appsignal::Transaction::ACTION_CABLE)
+          expect(transaction).to be_completed
+          expect(stale_transaction).to be_discarded
+          expect(current_transaction?).to be(false)
+          expect(logs).to contains_log :warn,
+            Regexp.new(
+              "Discarding transaction '#{stale_transaction.transaction_id}' .* " \
+                "when ActionCable::Channel::Base##{method_name} started"
+            )
+        end
+
         describe "#perform_action" do
           describe "creates a transaction for an action" do
             def perform
@@ -233,6 +253,14 @@ describe Appsignal::Hooks::ActionCableHook do
                   .to eq("action" => "speak", "message" => "foo")
                 expect(root_span.attributes).not_to have_key("queue_start")
                 expect(last_transaction).to be_completed
+              end
+            end
+          end
+
+          context "with a stale current transaction" do
+            it_in_both_modes "discards it and creates a new transaction" do
+              expect_stale_transaction_discarded("perform_action") do
+                instance.perform_action("message" => "foo", "action" => "speak")
               end
             end
           end
@@ -408,6 +436,14 @@ describe Appsignal::Hooks::ActionCableHook do
                   .to eq("user_id" => "123", "session" => "yes")
                 expect(root_span.attributes).not_to have_key("queue_start")
                 expect(last_transaction).to be_completed
+              end
+            end
+          end
+
+          context "with a stale current transaction" do
+            it_in_both_modes "discards it and creates a new transaction" do
+              expect_stale_transaction_discarded("subscribe_to_channel") do
+                instance.subscribe_to_channel
               end
             end
           end
@@ -634,6 +670,14 @@ describe Appsignal::Hooks::ActionCableHook do
                   .to eq("user_id" => "123", "session" => "yes")
                 expect(root_span.attributes).not_to have_key("queue_start")
                 expect(last_transaction).to be_completed
+              end
+            end
+          end
+
+          context "with a stale current transaction" do
+            it_in_both_modes "discards it and creates a new transaction" do
+              expect_stale_transaction_discarded("unsubscribe_from_channel") do
+                instance.unsubscribe_from_channel
               end
             end
           end
