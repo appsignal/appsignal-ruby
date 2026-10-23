@@ -7,6 +7,11 @@ module Appsignal
       class RenderFormatter < Appsignal::EventFormatter
         BLANK = ""
 
+        def initialize
+          super
+          @relative_paths = Appsignal::Utils::BoundedCache.new
+        end
+
         def opentelemetry_attributes(_payload)
           Appsignal::OpenTelemetry::Rendering.attributes
         end
@@ -16,7 +21,7 @@ module Appsignal
           # root, so a template rendered outside an application gets no title.
           return unless payload[:identifier] && root_path
 
-          [payload[:identifier].sub(root_path, BLANK), nil]
+          [relative_path(payload[:identifier]), nil]
         end
 
         # The application's root, which a template's path is made relative to.
@@ -29,6 +34,12 @@ module Appsignal
           return unless defined?(Rails)
 
           @root_path ||= "#{Rails.root}/"
+        end
+
+        private
+
+        def relative_path(path)
+          @relative_paths.fetch(path) { path.sub(root_path, BLANK).freeze }
         end
       end
     end
