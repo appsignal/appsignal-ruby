@@ -1,5 +1,27 @@
 # AppSignal for Ruby gem Changelog
 
+## 4.10.6
+
+_Published on 2026-10-23._
+
+### Added
+
+- Automatically detect the application's revision from the `HEROKU_BUILD_COMMIT`
+  environment variable, which is set by Heroku at build time [when the
+  `runtime-dyno-build-metadata` Heroku Labs
+  feature](https://devcenter.heroku.com/articles/dyno-metadata) is enabled.
+
+  (patch [31388981](https://github.com/appsignal/appsignal-ruby/commit/313889811d7c386a6b5e51d941b33aad878719b0))
+
+### Security
+
+- Bump the bundled certificates that the agent uses when it can't open the
+  configured CA file. They no longer include the emSign ECC Root CA - G3 and AAA
+  Certificate Services root certificates, which [compromised eMudhra intermediate
+  certificates](https://bugzilla.mozilla.org/show_bug.cgi?id=2083449) chain to.
+
+  (patch [a52c55d9](https://github.com/appsignal/appsignal-ruby/commit/a52c55d969a1e8f450e5066ced2a61a468567b4d), [c8e8ee7e](https://github.com/appsignal/appsignal-ruby/commit/c8e8ee7e7d8984134381b662f0403e946b82704e), [bd8b99ee](https://github.com/appsignal/appsignal-ruby/commit/bd8b99ee97555717c98655afca7380dbd1589f0e), [498a341e](https://github.com/appsignal/appsignal-ruby/commit/498a341e27aabf1d0f6f418e01c7f41c1c991d9d), [30cce0f7](https://github.com/appsignal/appsignal-ruby/commit/30cce0f7fb5ddb0e3ce154ca0c31a5c4c1a43662), [4c6dd90e](https://github.com/appsignal/appsignal-ruby/commit/4c6dd90eba93ba003aa0fc555ad8e7d4483353a0))
+
 ## 4.10.5
 
 _Published on 2026-10-22._

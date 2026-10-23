@@ -2,5 +2,5 @@
 
 module Appsignal
   # @return [String]
-  VERSION = "4.10.5"
+  VERSION = "4.10.6"
 end
