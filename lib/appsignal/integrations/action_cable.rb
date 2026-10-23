@@ -14,6 +14,7 @@ module Appsignal
         Appsignal::Transaction.run(
           :namespace => Appsignal::Transaction::ACTION_CABLE,
           :opentelemetry_scope => ["appsignal-ruby/action_cable", Appsignal::VERSION],
+          :discard_stale => "ActionCable::Channel::Base#perform_action",
           :finalize => lambda do |transaction|
             transaction.set_action_if_nil("#{self.class}##{args.first["action"]}")
             transaction.add_request_payload_if_nil(args.first)
