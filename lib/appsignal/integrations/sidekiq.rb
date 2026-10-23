@@ -52,7 +52,9 @@ module Appsignal
           transaction.add_function_parameters_if_nil(:jobstr => sidekiq_context[:jobstr])
           transaction.set_error(exception)
         end
-
+      ensure
+        # Complete the transaction of the failed job, or the one created above
+        # for an internal error, even when reporting the error raised.
         Appsignal::Transaction.complete_current!
       end
     end
@@ -177,53 +179,58 @@ module Appsignal
         # Read trace context off the job so the transaction links back to the
         # enqueuer. No-op outside collector mode.
         job_data = active_job_data(item)
-        transaction = Appsignal::Transaction.create(
+        finalize = lambda do |transaction|
+          transaction.add_function_parameters_if_nil { parse_arguments(item) }
+          enqueued_at = item["enqueued_at"]
+          queue_start =
+            if self.class.sidekiq8?
+              enqueued_at.to_i # Sidekiq 8 stores it as epoc milliseconds
+            else
+              # Convert seconds to milliseconds for Sidekiq 7 and older
+              (enqueued_at.to_f * 1000.0).to_i
+            end
+          transaction.set_queue_start(queue_start)
+          transaction.add_tags(:request_id => item["jid"])
+        end
+
+        # When the job raises, the transaction is left current and incomplete.
+        # Sidekiq then calls `SidekiqErrorHandler`, which reports the error on
+        # the transaction and completes it.
+        Appsignal::Transaction.run(
           Appsignal::Transaction::BACKGROUND_JOB,
           :opentelemetry_context => extract_context(item, job_data),
           :opentelemetry_scope => ["appsignal-ruby/sidekiq", Appsignal::VERSION],
           :opentelemetry_kind => :consumer,
           :opentelemetry_relationship =>
-            Appsignal::OpenTelemetry.active_job_relationship(job_data)
-        )
-        transaction.add_opentelemetry_attributes(
-          Appsignal::OpenTelemetry::Messaging
-            .perform_attributes("sidekiq", :destination => item["queue"])
-        )
-        transaction.set_action_if_nil(action_name)
+            Appsignal::OpenTelemetry.active_job_relationship(job_data),
+          :complete_on_error => false,
+          :finalize => finalize
+        ) do |transaction|
+          transaction.add_opentelemetry_attributes(
+            Appsignal::OpenTelemetry::Messaging
+              .perform_attributes("sidekiq", :destination => item["queue"])
+          )
+          transaction.set_action_if_nil(action_name)
 
-        formatted_metadata(item).each do |key, value|
-          transaction.set_metadata key, value
-        end
-
-        begin
-          Appsignal.instrument(
-            "perform_job.sidekiq",
-            :opentelemetry_scope => ["appsignal-ruby/sidekiq", Appsignal::VERSION]
-          ) do
-            Appsignal::Transaction.current.add_opentelemetry_attributes(
-              Appsignal::OpenTelemetry::Messaging
-                .perform_attributes("sidekiq", :destination => item["queue"])
-            )
-            block.call
+          formatted_metadata(item).each do |key, value|
+            transaction.set_metadata key, value
           end
-        rescue Exception => exception
-          job_status = :failed
-          raise exception
-        ensure
-          if transaction
-            transaction.add_function_parameters_if_nil { parse_arguments(item) }
-            enqueued_at = item["enqueued_at"]
-            queue_start =
-              if self.class.sidekiq8?
-                enqueued_at.to_i # Sidekiq 8 stores it as epoc milliseconds
-              else
-                # Convert seconds to milliseconds for Sidekiq 7 and older
-                (enqueued_at.to_f * 1000.0).to_i
-              end
-            transaction.set_queue_start(queue_start)
-            transaction.add_tags(:request_id => item["jid"])
-            Appsignal::Transaction.complete_current! unless exception
 
+          begin
+            Appsignal.instrument(
+              "perform_job.sidekiq",
+              :opentelemetry_scope => ["appsignal-ruby/sidekiq", Appsignal::VERSION]
+            ) do
+              Appsignal::Transaction.current.add_opentelemetry_attributes(
+                Appsignal::OpenTelemetry::Messaging
+                  .perform_attributes("sidekiq", :destination => item["queue"])
+              )
+              block.call
+            end
+          rescue Exception => exception
+            job_status = :failed
+            raise exception
+          ensure
             queue = item["queue"] || "unknown"
 
             if job_status

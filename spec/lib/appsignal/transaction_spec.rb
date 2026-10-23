@@ -478,6 +478,279 @@ describe Appsignal::Transaction do
     end
   end
 
+  describe ".complete_and_clear" do
+    let!(:transaction) { create_transaction }
+
+    it "completes the given transaction and clears the current transaction" do
+      expect(transaction).to eq(current_transaction)
+
+      Appsignal::Transaction.complete_and_clear(transaction)
+
+      expect(transaction).to be_completed
+      expect(current_transaction?).to be(false)
+    end
+
+    it "clears the current transaction even when completing a different one" do
+      other_transaction = new_transaction
+      expect(transaction).to eq(current_transaction)
+
+      Appsignal::Transaction.complete_and_clear(other_transaction)
+
+      expect(other_transaction).to be_completed
+      expect(transaction).to_not be_completed
+      expect(current_transaction?).to be(false)
+    end
+
+    context "when encountering an error while completing" do
+      before do
+        expect(transaction).to receive(:complete).and_raise(ExampleStandardError, "oh no")
+      end
+
+      it "logs an error message and does not raise" do
+        logs =
+          capture_logs do
+            expect do
+              Appsignal::Transaction.complete_and_clear(transaction)
+            end.to_not raise_error
+          end
+
+        expect(logs).to contains_log :error,
+          "Failed to complete transaction ##{transaction.transaction_id}. oh no"
+      end
+
+      it "clears the current transaction" do
+        Appsignal::Transaction.complete_and_clear(transaction)
+
+        expect(current_transaction?).to be(false)
+      end
+    end
+  end
+
+  describe ".run" do
+    def run_transaction(**options, &block)
+      Appsignal::Transaction.run(Appsignal::Transaction::BACKGROUND_JOB, **options, &block)
+    end
+
+    context "without an existing transaction" do
+      it_in_both_modes "creates a transaction that is current while the block runs" do
+        current_during_block = nil
+        yielded = nil
+
+        run_transaction do |transaction|
+          yielded = transaction
+          current_during_block = current_transaction
+        end
+
+        expect(yielded).to be_a(Appsignal::Transaction)
+        expect(yielded.namespace).to eq(Appsignal::Transaction::BACKGROUND_JOB)
+        expect(current_during_block).to eq(yielded)
+      end
+
+      it_in_both_modes "completes and clears the transaction after the block" do
+        run_transaction { |_transaction| nil }
+
+        expect(last_transaction).to be_completed
+        expect(current_transaction?).to be(false)
+      end
+
+      it "returns the value of the block" do
+        expect(run_transaction { |_transaction| :block_value }).to eq(:block_value)
+      end
+
+      it "creates the transaction with the given OpenTelemetry options" do
+        expect(Appsignal::Transaction).to receive(:create).with(
+          Appsignal::Transaction::BACKGROUND_JOB,
+          :opentelemetry_context => nil,
+          :opentelemetry_scope => ["appsignal-ruby/test", "1.0.0"],
+          :opentelemetry_kind => :consumer,
+          :opentelemetry_relationship => :link
+        ).and_call_original
+
+        run_transaction(
+          :opentelemetry_scope => ["appsignal-ruby/test", "1.0.0"],
+          :opentelemetry_kind => :consumer,
+          :opentelemetry_relationship => :link
+        ) { |_transaction| nil }
+      end
+
+      context "when the block raises" do
+        it_in_both_modes "raises the error and completes and clears the transaction" do
+          expect do
+            run_transaction { |_transaction| raise ExampleException, "uh oh" }
+          end.to raise_error(ExampleException, "uh oh")
+
+          expect(last_transaction).to be_completed
+          expect(current_transaction?).to be(false)
+        end
+      end
+
+      context "when creating the transaction raises" do
+        before do
+          allow(Appsignal::Transaction).to receive(:new)
+            .and_raise(ExampleStandardError, "create failed")
+        end
+
+        it "raises the error without calling the block and leaves no current transaction" do
+          block_called = false
+
+          expect do
+            run_transaction { |_transaction| block_called = true }
+          end.to raise_error(ExampleStandardError, "create failed")
+
+          expect(block_called).to be(false)
+          expect(current_transaction?).to be(false)
+        end
+      end
+
+      context "with complete_on_error set to false" do
+        it_in_both_modes "leaves the transaction current and incomplete when the block raises" do
+          expect do
+            run_transaction(:complete_on_error => false) do |_transaction|
+              raise ExampleException, "uh oh"
+            end
+          end.to raise_error(ExampleException, "uh oh")
+
+          transaction = last_transaction
+          expect(transaction).to_not be_completed
+          expect(current_transaction).to eq(transaction)
+
+          Appsignal::Transaction.complete_current!
+        end
+
+        it_in_both_modes "completes and clears the transaction when the block succeeds" do
+          run_transaction(:complete_on_error => false) { |_transaction| nil }
+
+          expect(last_transaction).to be_completed
+          expect(current_transaction?).to be(false)
+        end
+      end
+    end
+
+    context "with an existing transaction" do
+      it_in_both_modes "yields the existing transaction without creating another one" do
+        existing = create_transaction
+        expect(Appsignal::Transaction).to_not receive(:create)
+
+        yielded = nil
+        run_transaction(:existing => existing) { |transaction| yielded = transaction }
+
+        expect(yielded).to eq(existing)
+
+        Appsignal::Transaction.complete_current!
+      end
+
+      it_in_both_modes "does not complete or clear the existing transaction" do
+        existing = create_transaction
+
+        run_transaction(:existing => existing) { |_transaction| nil }
+
+        expect(existing).to_not be_completed
+        expect(current_transaction).to eq(existing)
+
+        Appsignal::Transaction.complete_current!
+      end
+
+      it_in_both_modes "leaves the existing transaction open when the block raises" do
+        existing = create_transaction
+
+        expect do
+          run_transaction(:existing => existing) { |_transaction| raise ExampleException, "uh oh" }
+        end.to raise_error(ExampleException, "uh oh")
+
+        expect(existing).to_not be_completed
+        expect(current_transaction).to eq(existing)
+
+        Appsignal::Transaction.complete_current!
+      end
+
+      it "calls finalize with the existing transaction" do
+        existing = create_transaction
+        finalized = nil
+
+        run_transaction(
+          :existing => existing,
+          :finalize => lambda  { |transaction| finalized = transaction }
+        ) { |_transaction| nil }
+
+        expect(finalized).to eq(existing)
+      end
+    end
+
+    describe "finalize" do
+      it "is called with the transaction after the block, before the transaction completes" do
+        calls = []
+        finalize = lambda do |transaction|
+          calls << [:finalize, transaction, transaction.completed?, current_transaction]
+        end
+
+        run_transaction(:finalize => finalize) { |transaction| calls << [:block, transaction] }
+
+        transaction = last_transaction
+        expect(calls).to eq([
+          [:block, transaction],
+          [:finalize, transaction, false, transaction]
+        ])
+      end
+
+      it "is called when the block raises" do
+        finalized = nil
+
+        expect do
+          finalize = lambda { |transaction| finalized = transaction }
+          run_transaction(:finalize => finalize) do |_transaction|
+            raise ExampleException, "uh oh"
+          end
+        end.to raise_error(ExampleException, "uh oh")
+
+        expect(finalized).to eq(last_transaction)
+      end
+
+      context "when finalize raises" do
+        let(:finalize) { lambda { |_transaction| raise ExampleStandardError, "finalize failed" } }
+
+        it_in_both_modes "logs the error without raising it and completes the transaction" do
+          logs =
+            capture_logs do
+              expect do
+                run_transaction(:finalize => finalize) { |_transaction| nil }
+              end.to_not raise_error
+            end
+
+          transaction = last_transaction
+          expect(logs).to contains_log :error,
+            "Error finalizing transaction ##{transaction.transaction_id}: " \
+              "ExampleStandardError: finalize failed"
+          expect(transaction).to be_completed
+          expect(current_transaction?).to be(false)
+        end
+
+        it "raises the error of the block, not the error of finalize" do
+          expect do
+            run_transaction(:finalize => finalize) do |_transaction|
+              raise ExampleException, "block failed"
+            end
+          end.to raise_error(ExampleException, "block failed")
+
+          expect(last_transaction).to be_completed
+          expect(current_transaction?).to be(false)
+        end
+      end
+
+      context "when finalize raises an error that is not a StandardError" do
+        let(:finalize) { lambda { |_transaction| raise ExampleException, "finalize failed" } }
+
+        it_in_both_modes "raises the error and completes and clears the transaction" do
+          expect do
+            run_transaction(:finalize => finalize) { |_transaction| nil }
+          end.to raise_error(ExampleException, "finalize failed")
+
+          expect(last_transaction).to be_completed
+          expect(current_transaction?).to be(false)
+        end
+      end
+    end
+  end
+
   describe "#complete" do
     let(:transaction) { create_transaction }
 

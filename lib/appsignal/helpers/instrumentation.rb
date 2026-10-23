@@ -148,27 +148,20 @@ module Appsignal
           return
         end
 
-        transaction =
-          if has_parent_transaction
-            Appsignal::Transaction.current
-          else
-            Appsignal::Transaction.create(
-              namespace || Appsignal::Transaction::HTTP_REQUEST,
-              :opentelemetry_context => opentelemetry_context,
-              :opentelemetry_scope => opentelemetry_scope,
-              :opentelemetry_kind => opentelemetry_kind,
-              :opentelemetry_relationship => opentelemetry_relationship
-            )
+        Appsignal::Transaction.run(
+          namespace || Appsignal::Transaction::HTTP_REQUEST,
+          :opentelemetry_context => opentelemetry_context,
+          :opentelemetry_scope => opentelemetry_scope,
+          :opentelemetry_kind => opentelemetry_kind,
+          :opentelemetry_relationship => opentelemetry_relationship,
+          :finalize => lambda do |transaction|
+            transaction.set_action_if_nil(action.to_s) if action && action != :set_later
           end
-
-        begin
+        ) do |transaction|
           yield if block_given?
         rescue Exception => error
           transaction.set_error(error)
           raise error
-        ensure
-          transaction.set_action_if_nil(action.to_s) if action && action != :set_later
-          Appsignal::Transaction.complete_current!
         end
       end
 

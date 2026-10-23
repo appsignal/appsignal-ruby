@@ -578,6 +578,48 @@ if DependencyHelper.delayed_job_present?
         end
       end
 
+      def stub_transaction_method_to_raise(method_name, message)
+        allow(Appsignal::Transaction).to receive(:new)
+          .and_wrap_original do |original, *args, **kwargs|
+          original.call(*args, **kwargs).tap do |transaction|
+            allow(transaction).to receive(method_name)
+              .and_raise(ExampleStandardError, message)
+          end
+        end
+      end
+
+      context "when setting up the transaction fails" do
+        it_in_both_modes "raises the error, completes, and clears the transaction" do
+          stub_transaction_method_to_raise(:add_opentelemetry_attributes, "setup failed")
+          job = Delayed::Job.enqueue(DelayedTestJob.new)
+          expect_any_instance_of(DelayedTestJob).to_not receive(:perform)
+
+          expect { perform_job(job) }.to raise_error(ExampleStandardError, "setup failed")
+
+          expect(last_transaction).to be_completed
+          expect(current_transaction?).to be(false)
+        end
+      end
+
+      context "when setting the job metadata fails" do
+        it_in_both_modes "logs the error, completes, and clears the transaction" do
+          stub_transaction_method_to_raise(:add_tags, "set tags failed")
+          job = Delayed::Job.enqueue(DelayedTestJob.new)
+
+          logs =
+            capture_logs do
+              expect { perform_job(job) }.to_not raise_error
+            end
+
+          transaction = last_transaction
+          expect(logs).to contains_log :error,
+            "Error finalizing transaction ##{transaction.transaction_id}: " \
+              "ExampleStandardError: set tags failed"
+          expect(transaction).to be_completed
+          expect(current_transaction?).to be(false)
+        end
+      end
+
       # Every example above performs the job by calling `invoke_job` directly,
       # which is what Delayed Job does when `delay_jobs` is false. A worker
       # takes a different path. It reads the job's payload before it invokes the
@@ -767,6 +809,21 @@ if DependencyHelper.delayed_job_present?
             event = root_span.events.find { |e| e.name == "exception" }
             expect(event.attributes["exception.type"])
               .to eq("Delayed::DeserializationError")
+          end
+
+          context "when setting the job metadata fails" do
+            it_in_both_modes "logs the error, completes, and clears the transaction" do
+              stub_transaction_method_to_raise(:add_tags, "set tags failed")
+
+              logs = capture_logs { work_off_one_job }
+
+              transaction = last_transaction
+              expect(logs).to contains_log :error,
+                "Error finalizing transaction ##{transaction.transaction_id}: " \
+                  "ExampleStandardError: set tags failed"
+              expect(transaction).to be_completed
+              expect(current_transaction?).to be(false)
+            end
           end
         end
 
