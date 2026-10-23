@@ -211,6 +211,25 @@ describe Appsignal::Rack::EventHandler do
       end
     end
 
+    context "with a stale current transaction" do
+      it_in_both_modes "discards it and creates a new transaction" do
+        use_test_logger
+        stale_transaction = create_transaction
+
+        on_start
+
+        transaction = request.env[Appsignal::Rack::APPSIGNAL_TRANSACTION]
+        expect(transaction).to_not eq(stale_transaction)
+        expect(current_transaction).to eq(transaction)
+        expect(stale_transaction).to be_discarded
+        expect(logs).to contains_log :warn,
+          "Discarding transaction '#{stale_transaction.transaction_id}' " \
+            "(namespace: http_request, action: nil) " \
+            "that was still current when Appsignal::Rack::EventHandler#on_start started. " \
+            "It was not completed and is not reported."
+      end
+    end
+
     it_in_both_modes "registers transaction on the request environment" do
       use_test_logger
       on_start
@@ -321,6 +340,64 @@ describe Appsignal::Rack::EventHandler do
     end
   end
 
+  describe "a request after an earlier request on the thread did not finish" do
+    let(:response) { Rack::Events::BufferedResponse.new(200, {}, ["body"]) }
+    let(:earlier_request) { Rack::Request.new(Rack::MockRequest.env_for("/earlier")) }
+
+    # Neither `on_finish` nor the `rack.after_reply` fallback runs for the
+    # earlier request, so its transaction is still current when the next
+    # request on the thread starts.
+    def perform
+      event_handler_instance.on_start(earlier_request, nil)
+      earlier_transaction.set_action("EarlierController#show")
+
+      event_handler_instance.on_start(request, response)
+      transaction.set_action("LaterController#show")
+      event_handler_instance.on_finish(request, response)
+    end
+
+    def earlier_transaction
+      earlier_request.env[Appsignal::Rack::APPSIGNAL_TRANSACTION]
+    end
+
+    def transaction
+      request.env[Appsignal::Rack::APPSIGNAL_TRANSACTION]
+    end
+
+    it "in agent mode", :agent_mode do
+      start_agent(**start_agent_args)
+      use_test_logger
+      perform
+
+      # The request is reported in its own transaction, not the earlier one.
+      expect(transaction).to_not eq(earlier_transaction)
+      expect(transaction).to be_completed
+      expect(transaction).to have_action("LaterController#show")
+      expect(earlier_transaction).to be_discarded
+      expect(earlier_transaction).to_not be_completed
+      expect(current_transaction?).to be(false)
+    end
+
+    it "in collector mode", :collector_mode do
+      start_collector_agent
+      use_test_logger
+      previous_context = ::OpenTelemetry::Context.current
+      perform
+
+      expect(transaction).to_not eq(earlier_transaction)
+      expect(transaction).to be_completed
+      expect(earlier_transaction).to be_discarded
+      expect(current_transaction?).to be(false)
+      # The earlier request's span is exported flagged so the collector
+      # ignores it, and both requests' contexts are released.
+      server_spans = span_exporter.finished_spans.select { |span| span.kind == :server }
+      expect(server_spans.map { |span| span.attributes["appsignal.ignore_subtrace"] })
+        .to eq([true, nil])
+      expect(server_spans.last.attributes["appsignal.action_name"]).to eq("LaterController#show")
+      expect(::OpenTelemetry::Context.current).to eq(previous_context)
+    end
+  end
+
   describe "cleanup after instrumentation failures" do
     def finish_request(given_request)
       if completion_callback == :on_finish
@@ -333,7 +410,7 @@ describe Appsignal::Rack::EventHandler do
     def expect_setup_failure_cleanup(method)
       use_test_logger
       transaction = new_transaction
-      set_current_transaction(transaction)
+      allow(Appsignal::Transaction).to receive(:new).and_return(transaction)
       allow(transaction).to receive(method).and_call_original
       expect(transaction).to receive(method)
         .and_raise(ExampleStandardError, "setup failed")
