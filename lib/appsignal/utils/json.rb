@@ -9,12 +9,19 @@ module Appsignal
 
       class << self
         def generate(body)
-          ::JSON.generate(jsonify(body, 0))
+          ::JSON.generate(jsonify(body))
         end
 
         private
 
-        def jsonify(value, depth)
+        def jsonify(value)
+          issues = []
+          result = jsonify_node(value, 0, issues)
+          log_issues(issues)
+          result
+        end
+
+        def jsonify_node(value, depth, issues)
           case value
           when String
             encode_utf8(value)
@@ -23,17 +30,17 @@ module Appsignal
           when Numeric, NilClass, TrueClass, FalseClass
             value
           when Hash
-            return max_depth_placeholder if depth >= MAX_DEPTH
+            return max_depth_placeholder(issues) if depth >= MAX_DEPTH
 
             value.each_with_object({}) do |(k, v), hash|
-              hash[jsonify(k, depth + 1)] = jsonify(v, depth + 1)
+              hash[jsonify_node(k, depth + 1, issues)] = jsonify_node(v, depth + 1, issues)
             end
           when Array
-            return max_depth_placeholder if depth >= MAX_DEPTH
+            return max_depth_placeholder(issues) if depth >= MAX_DEPTH
 
-            value.map { |v| jsonify(v, depth + 1) }
+            value.map { |v| jsonify_node(v, depth + 1, issues) }
           else
-            jsonify(object_to_s(value), depth)
+            jsonify_node(object_to_s(value), depth, issues)
           end
         end
 
@@ -46,11 +53,8 @@ module Appsignal
           UNSERIALIZABLE_PLACEHOLDER
         end
 
-        def max_depth_placeholder
-          Appsignal.internal_logger.error(
-            "Data is nested more than #{MAX_DEPTH} levels deep. " \
-              "Deeper values are replaced with '#{MAX_DEPTH_PLACEHOLDER}'."
-          )
+        def max_depth_placeholder(issues)
+          issues << :max_depth unless issues.include?(:max_depth)
           MAX_DEPTH_PLACEHOLDER
         end
 
@@ -74,6 +78,15 @@ module Appsignal
               :undef   => :replace
             )
           end
+        end
+
+        def log_issues(issues)
+          return unless issues.include?(:max_depth)
+
+          Appsignal.internal_logger.error(
+            "Data is nested more than #{MAX_DEPTH} levels deep. " \
+              "Deeper values are replaced with '#{MAX_DEPTH_PLACEHOLDER}'."
+          )
         end
       end
     end

@@ -116,10 +116,10 @@ describe Appsignal::Utils::JSON do
       context "with a body that reaches the limit more than once" do
         let(:body) { { "one" => nested_arrays(101), "two" => nested_arrays(101) } }
 
-        it "logs the message for each value it replaces" do
+        it "logs the message only once" do
           logs = capture_logs { subject }
 
-          expect(logs.scan(max_depth_message).length).to eq(2)
+          expect(logs.scan(max_depth_message).length).to eq(1)
         end
       end
 
