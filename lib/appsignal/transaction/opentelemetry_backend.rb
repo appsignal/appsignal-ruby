@@ -333,15 +333,15 @@ module Appsignal
       def set_sample_data(key, data)
         case key
         when "request_payload"
-          @span.set_attribute("appsignal.request.payload", JSON.generate(data))
+          write_json_attribute("appsignal.request.payload", data)
         when "function_parameters"
-          @span.set_attribute("appsignal.function.parameters", JSON.generate(data))
+          write_json_attribute("appsignal.function.parameters", data)
         when "query_parameters"
-          @span.set_attribute("appsignal.request.query_parameters", JSON.generate(data))
+          write_json_attribute("appsignal.request.query_parameters", data)
         when "session_data"
-          @span.set_attribute("appsignal.request.session_data", JSON.generate(data))
+          write_json_attribute("appsignal.request.session_data", data)
         when "custom_data"
-          @span.set_attribute("appsignal.custom_data", JSON.generate(data))
+          write_json_attribute("appsignal.custom_data", data)
         when "request_headers"
           write_request_headers(data)
         when "environment"
@@ -349,7 +349,7 @@ module Appsignal
         when "tags"
           write_tags(data)
         else
-          @span.set_attribute("appsignal.#{key}", JSON.generate(data))
+          write_json_attribute("appsignal.#{key}", data)
         end
       end
 
@@ -759,6 +759,10 @@ module Appsignal
 
       def service_namespace
         "#{Appsignal.config&.[](:service_name)}/#{display_namespace(@namespace)}"
+      end
+
+      def write_json_attribute(name, data)
+        @span.set_attribute(name, Appsignal::Utils::JSON.generate(data))
       end
 
       def write_request_headers(headers)
