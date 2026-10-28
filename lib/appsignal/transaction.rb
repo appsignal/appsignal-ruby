@@ -137,16 +137,20 @@ module Appsignal
       end
 
       # Returns currently active transaction or a {NilTransaction} if none is
-      # active.
+      # active. A completed transaction is not considered active.
       #
       # @see .current?
       # @return [Appsignal::Transaction, Appsignal::Transaction::NilTransaction]
       def current
-        Thread.current[:appsignal_transaction] || NilTransaction.new
+        transaction = Thread.current[:appsignal_transaction]
+        return NilTransaction.new if transaction.nil? || transaction.completed?
+
+        transaction
       end
 
       # Returns if any transaction is currently active or not. A
-      # {NilTransaction} is not considered an active transaction.
+      # {NilTransaction} or a completed transaction is not considered an active
+      # transaction.
       #
       # @see .current
       # @return [Boolean]
