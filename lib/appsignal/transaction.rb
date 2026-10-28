@@ -187,6 +187,11 @@ module Appsignal
       # the transaction current and incomplete, for an error handler that runs
       # after the block to complete it.
       #
+      # When `discard_stale` is given, any transaction that is current is
+      # discarded before a new transaction is created.  Thus, the current
+      # transaction is not reused.  See {.discard_stale_current!}.  It has no
+      # effect when `existing` is given.
+      #
       # @param namespace [String] Namespace of the transaction to create.
       # @param existing [Transaction, nil] Transaction to join instead of
       #   creating one. Defaults to the current transaction if it isn't
@@ -195,19 +200,26 @@ module Appsignal
       #   block, even when the block raised.
       # @param complete_on_error [Boolean] Whether to complete the transaction
       #   when the block raises.
+      # @param discard_stale [String, nil] Name of the request entry point, used
+      #   in the warning when a current transaction is discarded.
       # @yieldparam transaction [Transaction]
       # @return [Object] The return value of the block.
       # @!visibility private
       def run( # rubocop:disable Metrics/ParameterLists
         namespace: HTTP_REQUEST,
-        existing: (current if current?),
+        existing: nil,
         finalize: nil,
         complete_on_error: true,
+        discard_stale: nil,
         opentelemetry_context: nil,
         opentelemetry_scope: nil,
         opentelemetry_kind: nil,
         opentelemetry_relationship: nil
       )
+        discard_stale_current!(discard_stale) if existing.nil? && discard_stale
+
+        existing = current if existing.nil? && current?
+
         previous = Thread.current[:appsignal_transaction]
         transaction = existing || create(
           namespace,

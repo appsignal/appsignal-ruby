@@ -747,6 +747,43 @@ describe Appsignal::Transaction do
       end
     end
 
+    context "with a stale current transaction" do
+      let(:stale_transaction) { create_transaction }
+
+      context "with discard_stale" do
+        it_in_both_modes "discards the stale transaction and runs the block with a new one" do
+          stale_transaction
+          yielded = nil
+
+          logs =
+            capture_logs do
+              run_transaction(:discard_stale => "MyEntryPoint") do |transaction|
+                yielded = transaction
+              end
+            end
+
+          expect(yielded).to_not eq(stale_transaction)
+          expect(yielded).to be_completed
+          expect(stale_transaction).to be_discarded
+          expect(current_transaction?).to be(false)
+          expect(logs).to contains_log :warn,
+            /Discarding transaction '#{stale_transaction.transaction_id}' .* MyEntryPoint/
+        end
+      end
+
+      context "without discard_stale" do
+        it_in_both_modes "runs the block with the stale transaction" do
+          stale_transaction
+          yielded = nil
+
+          run_transaction { |transaction| yielded = transaction }
+
+          expect(yielded).to eq(stale_transaction)
+          expect(stale_transaction).to_not be_discarded
+        end
+      end
+    end
+
     context "with an existing transaction" do
       it_in_both_modes "yields the existing transaction without creating another one" do
         existing = create_transaction
@@ -779,6 +816,19 @@ describe Appsignal::Transaction do
         end.to raise_error(ExampleException, "uh oh")
 
         expect(existing).to_not be_completed
+        expect(current_transaction).to eq(existing)
+
+        Appsignal::Transaction.complete_current!
+      end
+
+      it_in_both_modes "does not discard the existing transaction with discard_stale" do
+        existing = create_transaction
+
+        run_transaction(:existing => existing, :discard_stale => "MyEntryPoint") do |transaction|
+          expect(transaction).to eq(existing)
+        end
+
+        expect(existing).to_not be_discarded
         expect(current_transaction).to eq(existing)
 
         Appsignal::Transaction.complete_current!
