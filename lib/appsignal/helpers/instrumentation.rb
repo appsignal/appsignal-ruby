@@ -149,7 +149,7 @@ module Appsignal
         end
 
         Appsignal::Transaction.run(
-          namespace || Appsignal::Transaction::HTTP_REQUEST,
+          :namespace => namespace || Appsignal::Transaction::HTTP_REQUEST,
           :opentelemetry_context => opentelemetry_context,
           :opentelemetry_scope => opentelemetry_scope,
           :opentelemetry_kind => opentelemetry_kind,

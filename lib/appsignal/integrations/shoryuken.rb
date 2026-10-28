@@ -80,7 +80,7 @@ module Appsignal
         context = extract_context(sqs_msg, body) unless batch
 
         Appsignal::Transaction.run(
-          Appsignal::Transaction::BACKGROUND_JOB,
+          :namespace => Appsignal::Transaction::BACKGROUND_JOB,
           :opentelemetry_context => context,
           :opentelemetry_scope => ["appsignal-ruby/shoryuken", Appsignal::VERSION],
           :opentelemetry_kind => :consumer,

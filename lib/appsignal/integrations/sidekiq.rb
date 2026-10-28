@@ -197,7 +197,7 @@ module Appsignal
         # Sidekiq then calls `SidekiqErrorHandler`, which reports the error on
         # the transaction and completes it.
         Appsignal::Transaction.run(
-          Appsignal::Transaction::BACKGROUND_JOB,
+          :namespace => Appsignal::Transaction::BACKGROUND_JOB,
           :opentelemetry_context => extract_context(item, job_data),
           :opentelemetry_scope => ["appsignal-ruby/sidekiq", Appsignal::VERSION],
           :opentelemetry_kind => :consumer,

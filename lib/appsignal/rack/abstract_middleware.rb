@@ -56,7 +56,6 @@ module Appsignal
           end
 
           Appsignal::Transaction.run(
-            Appsignal::Transaction::HTTP_REQUEST,
             :existing => parent_transaction,
             :finalize => finalize,
             **opentelemetry_options

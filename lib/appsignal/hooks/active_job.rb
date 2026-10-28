@@ -292,7 +292,7 @@ module Appsignal
             end
 
           Appsignal::Transaction.run(
-            Appsignal::Transaction::BACKGROUND_JOB,
+            :namespace => Appsignal::Transaction::BACKGROUND_JOB,
             :existing => wrapper_transaction,
             :finalize => lambda do |transaction|
               # Present in Rails 6 and up

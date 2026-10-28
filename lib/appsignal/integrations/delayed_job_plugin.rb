@@ -187,7 +187,7 @@ module Appsignal
       # has a payload that cannot be deserialized.
       def self.run_perform_transaction(job, job_data, finalize)
         Appsignal::Transaction.run(
-          Appsignal::Transaction::BACKGROUND_JOB,
+          :namespace => Appsignal::Transaction::BACKGROUND_JOB,
           :opentelemetry_context =>
             Appsignal::OpenTelemetry.extract_active_job_context(job_data),
           :opentelemetry_scope => ["appsignal-ruby/delayed_job", Appsignal::VERSION],

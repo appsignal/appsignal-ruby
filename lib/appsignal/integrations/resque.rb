@@ -9,7 +9,7 @@ module Appsignal
         # enqueuer. No-op outside collector mode.
         job_data = ResqueHelpers.active_job_data(payload)
         Appsignal::Transaction.run(
-          Appsignal::Transaction::BACKGROUND_JOB,
+          :namespace => Appsignal::Transaction::BACKGROUND_JOB,
           :opentelemetry_context => ResqueHelpers.extract_context(payload, job_data),
           :opentelemetry_scope => ["appsignal-ruby/resque", Appsignal::VERSION],
           :opentelemetry_kind => :consumer,

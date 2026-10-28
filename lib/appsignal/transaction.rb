@@ -191,7 +191,7 @@ module Appsignal
       # @return [Object] The return value of the block.
       # @!visibility private
       def run( # rubocop:disable Metrics/ParameterLists
-        namespace,
+        namespace: HTTP_REQUEST,
         existing: nil,
         finalize: nil,
         complete_on_error: true,

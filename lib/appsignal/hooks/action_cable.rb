@@ -37,7 +37,7 @@ module Appsignal
           env[Appsignal::Hooks::ActionCableHook::REQUEST_ID] ||= request_id
 
           Appsignal::Transaction.run(
-            Appsignal::Transaction::ACTION_CABLE,
+            :namespace => Appsignal::Transaction::ACTION_CABLE,
             :opentelemetry_scope => ["appsignal-ruby/action_cable", Appsignal::VERSION],
             :finalize => lambda do |transaction|
               transaction.set_action_if_nil("#{channel.class}#subscribed")
@@ -79,7 +79,7 @@ module Appsignal
           env[Appsignal::Hooks::ActionCableHook::REQUEST_ID] ||= request_id
 
           Appsignal::Transaction.run(
-            Appsignal::Transaction::ACTION_CABLE,
+            :namespace => Appsignal::Transaction::ACTION_CABLE,
             :opentelemetry_scope => ["appsignal-ruby/action_cable", Appsignal::VERSION],
             :finalize => lambda do |transaction|
               transaction.set_action_if_nil("#{channel.class}#unsubscribed")

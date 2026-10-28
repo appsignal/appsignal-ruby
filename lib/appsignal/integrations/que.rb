@@ -148,7 +148,7 @@ module Appsignal
         # Read the incoming trace context off the job's tags so the transaction
         # links back to the enqueuer. No-op outside collector mode.
         Appsignal::Transaction.run(
-          Appsignal::Transaction::BACKGROUND_JOB,
+          :namespace => Appsignal::Transaction::BACKGROUND_JOB,
           :opentelemetry_context => QueTraceContext.extract_context(job_data, tags),
           :opentelemetry_scope => ["appsignal-ruby/que", Appsignal::VERSION],
           :opentelemetry_kind => :consumer,

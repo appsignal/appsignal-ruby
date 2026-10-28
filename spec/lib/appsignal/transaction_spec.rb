@@ -528,7 +528,11 @@ describe Appsignal::Transaction do
 
   describe ".run" do
     def run_transaction(**options, &block)
-      Appsignal::Transaction.run(Appsignal::Transaction::BACKGROUND_JOB, **options, &block)
+      Appsignal::Transaction.run(
+        :namespace => Appsignal::Transaction::BACKGROUND_JOB,
+        **options,
+        &block
+      )
     end
 
     context "without an existing transaction" do
