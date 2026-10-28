@@ -403,6 +403,31 @@ describe Appsignal::Transaction do
       end
     end
 
+    context "when the current transaction is completed" do
+      let!(:transaction) { create_transaction }
+
+      before { transaction.complete }
+
+      it "still has the transaction registered on the current Thread" do
+        expect(Thread.current[:appsignal_transaction]).to eq(transaction)
+      end
+
+      it "returns a NilTransaction stub" do
+        expect(current_transaction.nil_transaction?).to be(true)
+        expect(current_transaction).to be_a(Appsignal::Transaction::NilTransaction)
+      end
+
+      it "returns false for current?" do
+        expect(Appsignal::Transaction.current?).to be(false)
+      end
+
+      it "does not add data to the completed transaction" do
+        expect(transaction).to_not receive(:add_tags)
+
+        current_transaction.add_tags(:foo => "bar")
+      end
+    end
+
     context "when there is no current transaction" do
       it "has no :appsignal_transaction registered on the current Thread" do
         expect(Thread.current[:appsignal_transaction]).to be_nil

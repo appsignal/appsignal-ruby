@@ -137,12 +137,16 @@ module Appsignal
       end
 
       # Returns currently active transaction or a {NilTransaction} if none is
-      # active.
+      # active. A transaction that is already completed but not yet cleared is
+      # not considered active.
       #
       # @see .current?
       # @return [Appsignal::Transaction, Appsignal::Transaction::NilTransaction]
       def current
-        Thread.current[:appsignal_transaction] || NilTransaction.new
+        transaction = Thread.current[:appsignal_transaction]
+        return NilTransaction.new if transaction.nil? || transaction.completed?
+
+        transaction
       end
 
       # Returns if any transaction is currently active or not. A
@@ -196,7 +200,7 @@ module Appsignal
       # @!visibility private
       def run( # rubocop:disable Metrics/ParameterLists
         namespace: HTTP_REQUEST,
-        existing: (current if current? && !current.completed?),
+        existing: (current if current?),
         finalize: nil,
         complete_on_error: true,
         opentelemetry_context: nil,
