@@ -750,14 +750,14 @@ describe Appsignal::Transaction do
     context "with a stale current transaction" do
       let(:stale_transaction) { create_transaction }
 
-      context "with discard_stale" do
+      context "with discard_stale_with_reason" do
         it_in_both_modes "discards the stale transaction and runs the block with a new one" do
           stale_transaction
           yielded = nil
 
           logs =
             capture_logs do
-              run_transaction(:discard_stale => "MyEntryPoint") do |transaction|
+              run_transaction(:discard_stale_with_reason => "MyEntryPoint") do |transaction|
                 yielded = transaction
               end
             end
@@ -771,7 +771,7 @@ describe Appsignal::Transaction do
         end
       end
 
-      context "without discard_stale" do
+      context "without discard_stale_with_reason" do
         it_in_both_modes "runs the block with the stale transaction" do
           stale_transaction
           yielded = nil
@@ -821,10 +821,13 @@ describe Appsignal::Transaction do
         Appsignal::Transaction.complete_current!
       end
 
-      it_in_both_modes "does not discard the existing transaction with discard_stale" do
+      it_in_both_modes "does not discard the existing transaction with discard_stale_with_reason" do
         existing = create_transaction
 
-        run_transaction(:existing => existing, :discard_stale => "MyEntryPoint") do |transaction|
+        run_transaction(
+          :existing => existing,
+          :discard_stale_with_reason => "MyEntryPoint"
+        ) do |transaction|
           expect(transaction).to eq(existing)
         end
 
