@@ -168,7 +168,7 @@ module Appsignal
             "perform_job.delayed_job",
             :opentelemetry_scope => ["appsignal-ruby/delayed_job", Appsignal::VERSION]
           ) do
-            Appsignal::Transaction.current.add_opentelemetry_attributes(
+            transaction.add_opentelemetry_attributes(
               Appsignal::OpenTelemetry::Messaging
                 .perform_attributes("delayed_job", :destination => queue_name(job))
             )
