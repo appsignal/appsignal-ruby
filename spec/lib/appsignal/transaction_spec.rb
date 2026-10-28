@@ -561,7 +561,7 @@ describe Appsignal::Transaction do
 
         logs = capture_logs { discard_stale_current }
 
-        expect(current_transaction?).to be(false)
+        expect(Thread.current[:appsignal_transaction]).to be_nil
         expect(transaction).to_not be_discarded
         expect(logs).to_not contains_log(:warn, /Discarding transaction/)
       end

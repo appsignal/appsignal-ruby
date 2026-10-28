@@ -280,11 +280,9 @@ module Appsignal
       # @return [void]
       # @!visibility private
       def discard_stale_current!(entry_point)
-        transaction = Thread.current[:appsignal_transaction]
-        return unless transaction
-
+        transaction = current
         clear_current_transaction!
-        return if transaction.completed?
+        return if transaction.nil_transaction?
 
         Appsignal.internal_logger.warn(
           "Discarding transaction '#{transaction.transaction_id}' " \
