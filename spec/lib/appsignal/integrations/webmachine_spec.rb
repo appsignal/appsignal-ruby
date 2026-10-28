@@ -219,6 +219,46 @@ if DependencyHelper.webmachine_present?
         expect(current_transaction?).to be_falsy
       end
 
+      def stub_transaction_method_to_raise(method_name, message)
+        allow(Appsignal::Transaction).to receive(:new)
+          .and_wrap_original do |original, *args, **kwargs|
+          original.call(*args, **kwargs).tap do |transaction|
+            allow(transaction).to receive(method_name)
+              .and_raise(ExampleStandardError, message)
+          end
+        end
+      end
+
+      context "when setting up the transaction fails" do
+        it_in_both_modes "raises the error, completes, and clears the transaction" do
+          stub_transaction_method_to_raise(:add_opentelemetry_attributes, "setup failed")
+          expect(resource_instance).to_not receive(:to_html)
+
+          expect { perform }.to raise_error(ExampleStandardError, "setup failed")
+
+          expect(last_transaction).to be_completed
+          expect(current_transaction?).to be(false)
+        end
+      end
+
+      context "when setting the action fails" do
+        it_in_both_modes "logs the error, completes, and clears the transaction" do
+          stub_transaction_method_to_raise(:set_action_if_nil, "set action failed")
+
+          logs =
+            capture_logs do
+              expect { perform }.to_not raise_error
+            end
+
+          transaction = last_transaction
+          expect(logs).to contains_log :error,
+            "Error finalizing transaction ##{transaction.transaction_id}: " \
+              "ExampleStandardError: set action failed"
+          expect(transaction).to be_completed
+          expect(current_transaction?).to be(false)
+        end
+      end
+
       describe "incoming trace context" do
         let(:trace_id_hex) { "0af7651916cd43dd8448eb211c80319c" }
         let(:span_id_hex) { "b7ad6b7169203331" }

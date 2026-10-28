@@ -8,43 +8,42 @@ module Appsignal
         # Read trace context off the job so the transaction links back to the
         # enqueuer. No-op outside collector mode.
         job_data = ResqueHelpers.active_job_data(payload)
-        transaction = Appsignal::Transaction.create(
-          Appsignal::Transaction::BACKGROUND_JOB,
+        Appsignal::Transaction.run(
+          :namespace => Appsignal::Transaction::BACKGROUND_JOB,
           :opentelemetry_context => ResqueHelpers.extract_context(payload, job_data),
           :opentelemetry_scope => ["appsignal-ruby/resque", Appsignal::VERSION],
           :opentelemetry_kind => :consumer,
           :opentelemetry_relationship =>
-            Appsignal::OpenTelemetry.active_job_relationship(job_data)
-        )
-        # Describes this span as a job being performed. The messaging system is
-        # what the trace timeline reads to recognize background job work, and
-        # `resque` is the value OpenTelemetry's own Resque instrumentation uses.
-        transaction.add_opentelemetry_attributes(
-          Appsignal::OpenTelemetry::Messaging
-            .perform_attributes("resque", :destination => queue)
-        )
-
-        Appsignal.instrument(
-          "perform.resque",
-          :opentelemetry_scope => ["appsignal-ruby/resque", Appsignal::VERSION]
-        ) do
-          Appsignal::Transaction.current.add_opentelemetry_attributes(
+            Appsignal::OpenTelemetry.active_job_relationship(job_data),
+          :finalize => lambda do |transaction|
+            transaction.set_action_if_nil("#{payload["class"]}#perform")
+            transaction.add_function_parameters_if_nil { ResqueHelpers.arguments(payload) }
+            transaction.add_tags("queue" => queue)
+          end
+        ) do |transaction|
+          # Describes this span as a job being performed. The messaging system is
+          # what the trace timeline reads to recognize background job work, and
+          # `resque` is the value OpenTelemetry's own Resque instrumentation uses.
+          transaction.add_opentelemetry_attributes(
             Appsignal::OpenTelemetry::Messaging
               .perform_attributes("resque", :destination => queue)
           )
-          super
-        end
-      rescue Exception => exception
-        transaction.set_error(exception)
-        raise exception
-      ensure
-        if transaction
-          transaction.set_action_if_nil("#{payload["class"]}#perform")
-          transaction.add_function_parameters_if_nil { ResqueHelpers.arguments(payload) }
-          transaction.add_tags("queue" => queue)
 
-          Appsignal::Transaction.complete_current!
+          Appsignal.instrument(
+            "perform.resque",
+            :opentelemetry_scope => ["appsignal-ruby/resque", Appsignal::VERSION]
+          ) do
+            Appsignal::Transaction.current.add_opentelemetry_attributes(
+              Appsignal::OpenTelemetry::Messaging
+                .perform_attributes("resque", :destination => queue)
+            )
+            super
+          end
+        rescue Exception => exception
+          transaction.set_error(exception)
+          raise exception
         end
+      ensure
         Appsignal.stop("resque")
       end
     end

@@ -1,0 +1,17 @@
+---
+bump: patch
+type: fix
+---
+
+Fix an issue where a request or background job could be reported with data from
+the previous one processed on the same thread.  When AppSignal's instrumentation
+raised an error while starting or finishing a request or job, the next one could
+be reported under the previous one's action name, with its parameters and
+errors, and with a duration that was too long.  This affected the Rack, Grape,
+Webmachine, Action Cable, Active Job, Sidekiq, Delayed Job, Resque, Que and
+Shoryuken integrations, and `Appsignal.monitor`.
+
+Each request and job is now reported on its own.  If such an error happens while
+finishing a request or job, it is logged in the AppSignal log instead of being
+raised.  This also applies to the Rails, Sinatra, Padrino and Hanami
+integrations.  No changes to your app are needed.

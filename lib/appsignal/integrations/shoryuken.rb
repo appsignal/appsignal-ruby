@@ -79,8 +79,8 @@ module Appsignal
         # No-op outside collector mode.
         context = extract_context(sqs_msg, body) unless batch
 
-        transaction = Appsignal::Transaction.create(
-          Appsignal::Transaction::BACKGROUND_JOB,
+        Appsignal::Transaction.run(
+          :namespace => Appsignal::Transaction::BACKGROUND_JOB,
           :opentelemetry_context => context,
           :opentelemetry_scope => ["appsignal-ruby/shoryuken", Appsignal::VERSION],
           :opentelemetry_kind => :consumer,
@@ -88,45 +88,45 @@ module Appsignal
           # context to relate to at all, so the body it reads here is the single
           # message's job data or nothing.
           :opentelemetry_relationship =>
-            Appsignal::OpenTelemetry.active_job_relationship(batch ? nil : body)
-        )
-        # Describes this span as a job being performed. The messaging system is
-        # what the trace timeline reads to recognize background job work.
-        # Shoryuken runs on Amazon SQS, so it takes the `aws_sqs` value the
-        # OpenTelemetry semantic conventions define for it.
-        transaction.add_opentelemetry_attributes(
-          Appsignal::OpenTelemetry::Messaging.perform_attributes(
-            "aws_sqs", :destination => queue, :batch_size => batch_size
-          )
-        )
+            Appsignal::OpenTelemetry.active_job_relationship(batch ? nil : body),
+          :finalize => lambda do |transaction|
+            attributes = fetch_attributes(batch, sqs_msg)
+            transaction.set_action_if_nil("#{worker_instance.class.name}#perform")
+            transaction.add_function_parameters_if_nil { fetch_args(batch, sqs_msg, body) }
+            transaction.add_tags(attributes)
+            transaction.add_tags("queue" => queue)
+            transaction.add_tags("batch" => true) if batch
 
-        Appsignal.instrument(
-          "perform_job.shoryuken",
-          :opentelemetry_scope => ["appsignal-ruby/shoryuken", Appsignal::VERSION]
-        ) do
-          Appsignal::Transaction.current.add_opentelemetry_attributes(
+            if attributes.key?("SentTimestamp")
+              transaction.set_queue_start(Time.at(attributes["SentTimestamp"].to_i).to_i)
+            end
+          end
+        ) do |transaction|
+          # Describes this span as a job being performed. The messaging system is
+          # what the trace timeline reads to recognize background job work.
+          # Shoryuken runs on Amazon SQS, so it takes the `aws_sqs` value the
+          # OpenTelemetry semantic conventions define for it.
+          transaction.add_opentelemetry_attributes(
             Appsignal::OpenTelemetry::Messaging.perform_attributes(
               "aws_sqs", :destination => queue, :batch_size => batch_size
             )
           )
-          block.call
-        end
-      rescue Exception => error
-        transaction.set_error(error)
-        raise
-      ensure
-        attributes = fetch_attributes(batch, sqs_msg)
-        transaction.set_action_if_nil("#{worker_instance.class.name}#perform")
-        transaction.add_function_parameters_if_nil { fetch_args(batch, sqs_msg, body) }
-        transaction.add_tags(attributes)
-        transaction.add_tags("queue" => queue)
-        transaction.add_tags("batch" => true) if batch
 
-        if attributes.key?("SentTimestamp")
-          transaction.set_queue_start(Time.at(attributes["SentTimestamp"].to_i).to_i)
+          Appsignal.instrument(
+            "perform_job.shoryuken",
+            :opentelemetry_scope => ["appsignal-ruby/shoryuken", Appsignal::VERSION]
+          ) do
+            Appsignal::Transaction.current.add_opentelemetry_attributes(
+              Appsignal::OpenTelemetry::Messaging.perform_attributes(
+                "aws_sqs", :destination => queue, :batch_size => batch_size
+              )
+            )
+            block.call
+          end
+        rescue Exception => error
+          transaction.set_error(error)
+          raise
         end
-
-        Appsignal::Transaction.complete_current!
       end
 
       private
