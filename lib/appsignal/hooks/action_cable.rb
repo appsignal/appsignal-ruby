@@ -39,7 +39,7 @@ module Appsignal
           Appsignal::Transaction.run(
             Appsignal::Transaction::ACTION_CABLE,
             :opentelemetry_scope => ["appsignal-ruby/action_cable", Appsignal::VERSION],
-            :discard_stale => "ActionCable::Channel::Base#subscribe_to_channel",
+            :discard_stale_with_reason => "ActionCable::Channel::Base#subscribe_to_channel",
             :finalize => lambda do |transaction|
               transaction.set_action_if_nil("#{channel.class}#subscribed")
               transaction.set_metadata("path", request.path)
@@ -82,7 +82,7 @@ module Appsignal
           Appsignal::Transaction.run(
             Appsignal::Transaction::ACTION_CABLE,
             :opentelemetry_scope => ["appsignal-ruby/action_cable", Appsignal::VERSION],
-            :discard_stale => "ActionCable::Channel::Base#unsubscribe_from_channel",
+            :discard_stale_with_reason => "ActionCable::Channel::Base#unsubscribe_from_channel",
             :finalize => lambda do |transaction|
               transaction.set_action_if_nil("#{channel.class}#unsubscribed")
               transaction.set_metadata("path", request.path)
