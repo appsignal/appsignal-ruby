@@ -169,6 +169,9 @@ module Appsignal
       # belongs in the block, so an error raised while setting it up cannot
       # skip the cleanup.
       #
+      # If an (uncompleted) transaction exists, when calling this method, that
+      # transaction isn't completed nor cleared.
+      #
       # When `finalize` is given, it runs that after the block, even when the
       # block raised. Any error raised by `finalize` is rescued and logged.
       # These do not skip the cleanup nor replace the block's own error.
@@ -182,7 +185,8 @@ module Appsignal
       #
       # @param namespace [String] Namespace of the transaction to create.
       # @param existing [Transaction, nil] Transaction to join instead of
-      #   creating one.
+      #   creating one. Defaults to the current transaction if it isn't
+      #   completed.
       # @param finalize [#call, nil] Called with the transaction after the
       #   block, even when the block raised.
       # @param complete_on_error [Boolean] Whether to complete the transaction
@@ -192,7 +196,7 @@ module Appsignal
       # @!visibility private
       def run( # rubocop:disable Metrics/ParameterLists
         namespace: HTTP_REQUEST,
-        existing: nil,
+        existing: (current if current? && !current.completed?),
         finalize: nil,
         complete_on_error: true,
         opentelemetry_context: nil,
@@ -200,7 +204,7 @@ module Appsignal
         opentelemetry_kind: nil,
         opentelemetry_relationship: nil
       )
-        owner = existing.nil?
+        previous = Thread.current[:appsignal_transaction]
         transaction = existing || create(
           namespace,
           :opentelemetry_context => opentelemetry_context,
@@ -208,6 +212,9 @@ module Appsignal
           :opentelemetry_kind => opentelemetry_kind,
           :opentelemetry_relationship => opentelemetry_relationship
         )
+
+        # Only transactions created here are ours to complete and clear.
+        owner = existing.nil? && !transaction.equal?(previous)
         raised = false
         begin
           yield transaction

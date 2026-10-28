@@ -680,6 +680,117 @@ describe Appsignal::Transaction do
       end
     end
 
+    context "with a current transaction and `existing:` is not given" do
+      it_in_both_modes "joins the current transaction without creating another one" do
+        current = create_transaction
+        expect(Appsignal::Transaction).to_not receive(:create)
+
+        yielded = nil
+        run_transaction { |transaction| yielded = transaction }
+
+        expect(yielded).to eq(current)
+
+        Appsignal::Transaction.complete_current!
+      end
+
+      it_in_both_modes "does not complete or clear the current transaction" do
+        current = create_transaction
+
+        run_transaction { |_transaction| nil }
+
+        expect(current).to_not be_completed
+        expect(current_transaction).to eq(current)
+
+        Appsignal::Transaction.complete_current!
+      end
+
+      it_in_both_modes "current transaction isn't completed nor cleared if block raises" do
+        current = create_transaction
+
+        expect do
+          run_transaction { |_transaction| raise ExampleException, "uh oh" }
+        end.to raise_error(ExampleException, "uh oh")
+
+        expect(current).to_not be_completed
+        expect(current_transaction).to eq(current)
+
+        Appsignal::Transaction.complete_current!
+      end
+
+      it "creates a new transaction when the current transaction is completed" do
+        completed = create_transaction
+        completed.complete
+
+        yielded = nil
+        run_transaction { |transaction| yielded = transaction }
+
+        expect(yielded).to_not eq(completed)
+        expect(yielded).to be_completed
+        expect(current_transaction?).to be(false)
+      end
+    end
+
+    context "with a current transaction and `existing:` is explicitly nil" do
+      it_in_both_modes "does not complete or clear the current transaction" do
+        current = create_transaction
+
+        yielded = nil
+        run_transaction(:existing => nil) { |transaction| yielded = transaction }
+
+        expect(yielded).to eq(current)
+        expect(current).to_not be_completed
+        expect(current_transaction).to eq(current)
+
+        Appsignal::Transaction.complete_current!
+      end
+    end
+
+    context "with no current transaction and `existing:` is explicitly nil" do
+      it_in_both_modes "completes and clears the transaction it created" do
+        run_transaction(:existing => nil) { |_transaction| nil }
+
+        expect(last_transaction).to be_completed
+        expect(current_transaction?).to be(false)
+      end
+    end
+
+    context "with nested calls" do
+      it_in_both_modes "only the outermost call completes and clears the current transaction" do
+        outer = nil
+        inner = nil
+        state_after_inner = nil
+
+        run_transaction do |transaction|
+          outer = transaction
+          run_transaction { |inner_transaction| inner = inner_transaction }
+          state_after_inner = [outer.completed?, current_transaction]
+        end
+
+        expect(inner).to eq(outer)
+        expect(state_after_inner).to eq([false, outer])
+        expect(outer).to be_completed
+        expect(current_transaction?).to be(false)
+      end
+
+      it_in_both_modes "when innermost raises, current transaction isn't completed nor cleared" do
+        outer = nil
+        state_after_inner = nil
+
+        run_transaction do |transaction|
+          outer = transaction
+          begin
+            run_transaction { |_inner_transaction| raise ExampleException, "uh oh" }
+          rescue ExampleException
+            state_after_inner = [outer.completed?, current_transaction]
+          end
+        end
+
+        expect(state_after_inner).to eq([false, outer])
+        expect(outer).to be_completed
+        expect(current_transaction?).to be(false)
+      end
+    end
+
     describe "finalize" do
       it "is called with the transaction after the block, before the transaction completes" do
         calls = []
