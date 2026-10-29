@@ -4,13 +4,22 @@ $LOAD_PATH.unshift(File.expand_path("lib", PROJECT_ROOT))
 
 require "appsignal"
 
+# Set by the invalid UTF-8 specs: a String tagged UTF-8 holding a byte that
+# is not UTF-8, or a binary String with a byte above 127. Used as the
+# revision, which ends up in the resource of every exported batch.
+INVALID_STRING =
+  case ENV.fetch("INVALID_UTF8_ENCODING", nil)
+  when "utf8" then "caf\xE9".dup.force_encoding(Encoding::UTF_8)
+  when "binary" then "caf\xE9".b
+  end
+
 # Name, environment and push API key come from the env vars the Runner
 # injects (see `Runner::DEFAULT_ENV`). The options below are specific to
 # this test's resource-attribute assertions.
 Appsignal.configure do |config|
   config.service_name = "collector-mode-test-service"
   config.hostname = "test-host"
-  config.revision = "abc1234"
+  config.revision = INVALID_STRING || "abc1234"
   config.filter_attributes = ["password", "secret"]
   config.filter_request_payload = ["payload-key"]
   config.send_request_payload = false
