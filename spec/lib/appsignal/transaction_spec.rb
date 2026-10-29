@@ -551,6 +551,98 @@ describe Appsignal::Transaction do
     end
   end
 
+  describe ".discard_stale_current!" do
+    def discard_stale_current
+      Appsignal::Transaction.discard_stale_current!("MyEntryPoint")
+    end
+
+    context "without a current transaction" do
+      it "does nothing" do
+        logs = capture_logs { discard_stale_current }
+
+        expect(current_transaction?).to be(false)
+        expect(logs).to be_empty
+      end
+    end
+
+    context "with a completed current transaction" do
+      it "clears the current transaction without logging a warning" do
+        transaction = create_transaction
+        transaction.complete
+
+        logs = capture_logs { discard_stale_current }
+
+        expect(Thread.current[:appsignal_transaction]).to be_nil
+        expect(transaction).to_not be_discarded
+        expect(logs).to_not contains_log(:warn, /Discarding transaction/)
+      end
+    end
+
+    context "with an incomplete current transaction" do
+      let(:transaction) do
+        create_transaction.tap { |t| t.set_action("MyController#index") }
+      end
+
+      it_in_both_modes "discards and clears the transaction" do
+        transaction
+        discard_stale_current
+
+        expect(transaction).to be_discarded
+        expect(current_transaction?).to be(false)
+      end
+
+      it "logs a warning about the discarded transaction" do
+        allow(SecureRandom).to receive(:uuid).and_return("stale_transaction_id")
+        transaction
+        logs = capture_logs { discard_stale_current }
+
+        expect(logs).to contains_log :warn,
+          "Discarding transaction 'stale_transaction_id' " \
+            "(namespace: http_request, action: \"MyController#index\") " \
+            "that was still current when MyEntryPoint started. " \
+            "It was not completed and is not reported."
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent
+        transaction
+        discard_stale_current
+
+        # Nothing is reported: the transaction is dropped, not completed.
+        expect(transaction).to_not be_completed
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        transaction
+        discard_stale_current
+
+        # The root span is exported flagged so the collector ignores the
+        # subtrace, and the transaction's context is no longer current.
+        expect(root_span.attributes["appsignal.ignore_subtrace"]).to be(true)
+        expect(::OpenTelemetry::Trace.current_span)
+          .to eq(::OpenTelemetry::Trace::Span::INVALID)
+      end
+
+      context "when discarding the transaction raises" do
+        before do
+          allow(transaction).to receive(:complete).and_raise(ExampleStandardError, "oh no")
+        end
+
+        it "logs an error without raising and clears the current transaction" do
+          logs =
+            capture_logs do
+              expect { discard_stale_current }.to_not raise_error
+            end
+
+          expect(logs).to contains_log :error,
+            "Failed to discard transaction ##{transaction.transaction_id}. oh no"
+          expect(current_transaction?).to be(false)
+        end
+      end
+    end
+  end
+
   describe ".run" do
     def run_transaction(**options, &block)
       Appsignal::Transaction.run(
@@ -655,6 +747,43 @@ describe Appsignal::Transaction do
       end
     end
 
+    context "with a stale current transaction" do
+      let(:stale_transaction) { create_transaction }
+
+      context "with discard_stale_with_reason" do
+        it_in_both_modes "discards the stale transaction and runs the block with a new one" do
+          stale_transaction
+          yielded = nil
+
+          logs =
+            capture_logs do
+              run_transaction(:discard_stale_with_reason => "MyEntryPoint") do |transaction|
+                yielded = transaction
+              end
+            end
+
+          expect(yielded).to_not eq(stale_transaction)
+          expect(yielded).to be_completed
+          expect(stale_transaction).to be_discarded
+          expect(current_transaction?).to be(false)
+          expect(logs).to contains_log :warn,
+            /Discarding transaction '#{stale_transaction.transaction_id}' .* MyEntryPoint/
+        end
+      end
+
+      context "without discard_stale_with_reason" do
+        it_in_both_modes "runs the block with the stale transaction" do
+          stale_transaction
+          yielded = nil
+
+          run_transaction { |transaction| yielded = transaction }
+
+          expect(yielded).to eq(stale_transaction)
+          expect(stale_transaction).to_not be_discarded
+        end
+      end
+    end
+
     context "with an existing transaction" do
       it_in_both_modes "yields the existing transaction without creating another one" do
         existing = create_transaction
@@ -687,6 +816,22 @@ describe Appsignal::Transaction do
         end.to raise_error(ExampleException, "uh oh")
 
         expect(existing).to_not be_completed
+        expect(current_transaction).to eq(existing)
+
+        Appsignal::Transaction.complete_current!
+      end
+
+      it_in_both_modes "does not discard the existing transaction with discard_stale_with_reason" do
+        existing = create_transaction
+
+        run_transaction(
+          :existing => existing,
+          :discard_stale_with_reason => "MyEntryPoint"
+        ) do |transaction|
+          expect(transaction).to eq(existing)
+        end
+
+        expect(existing).to_not be_discarded
         expect(current_transaction).to eq(existing)
 
         Appsignal::Transaction.complete_current!

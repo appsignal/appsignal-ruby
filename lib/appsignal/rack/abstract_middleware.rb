@@ -57,6 +57,7 @@ module Appsignal
 
           Appsignal::Transaction.run(
             :existing => parent_transaction,
+            :discard_stale_with_reason => "#{self.class}#call",
             :finalize => finalize,
             **opentelemetry_options
           ) do |transaction|

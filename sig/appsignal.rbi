@@ -1940,7 +1940,8 @@ module Appsignal
     def self.current; end
 
     # Returns if any transaction is currently active or not. A
-    # {NilTransaction} is not considered an active transaction.
+    # {NilTransaction} or a completed transaction is not considered an active
+    # transaction.
     # 
     # _@see_ `.current`
     sig { returns(T::Boolean) }

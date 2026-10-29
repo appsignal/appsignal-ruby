@@ -150,7 +150,8 @@ module Appsignal
       end
 
       # Returns if any transaction is currently active or not. A
-      # {NilTransaction} is not considered an active transaction.
+      # {NilTransaction} or a completed transaction is not considered an active
+      # transaction.
       #
       # @see .current
       # @return [Boolean]
@@ -187,6 +188,11 @@ module Appsignal
       # the transaction current and incomplete, for an error handler that runs
       # after the block to complete it.
       #
+      # When `discard_stale_with_reason` is given, any transaction that is
+      # current is discarded before a new transaction is created.  Thus, the
+      # current transaction is not reused.  See {.discard_stale_current!}.  It
+      # has no effect when `existing` is given.
+      #
       # @param namespace [String] Namespace of the transaction to create.
       # @param existing [Transaction, nil] Transaction to join instead of
       #   creating one. Defaults to the current transaction if it isn't
@@ -195,19 +201,29 @@ module Appsignal
       #   block, even when the block raised.
       # @param complete_on_error [Boolean] Whether to complete the transaction
       #   when the block raises.
+      # @param discard_stale_with_reason [String, nil] Name of the request
+      #   entry point, used in the warning when a current transaction is
+      #   discarded.
       # @yieldparam transaction [Transaction]
       # @return [Object] The return value of the block.
       # @!visibility private
       def run( # rubocop:disable Metrics/ParameterLists
         namespace: HTTP_REQUEST,
-        existing: (current if current?),
+        existing: nil,
         finalize: nil,
         complete_on_error: true,
+        discard_stale_with_reason: nil,
         opentelemetry_context: nil,
         opentelemetry_scope: nil,
         opentelemetry_kind: nil,
         opentelemetry_relationship: nil
       )
+        if existing.nil? && discard_stale_with_reason
+          discard_stale_current!(discard_stale_with_reason)
+        end
+
+        existing = current if existing.nil? && current?
+
         previous = Thread.current[:appsignal_transaction]
         transaction = existing || create(
           namespace,
@@ -254,6 +270,46 @@ module Appsignal
         )
       ensure
         clear_current_transaction!
+      end
+
+      # Discard the current transaction, if there is one, and unset it as the
+      # current transaction.
+      #
+      # Called where a new request starts and no transaction can be current yet.
+      # A transaction that is current was left there by earlier work on the same
+      # thread.
+      #
+      # Completed transactions are unset with no warning.  They are not
+      # discarded.
+      #
+      # Incomplete transactions are discarded, and not completed, because they
+      # were not finished: their data is incomplete.  A warning is logged with
+      # the details of the discarded transaction.
+      #
+      # Errors raised while discarding are logged, not re-raised.  The current
+      # transaction is unset regardless.
+      #
+      # @param entry_point [String] Name of the request entry point, used in the
+      #   warning.
+      # @return [void]
+      # @!visibility private
+      def discard_stale_current!(entry_point)
+        transaction = current
+        clear_current_transaction!
+        return if transaction.nil_transaction?
+
+        Appsignal.internal_logger.warn(
+          "Discarding transaction '#{transaction.transaction_id}' " \
+            "(namespace: #{transaction.namespace}, action: #{transaction.action.inspect}) " \
+            "that was still current when #{entry_point} started. " \
+            "It was not completed and is not reported."
+        )
+        transaction.discard!
+        transaction.complete
+      rescue => e
+        Appsignal.internal_logger.error(
+          "Failed to discard transaction ##{transaction.transaction_id}. #{e.message}"
+        )
       end
 
       # Remove current transaction from current Thread.
