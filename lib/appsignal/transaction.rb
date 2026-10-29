@@ -150,7 +150,8 @@ module Appsignal
       end
 
       # Returns if any transaction is currently active or not. A
-      # {NilTransaction} is not considered an active transaction.
+      # {NilTransaction} or a completed transaction is not considered an active
+      # transaction.
       #
       # @see .current
       # @return [Boolean]
@@ -290,11 +291,9 @@ module Appsignal
       # @return [void]
       # @!visibility private
       def discard_stale_current!(entry_point)
-        transaction = Thread.current[:appsignal_transaction]
-        return unless transaction
-
+        transaction = current
         clear_current_transaction!
-        return if transaction.completed?
+        return if transaction.nil_transaction?
 
         Appsignal.internal_logger.warn(
           "Discarding transaction '#{transaction.transaction_id}' " \
