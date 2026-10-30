@@ -16,3 +16,8 @@ is not valid UTF-8. Invalid bytes are replaced with `�`.
 * An invalid log message or logger group would drop the whole export batch.
 * An invalid transaction action or namespace would drop the whole export
   batch.
+* Invalid transaction metadata, tags or request headers would drop the whole
+  export batch, or be replaced with `"Encoding Error"`.
+* An invalid error message or backtrace, or breadcrumb category, action or
+  message, would drop the whole export batch, or be replaced with
+  `"Encoding Error"`.
