@@ -209,6 +209,7 @@ module Appsignal
         # The collector reads the action from `appsignal.action_name`, not the
         # span name. Set the name too so the OTel-native trace stays readable;
         # the collector treats the span name as authoritative for display.
+        action = encode_utf8(action)
         @span.name = action
         @span.set_attribute("appsignal.action_name", action)
         @action = action
@@ -246,7 +247,7 @@ module Appsignal
       # attribute, but it is the same shape as tags and the collector/trace UI
       # already surface `appsignal.tag.*`, so emit metadata as a tag.
       def set_metadata(key, value)
-        @span.set_attribute("appsignal.tag.#{key}", value)
+        @span.set_attribute(encode_utf8("appsignal.tag.#{key}"), encode_utf8(value))
       end
 
       # Sets OpenTelemetry attributes on AppSignal's current span -- the open
@@ -369,13 +370,13 @@ module Appsignal
 
         attributes = {
           "exception.type" => class_name,
-          "exception.message" => message.to_s,
-          "exception.stacktrace" => error_lines.join("\n"),
+          "exception.message" => encode_utf8(message.to_s),
+          "exception.stacktrace" => encode_utf8(error_lines.join("\n")),
           "appsignal.alert_this_error" => true
         }
 
         unless causes.empty?
-          attributes["appsignal.error_causes"] = JSON.generate(
+          attributes["appsignal.error_causes"] = Appsignal::Utils::JSON.generate(
             causes.map do |cause|
               lines, lines_omitted = trim_shared_tail(Array(cause[:backtrace]), error_lines)
 
@@ -419,10 +420,10 @@ module Appsignal
           "appsignal.breadcrumb",
           :timestamp => Time.at(breadcrumb[:time]),
           :attributes => {
-            "category" => breadcrumb[:category],
-            "action" => breadcrumb[:action],
-            "message" => breadcrumb[:message],
-            "metadata" => JSON.generate(breadcrumb[:metadata] || {})
+            "category" => encode_utf8(breadcrumb[:category]),
+            "action" => encode_utf8(breadcrumb[:action]),
+            "message" => encode_utf8(breadcrumb[:message]),
+            "metadata" => Appsignal::Utils::JSON.generate(breadcrumb[:metadata] || {})
           }
         )
       end
@@ -685,6 +686,7 @@ module Appsignal
       end
 
       def placeholder_span_name(namespace)
+        namespace = encode_utf8(namespace)
         "appsignal.transaction #{namespace}"
       end
 
@@ -754,7 +756,12 @@ module Appsignal
       end
 
       def display_namespace(namespace)
+        namespace = encode_utf8(namespace)
         DISPLAY_NAMESPACE.fetch(namespace, namespace)
+      end
+
+      def encode_utf8(value)
+        value.is_a?(String) ? Appsignal::Utils::UTF8.encode(value) : value
       end
 
       def service_namespace
@@ -767,13 +774,13 @@ module Appsignal
 
       def write_request_headers(headers)
         headers.each do |name, value|
-          @span.set_attribute("http.request.header.#{name}", value.to_s)
+          @span.set_attribute(encode_utf8("http.request.header.#{name}"), encode_utf8(value.to_s))
         end
       end
 
       def write_request_environment(environment)
         environment.each do |key, value|
-          @span.set_attribute("appsignal.environment.#{key}", value.to_s)
+          @span.set_attribute(encode_utf8("appsignal.environment.#{key}"), encode_utf8(value.to_s))
         end
       end
 
@@ -785,7 +792,7 @@ module Appsignal
       def write_tags(tags)
         tags.each do |key, value|
           value = value.to_s if value.is_a?(Symbol)
-          @span.set_attribute("appsignal.tag.#{key}", value)
+          @span.set_attribute(encode_utf8("appsignal.tag.#{key}"), encode_utf8(value))
         end
       end
 
@@ -821,7 +828,8 @@ module Appsignal
       # name as the title as well; in that case the name is not repeated.
       def write_event_span_name(span, name, title)
         has_title = title && !title.empty? && title != name
-        span.name = has_title ? "#{name} (#{title})" : name
+        span_name = has_title ? "#{name} (#{title})" : name
+        span.name = encode_utf8(span_name)
       end
 
       def write_event_body_attributes(span, body, body_format, db_system_name_set)
@@ -835,9 +843,9 @@ module Appsignal
           # earlier in the event, so an integration's own `db.system.name`
           # always wins over it.
           span.set_attribute("db.system.name", SQL_DB_SYSTEM) unless db_system_name_set
-          span.set_attribute("db.query.text", body) if has_body
+          span.set_attribute("db.query.text", encode_utf8(body)) if has_body
         elsif has_body
-          span.set_attribute("appsignal.body", body)
+          span.set_attribute("appsignal.body", encode_utf8(body))
         end
       end
 

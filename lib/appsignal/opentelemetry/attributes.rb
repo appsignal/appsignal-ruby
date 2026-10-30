@@ -7,13 +7,13 @@ module Appsignal
     # Coerces user-supplied tag hashes into a shape the OpenTelemetry SDK
     # accepts as attribute values: string keys, and values restricted to
     # the primitive types the OTLP spec allows. Anything else falls back
-    # to `to_s`. Shared by the metric and log backends so both behave
-    # identically.
+    # to `to_s`. Keys and string values are made valid UTF-8. Shared by
+    # the metric and log backends so both behave identically.
     module Attributes
       class << self
         def format(attrs)
           attrs.each_with_object({}) do |(key, value), result|
-            result[key.to_s] = format_value(value)
+            result[Appsignal::Utils::UTF8.encode(key.to_s)] = format_value(value)
           end
         end
 
@@ -21,8 +21,9 @@ module Appsignal
 
         def format_value(value)
           case value
-          when String, Integer, Float, TrueClass, FalseClass then value
-          else value.to_s
+          when String then Appsignal::Utils::UTF8.encode(value)
+          when Integer, Float, TrueClass, FalseClass then value
+          else Appsignal::Utils::UTF8.encode(value.to_s)
           end
         end
       end

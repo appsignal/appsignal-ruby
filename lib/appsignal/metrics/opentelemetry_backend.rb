@@ -66,6 +66,7 @@ module Appsignal
         # make the SDK log a duplicate-registration warning).
         def instrument(kind, name)
           name = name.to_s
+            .encode("ASCII", :invalid => :replace, :undef => :replace, :replace => "_")
           MUTEX.synchronize do
             case kind
             when :gauge
