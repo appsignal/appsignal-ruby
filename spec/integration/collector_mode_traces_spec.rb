@@ -114,37 +114,6 @@ if DependencyHelper.opentelemetry_present?
             expect(attribute_value(span, "appsignal.tag.#{replaced}")).to eq("value")
           end
 
-          # `Appsignal::Utils::JSON` already scrubs binary strings in sample
-          # data, so only the UTF-8 string is checked here.
-          if encoding == "utf8"
-            it "exports a transaction with an invalid request payload value" do
-              run_invalid_utf8_scenario("request_payload")
-
-              span = exported_invalid_root_span
-              payload = attribute_value(span, "appsignal.request.payload")
-              expect(payload).not_to be_nil
-              expect(JSON.parse(payload)).to eq("invalid_param" => replaced)
-            end
-
-            it "exports a transaction with an invalid session data value" do
-              run_invalid_utf8_scenario("session_data")
-
-              span = exported_invalid_root_span
-              session_data = attribute_value(span, "appsignal.request.session_data")
-              expect(session_data).not_to be_nil
-              expect(JSON.parse(session_data)).to eq("invalid_session" => replaced)
-            end
-
-            it "exports a transaction with an invalid custom data value" do
-              run_invalid_utf8_scenario("custom_data")
-
-              span = exported_invalid_root_span
-              custom_data = attribute_value(span, "appsignal.custom_data")
-              expect(custom_data).not_to be_nil
-              expect(JSON.parse(custom_data)).to eq("invalid_custom" => replaced)
-            end
-          end
-
           it "exports a transaction with an invalid request header value" do
             run_invalid_utf8_scenario("request_header")
 

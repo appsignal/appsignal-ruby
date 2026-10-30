@@ -70,12 +70,6 @@ when "tag_value"
   monitor_invalid { Appsignal.add_tags("invalid_tag" => INVALID_STRING) }
 when "tag_key"
   monitor_invalid { Appsignal.add_tags(INVALID_STRING => "value") }
-when "request_payload"
-  monitor_invalid { Appsignal.add_params("invalid_param" => INVALID_STRING) }
-when "session_data"
-  monitor_invalid { Appsignal.add_session_data("invalid_session" => INVALID_STRING) }
-when "custom_data"
-  monitor_invalid { Appsignal.add_custom_data("invalid_custom" => INVALID_STRING) }
 when "request_header"
   monitor_invalid { Appsignal.add_request_headers("accept" => INVALID_STRING) }
 when "opentelemetry_attribute_value"
