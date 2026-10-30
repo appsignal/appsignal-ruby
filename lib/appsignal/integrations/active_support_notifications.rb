@@ -6,6 +6,7 @@ module Appsignal
     module ActiveSupportNotificationsIntegration
       class << self
         BANG = "!"
+        SCOPE_BY_EVENT_NAME = Appsignal::Utils::BoundedCache.new
 
         def start_event(name)
           return unless record_event?(name)
@@ -32,13 +33,7 @@ module Appsignal
         # rather than lumping them under one. A name without a group falls back
         # to the default scope in the backend.
         def scope_for(name)
-          # Only names with a group (a dot) map to a component scope. A name
-          # without one has no component to attribute it to, so it falls back to
-          # the default scope in the backend (returning nil here).
-          parts = name.to_s.split(".")
-          return if parts.length < 2 || parts.last.empty?
-
-          ["appsignal-ruby/#{parts.last}", Appsignal::VERSION]
+          SCOPE_BY_EVENT_NAME.fetch(name) { build_scope(name) }
         end
 
         def finish_event(name, payload = {})
@@ -82,7 +77,16 @@ module Appsignal
         # here. Both `start_event` and `finish_event` gate on this so the event
         # stack stays balanced.
         def record_event?(name)
-          name.to_s[0] != BANG && Appsignal::EventFormatter.record?(name)
+          !name.to_s.start_with?(BANG) && Appsignal::EventFormatter.record?(name)
+        end
+
+        private
+
+        def build_scope(name)
+          parts = name.to_s.split(".")
+          return if parts.length < 2 || parts.last.empty?
+
+          ["appsignal-ruby/#{parts.last}", Appsignal::VERSION].freeze
         end
       end
 
