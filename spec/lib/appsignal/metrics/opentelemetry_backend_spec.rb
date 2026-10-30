@@ -54,6 +54,18 @@ describe Appsignal::Metrics::OpenTelemetryBackend, :if => DependencyHelper.opent
       # snapshot if the symbol name was coerced.
       expect(snapshot_for("my_gauge")).not_to be_nil
     end
+
+    it "replaces non-ASCII characters in a metric name with underscores" do
+      described_class.set_gauge("café", 1.0, {})
+
+      expect(snapshot_for("caf_")).not_to be_nil
+    end
+
+    it "replaces invalid UTF-8 bytes in a metric name with underscores" do
+      described_class.set_gauge("caf\xE9".b, 1.0, {})
+
+      expect(snapshot_for("caf_")).not_to be_nil
+    end
   end
 
   describe ".increment_counter" do

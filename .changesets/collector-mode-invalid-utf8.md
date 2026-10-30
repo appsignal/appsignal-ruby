@@ -25,3 +25,6 @@ is not valid UTF-8. Invalid bytes are replaced with `�`.
   the whole export batch, or be replaced with `"Encoding Error"`.
 * An invalid config value sent with every export, such as the revision,
   would drop every batch of traces, metrics and logs.
+* A metric name with a non-ASCII character would raise an error into the
+  application, because the OpenTelemetry SDK only accepts ASCII metric names.
+  Each non-ASCII character is now replaced with `_`.
