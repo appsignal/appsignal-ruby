@@ -23,3 +23,5 @@ is not valid UTF-8. Invalid bytes are replaced with `�`.
   `"Encoding Error"`.
 * An invalid event name, title or body, including an SQL query, would drop
   the whole export batch, or be replaced with `"Encoding Error"`.
+* An invalid config value sent with every export, such as the revision,
+  would drop every batch of traces, metrics and logs.

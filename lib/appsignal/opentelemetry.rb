@@ -370,6 +370,10 @@ module Appsignal
         # An absent attribute leaves the collector its own default, which an empty
         # allowlist cannot say, so an empty list is sent and an unset option is not.
         attrs.reject! { |_, value| value.nil? || value == "" }
+        # Enforce valid UTF8 strings.
+        attrs.transform_values! do |value|
+          value.is_a?(String) ? Appsignal::Utils::UTF8.encode(value) : value
+        end
         ::OpenTelemetry::SDK::Resources::Resource.create(attrs)
       end
 
