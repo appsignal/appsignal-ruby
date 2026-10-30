@@ -10,3 +10,9 @@ is not valid UTF-8. Invalid bytes are replaced with `�`.
 
 * An error cause message, or breadcrumb metadata, with invalid bytes would
   raise a `JSON::GeneratorError` into the application.
+* An invalid key or value in metric tags, log attributes or OpenTelemetry
+  attributes would drop the whole export batch, or be replaced with
+  `"Encoding Error"`.
+* An invalid log message or logger group would drop the whole export batch.
+* An invalid transaction action or namespace would drop the whole export
+  batch.

@@ -209,6 +209,7 @@ module Appsignal
         # The collector reads the action from `appsignal.action_name`, not the
         # span name. Set the name too so the OTel-native trace stays readable;
         # the collector treats the span name as authoritative for display.
+        action = encode_utf8(action)
         @span.name = action
         @span.set_attribute("appsignal.action_name", action)
         @action = action
@@ -685,6 +686,7 @@ module Appsignal
       end
 
       def placeholder_span_name(namespace)
+        namespace = encode_utf8(namespace)
         "appsignal.transaction #{namespace}"
       end
 
@@ -754,7 +756,12 @@ module Appsignal
       end
 
       def display_namespace(namespace)
+        namespace = encode_utf8(namespace)
         DISPLAY_NAMESPACE.fetch(namespace, namespace)
+      end
+
+      def encode_utf8(value)
+        value.is_a?(String) ? Appsignal::Utils::UTF8.encode(value) : value
       end
 
       def service_namespace
