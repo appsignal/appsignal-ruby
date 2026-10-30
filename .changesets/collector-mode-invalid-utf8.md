@@ -21,3 +21,5 @@ is not valid UTF-8. Invalid bytes are replaced with `�`.
 * An invalid error message or backtrace, or breadcrumb category, action or
   message, would drop the whole export batch, or be replaced with
   `"Encoding Error"`.
+* An invalid event name, title or body, including an SQL query, would drop
+  the whole export batch, or be replaced with `"Encoding Error"`.
