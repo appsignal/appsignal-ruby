@@ -66,21 +66,21 @@ if DependencyHelper.opentelemetry_present?
             run_invalid_utf8_scenario("log_attribute_value")
 
             record = exported_invalid_log_record
-            expect(attribute_value(record, "invalid_attribute").string_value).to eq(replaced)
+            expect(attribute_value(record, "invalid_attribute")&.string_value).to eq(replaced)
           end
 
           it "exports logs with an invalid attribute key" do
             run_invalid_utf8_scenario("log_attribute_key")
 
             record = exported_invalid_log_record
-            expect(attribute_value(record, replaced).string_value).to eq("value")
+            expect(attribute_value(record, replaced)&.string_value).to eq("value")
           end
 
           it "exports logs with an invalid group" do
             run_invalid_utf8_scenario("log_group")
 
             record = exported_invalid_log_record
-            expect(attribute_value(record, "appsignal.group").string_value).to eq(replaced)
+            expect(attribute_value(record, "appsignal.group")&.string_value).to eq(replaced)
           end
         end
       end
