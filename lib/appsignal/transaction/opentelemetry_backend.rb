@@ -247,7 +247,7 @@ module Appsignal
       # attribute, but it is the same shape as tags and the collector/trace UI
       # already surface `appsignal.tag.*`, so emit metadata as a tag.
       def set_metadata(key, value)
-        @span.set_attribute("appsignal.tag.#{key}", value)
+        @span.set_attribute(encode_utf8("appsignal.tag.#{key}"), encode_utf8(value))
       end
 
       # Sets OpenTelemetry attributes on AppSignal's current span -- the open
@@ -774,13 +774,13 @@ module Appsignal
 
       def write_request_headers(headers)
         headers.each do |name, value|
-          @span.set_attribute("http.request.header.#{name}", value.to_s)
+          @span.set_attribute(encode_utf8("http.request.header.#{name}"), encode_utf8(value.to_s))
         end
       end
 
       def write_request_environment(environment)
         environment.each do |key, value|
-          @span.set_attribute("appsignal.environment.#{key}", value.to_s)
+          @span.set_attribute(encode_utf8("appsignal.environment.#{key}"), encode_utf8(value.to_s))
         end
       end
 
@@ -792,7 +792,7 @@ module Appsignal
       def write_tags(tags)
         tags.each do |key, value|
           value = value.to_s if value.is_a?(Symbol)
-          @span.set_attribute("appsignal.tag.#{key}", value)
+          @span.set_attribute(encode_utf8("appsignal.tag.#{key}"), encode_utf8(value))
         end
       end
 
