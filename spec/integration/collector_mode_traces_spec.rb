@@ -160,6 +160,32 @@ if DependencyHelper.opentelemetry_present?
         expect(JSON.parse(metadata)).to eq("key" => replaced)
       end
 
+      it "exports an event with an invalid name" do
+        run_invalid_utf8_scenario("event_name")
+
+        expect(exported_invalid_event_span.name).to eq(replaced)
+      end
+
+      it "exports an event with an invalid title" do
+        run_invalid_utf8_scenario("event_title")
+
+        expect(exported_invalid_event_span.name).to eq("event.invalid (#{replaced})")
+      end
+
+      it "exports an event with an invalid body" do
+        run_invalid_utf8_scenario("event_body")
+
+        event = exported_invalid_event_span
+        expect(attribute_value(event, "appsignal.body")).to eq(replaced)
+      end
+
+      it "exports a SQL event with an invalid query" do
+        run_invalid_utf8_scenario("sql_body")
+
+        event = exported_invalid_event_span
+        expect(attribute_value(event, "db.query.text")).to eq(replaced)
+      end
+
       def run_invalid_utf8_scenario(scenario)
         runner = Runner.new(
           "collector_mode_traces",
@@ -179,6 +205,15 @@ if DependencyHelper.opentelemetry_present?
         spans = exported_spans
         expect(spans.map(&:name)).to include("MyController#index", invalid_action)
         spans.find { |s| s.name == invalid_action }
+      end
+
+      def exported_invalid_event_span
+        spans = exported_spans
+        expect(spans.map(&:name)).to include("MyController#index", invalid_action)
+        root = spans.find { |s| s.name == invalid_action }
+        events = spans.select { |s| s.parent_span_id == root.span_id }
+        expect(events.size).to eq(1)
+        events.first
       end
 
       def span_event(span, name)
