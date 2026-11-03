@@ -370,8 +370,8 @@ module Appsignal
 
         attributes = {
           "exception.type" => class_name,
-          "exception.message" => message.to_s,
-          "exception.stacktrace" => error_lines.join("\n"),
+          "exception.message" => encode_utf8(message.to_s),
+          "exception.stacktrace" => encode_utf8(error_lines.join("\n")),
           "appsignal.alert_this_error" => true
         }
 
@@ -420,9 +420,9 @@ module Appsignal
           "appsignal.breadcrumb",
           :timestamp => Time.at(breadcrumb[:time]),
           :attributes => {
-            "category" => breadcrumb[:category],
-            "action" => breadcrumb[:action],
-            "message" => breadcrumb[:message],
+            "category" => encode_utf8(breadcrumb[:category]),
+            "action" => encode_utf8(breadcrumb[:action]),
+            "message" => encode_utf8(breadcrumb[:message]),
             "metadata" => Appsignal::Utils::JSON.generate(breadcrumb[:metadata] || {})
           }
         )
