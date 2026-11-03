@@ -828,7 +828,8 @@ module Appsignal
       # name as the title as well; in that case the name is not repeated.
       def write_event_span_name(span, name, title)
         has_title = title && !title.empty? && title != name
-        span.name = has_title ? "#{name} (#{title})" : name
+        span_name = has_title ? "#{name} (#{title})" : name
+        span.name = encode_utf8(span_name)
       end
 
       def write_event_body_attributes(span, body, body_format, db_system_name_set)
@@ -842,9 +843,9 @@ module Appsignal
           # earlier in the event, so an integration's own `db.system.name`
           # always wins over it.
           span.set_attribute("db.system.name", SQL_DB_SYSTEM) unless db_system_name_set
-          span.set_attribute("db.query.text", body) if has_body
+          span.set_attribute("db.query.text", encode_utf8(body)) if has_body
         elsif has_body
-          span.set_attribute("appsignal.body", body)
+          span.set_attribute("appsignal.body", encode_utf8(body))
         end
       end
 
