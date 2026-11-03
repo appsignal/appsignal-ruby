@@ -1188,6 +1188,66 @@ describe Appsignal do
         end
       end
 
+      # The agent mode counterpart of the invalid UTF-8 scenarios in the
+      # collector mode traces integration spec. The extension replaces the
+      # invalid bytes with "�".
+      describe "with invalid UTF-8" do
+        let(:invalid) { "caf\xE9".dup.force_encoding(Encoding::UTF_8) }
+        let(:replaced) { "caf\u{FFFD}" }
+
+        # The error keeps its real backtrace: with Rails loaded, the Rails
+        # backtrace cleaner raises on a backtrace line with invalid UTF-8.
+        def error_with_invalid_cause
+          begin
+            raise ArgumentError, invalid
+          rescue ArgumentError
+            raise StandardError, invalid
+          end
+        rescue StandardError => error
+          error
+        end
+
+        def perform
+          Appsignal.monitor(:action => invalid, :namespace => invalid) do
+            Appsignal.add_tags(invalid => invalid)
+            Appsignal::Transaction.current.set_metadata(invalid, invalid)
+            Appsignal.add_params(invalid => invalid)
+            Appsignal.add_session_data(invalid => invalid)
+            Appsignal.add_custom_data(invalid => invalid)
+            Appsignal.add_request_headers("accept" => invalid)
+            Appsignal.add_breadcrumb(invalid, invalid, invalid, invalid => invalid)
+            Appsignal.instrument(invalid, invalid, invalid) do
+              # No body; the event itself carries the invalid strings.
+            end
+            Appsignal.set_error(error_with_invalid_cause)
+          end
+        end
+
+        it "in agent mode", :agent_mode do
+          start_agent
+          perform
+
+          transaction = last_transaction
+          expect(transaction.backend.to_json).to be_valid_encoding
+          expect(transaction).to have_namespace(replaced)
+          expect(transaction).to have_action(replaced)
+          expect(transaction).to include_tags(replaced => replaced)
+          expect(transaction).to include_metadata(replaced => replaced)
+          expect(transaction).to include_params(replaced => replaced)
+          expect(transaction).to include_session_data(replaced => replaced)
+          expect(transaction).to include_custom_data(replaced => replaced)
+          expect(transaction).to include_environment("HTTP_ACCEPT" => replaced)
+          expect(transaction)
+            .to include_breadcrumb(replaced, replaced, replaced, replaced => replaced)
+          expect(transaction)
+            .to include_event("name" => replaced, "title" => replaced, "body" => replaced)
+          expect(transaction).to have_error("StandardError", replaced)
+          expect(transaction).to include_error_causes(
+            [hash_including("name" => "ArgumentError", "message" => replaced)]
+          )
+        end
+      end
+
       describe "passing an OpenTelemetry scope" do
         let(:scope) { ["appsignal-ruby/custom", "1.2.3"] }
 
