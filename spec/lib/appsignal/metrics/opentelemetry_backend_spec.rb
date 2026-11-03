@@ -132,6 +132,17 @@ describe Appsignal::Metrics::OpenTelemetryBackend, :if => DependencyHelper.opent
     end
   end
 
+  describe "metric names with invalid UTF-8" do
+    [:set_gauge, :increment_counter, :add_distribution_value].each do |helper|
+      it "raises the OpenTelemetry instrument name error for a #{helper} metric" do
+        name = "caf\xE9".dup.force_encoding(Encoding::UTF_8)
+
+        expect { described_class.public_send(helper, name, 1, {}) }
+          .to raise_error(::OpenTelemetry::Metrics::Meter::InstrumentNameError)
+      end
+    end
+  end
+
   describe "instrument caching" do
     it "reuses the same instrument across calls for a given metric name" do
       meter = ::OpenTelemetry.meter_provider.meter("appsignal-helpers")
