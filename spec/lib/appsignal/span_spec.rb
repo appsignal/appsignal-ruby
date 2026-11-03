@@ -128,6 +128,63 @@ describe Appsignal::Span do
     end
   end
 
+  describe "string encodings" do
+    def span_json(span)
+      span.instance_variable_get(:@ext).to_json
+    end
+
+    shared_examples "a span with valid UTF-8 strings" do |expected|
+      it "sends valid UTF-8 in every string field" do
+        span = Appsignal::Span.new(string)
+        span.name = string
+        span[string] = string
+        span.set_sample_data(string, string => string)
+        span.add_error(StandardError.new(string))
+
+        json = span_json(span)
+        expect(json).to be_valid_encoding
+
+        hash = JSON.parse(json)
+        expect(hash).to include(
+          "namespace" => expected,
+          "name" => expected,
+          "attributes" => { expected => expected },
+          "sample_data" => { expected => %({"#{expected}":"#{expected}"}) }
+        )
+        expect(hash["error"]).to include("message" => expected)
+      end
+
+      it "sends valid UTF-8 for a child span name" do
+        child = root.child
+        child.name = string
+
+        json = span_json(child)
+        expect(json).to be_valid_encoding
+        expect(JSON.parse(json)["name"]).to eq(expected)
+      end
+    end
+
+    context "with invalid bytes in a UTF-8 string" do
+      let(:string) { "caf\xE9".dup.force_encoding(Encoding::UTF_8) }
+
+      include_examples "a span with valid UTF-8 strings", "caf\u{FFFD}"
+    end
+
+    context "with a binary string of valid UTF-8 bytes" do
+      let(:string) { "caf\xC3\xA9".b }
+
+      include_examples "a span with valid UTF-8 strings", "café"
+    end
+
+    # The extension reads the bytes as UTF-8 and ignores the Ruby encoding, so
+    # the ISO-8859-1 "é" (0xE9) is an invalid byte to it.
+    context "with a string in another encoding" do
+      let(:string) { "café".encode(Encoding::ISO_8859_1) }
+
+      include_examples "a span with valid UTF-8 strings", "caf\u{FFFD}"
+    end
+  end
+
   describe "#close" do
     it "closes a span" do
       expect(root.closed?).to eq false
