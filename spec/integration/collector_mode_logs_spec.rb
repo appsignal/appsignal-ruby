@@ -38,6 +38,47 @@ if DependencyHelper.opentelemetry_present?
       expect(error_record.severity_text).to eq("ERROR")
     end
 
+    context "with invalid UTF-8" do
+      let(:replaced) { "caf\u{FFFD}" }
+
+      it "exports logs with an invalid attribute value" do
+        run_invalid_utf8_scenario("log_attribute_value")
+
+        record = exported_invalid_log_record
+        expect(attribute_value(record, "invalid_attribute")&.string_value).to eq(replaced)
+      end
+
+      it "exports logs with an invalid attribute key" do
+        run_invalid_utf8_scenario("log_attribute_key")
+
+        record = exported_invalid_log_record
+        expect(attribute_value(record, replaced)&.string_value).to eq("value")
+      end
+
+      def run_invalid_utf8_scenario(scenario)
+        runner = Runner.new(
+          "collector_mode_logs",
+          :env => OTLPCollectorServer.env.merge("INVALID_UTF8_SCENARIO" => scenario)
+        )
+        runner.run
+      end
+
+      # The runner stops AppSignal before it exits, which flushes the logs, so
+      # the batch has been sent by the time this reads it.
+      def exported_log_records
+        # Waiting longer is useless, the batch should be ready by this time.
+        log_req = OTLPCollectorServer.listen_to("/v1/logs", :timeout => 2)
+        Opentelemetry::Proto::Collector::Logs::V1::ExportLogsServiceRequest
+          .decode(log_req[:body])
+          .resource_logs.flat_map(&:scope_logs)
+          .flat_map(&:log_records)
+      end
+
+      def exported_invalid_log_record
+        exported_log_records.find { |record| record.body.string_value == "invalid line" }
+      end
+    end
+
     def attribute_value(record, key)
       record.attributes.find { |kv| kv.key == key }&.value
     end

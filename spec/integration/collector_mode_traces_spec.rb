@@ -63,6 +63,21 @@ if DependencyHelper.opentelemetry_present?
       let(:replaced) { "caf\u{FFFD}" }
       let(:invalid_action) { "InvalidUtf8Controller#index" }
 
+
+      it "exports a transaction with an invalid OpenTelemetry attribute value" do
+        run_invalid_utf8_scenario("opentelemetry_attribute_value")
+
+        span = exported_invalid_root_span
+        expect(attribute_value(span, "invalid.attribute")).to eq(replaced)
+      end
+
+      it "exports a transaction with an invalid OpenTelemetry attribute key" do
+        run_invalid_utf8_scenario("opentelemetry_attribute_key")
+
+        span = exported_invalid_root_span
+        expect(attribute_value(span, replaced)).to eq("value")
+      end
+
       it "exports a transaction with an invalid error cause message" do
         run_invalid_utf8_scenario("error_cause_message")
 
