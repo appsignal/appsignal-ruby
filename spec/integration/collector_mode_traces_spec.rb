@@ -79,6 +79,34 @@ if DependencyHelper.opentelemetry_present?
         expect(attribute_value(span, "appsignal.namespace")).to eq(replaced)
       end
 
+      it "exports a transaction with an invalid metadata value" do
+        run_invalid_utf8_scenario("metadata")
+
+        span = exported_invalid_root_span
+        expect(attribute_value(span, "appsignal.tag.path")).to eq(replaced)
+      end
+
+      it "exports a transaction with an invalid tag value" do
+        run_invalid_utf8_scenario("tag_value")
+
+        span = exported_invalid_root_span
+        expect(attribute_value(span, "appsignal.tag.invalid_tag")).to eq(replaced)
+      end
+
+      it "exports a transaction with an invalid tag key" do
+        run_invalid_utf8_scenario("tag_key")
+
+        span = exported_invalid_root_span
+        expect(attribute_value(span, "appsignal.tag.#{replaced}")).to eq("value")
+      end
+
+      it "exports a transaction with an invalid request header value" do
+        run_invalid_utf8_scenario("request_header")
+
+        span = exported_invalid_root_span
+        expect(attribute_value(span, "http.request.header.accept")).to eq(replaced)
+      end
+
       it "exports a transaction with an invalid OpenTelemetry attribute value" do
         run_invalid_utf8_scenario("opentelemetry_attribute_value")
 
