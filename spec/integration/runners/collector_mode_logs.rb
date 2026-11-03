@@ -29,10 +29,14 @@ logger.error("error line")
 case ENV.fetch("INVALID_UTF8_SCENARIO", nil)
 when nil
   nil
+when "log_message"
+  Appsignal::Logger.new("invalid-group").info(INVALID_STRING)
 when "log_attribute_value"
   Appsignal::Logger.new("invalid-group").info("invalid line", :invalid_attribute => INVALID_STRING)
 when "log_attribute_key"
   Appsignal::Logger.new("invalid-group").info("invalid line", INVALID_STRING => "value")
+when "log_group"
+  Appsignal::Logger.new(INVALID_STRING).info("invalid line")
 else
   raise "Unknown INVALID_UTF8_SCENARIO: #{ENV.fetch("INVALID_UTF8_SCENARIO")}"
 end
