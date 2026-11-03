@@ -238,6 +238,78 @@ describe Appsignal::Transaction::ExtensionBackend do
     end
   end
 
+  describe "string encodings" do
+    def transaction_json(string)
+      backend = described_class.new("abc-123", string)
+      backend.set_action(string)
+      backend.set_metadata(string, string)
+      backend.start_event
+      backend.finish_event(string, string, string, 0)
+      backend.record_event(string, string, string, 0, 1000)
+      # The cause has no backtrace because the first line of a cause's
+      # backtrace is matched against a regex, which raises on invalid UTF-8.
+      causes = [{ :name => string, :message => string, :backtrace => nil }]
+      backend.set_error(string, string, [string], causes, false)
+      backend.set_sample_data("tags", string => string)
+      backend.to_json
+    end
+
+    shared_examples "a transaction with valid UTF-8 strings" do |expected|
+      it "sends valid UTF-8 in every string field" do
+        json = transaction_json(string)
+        expect(json).to be_valid_encoding
+
+        transaction = JSON.parse(json)
+        expect(transaction).to include(
+          "namespace" => expected,
+          "action" => expected,
+          "metadata" => { expected => expected },
+          "error" => {
+            "name" => expected,
+            "message" => expected,
+            "backtrace" => %(["#{expected}"])
+          }
+        )
+        expect(transaction["sample_data"]).to eq(
+          "tags" => { expected => expected },
+          "error_causes" => [{ "name" => expected, "message" => expected, "first_line" => nil }]
+        )
+        expect(transaction["events"].size).to eq(2)
+        expect(transaction["events"])
+          .to all(include("name" => expected, "title" => expected, "body" => expected))
+      end
+
+      it "sends valid UTF-8 for a namespace set after the start" do
+        backend.set_namespace(string)
+        json = backend.to_json
+
+        expect(json).to be_valid_encoding
+        expect(JSON.parse(json)["namespace"]).to eq(expected)
+      end
+    end
+
+    context "with invalid bytes in a UTF-8 string" do
+      let(:string) { "caf\xE9".dup.force_encoding(Encoding::UTF_8) }
+
+      include_examples "a transaction with valid UTF-8 strings", "caf\u{FFFD}"
+    end
+
+    context "with a binary string of valid UTF-8 bytes" do
+      let(:string) { "caf\xC3\xA9".b }
+
+      include_examples "a transaction with valid UTF-8 strings", "café"
+    end
+
+    # The extension reads the bytes as UTF-8 and ignores the Ruby encoding, so
+    # the ISO-8859-1 "é" (0xE9) is an invalid byte to it.
+    # Collector mode converts the same string to "café".
+    context "with a string in another encoding" do
+      let(:string) { "café".encode(Encoding::ISO_8859_1) }
+
+      include_examples "a transaction with valid UTF-8 strings", "caf\u{FFFD}"
+    end
+  end
+
   describe "#supports_multiple_errors?" do
     it "returns false (extra errors are reported as duplicate transactions)" do
       expect(backend.supports_multiple_errors?).to eq(false)
