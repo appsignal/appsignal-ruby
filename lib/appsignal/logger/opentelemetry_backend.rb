@@ -42,8 +42,9 @@ module Appsignal
         def emit(group, severity, format, message, attributes)
           number, text = OTEL_SEVERITY_MAP.fetch(severity, [0, nil])
           otel_attributes = Appsignal::OpenTelemetry::Attributes.format(attributes)
-          otel_attributes["appsignal.group"] = group.to_s
+          otel_attributes["appsignal.group"] = Appsignal::Utils::UTF8.encode(group.to_s)
           otel_attributes["appsignal.format"] = FORMAT_NAMES.fetch(format, "autodetect")
+          message = Appsignal::Utils::UTF8.encode(message) if message.is_a?(String)
           logger.on_emit(
             :severity_number => number,
             :severity_text => text,

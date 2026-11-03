@@ -41,6 +41,13 @@ if DependencyHelper.opentelemetry_present?
     context "with invalid UTF-8" do
       let(:replaced) { "caf\u{FFFD}" }
 
+      it "exports logs with an invalid message" do
+        run_invalid_utf8_scenario("log_message")
+
+        bodies = exported_log_records.map { |record| record.body.string_value }
+        expect(bodies).to include("info line", replaced)
+      end
+
       it "exports logs with an invalid attribute value" do
         run_invalid_utf8_scenario("log_attribute_value")
 
@@ -53,6 +60,13 @@ if DependencyHelper.opentelemetry_present?
 
         record = exported_invalid_log_record
         expect(attribute_value(record, replaced)&.string_value).to eq("value")
+      end
+
+      it "exports logs with an invalid group" do
+        run_invalid_utf8_scenario("log_group")
+
+        record = exported_invalid_log_record
+        expect(attribute_value(record, "appsignal.group")&.string_value).to eq(replaced)
       end
 
       def run_invalid_utf8_scenario(scenario)
