@@ -121,6 +121,20 @@ if DependencyHelper.opentelemetry_present?
         expect(attribute_value(span, replaced)).to eq("value")
       end
 
+      it "exports a transaction with an invalid error message" do
+        run_invalid_utf8_scenario("error_message")
+
+        exception = span_event(exported_invalid_root_span, "exception")
+        expect(attribute_value(exception, "exception.message")).to eq(replaced)
+      end
+
+      it "exports a transaction with an invalid error backtrace" do
+        run_invalid_utf8_scenario("error_backtrace")
+
+        exception = span_event(exported_invalid_root_span, "exception")
+        expect(attribute_value(exception, "exception.stacktrace")).to eq(replaced)
+      end
+
       it "exports a transaction with an invalid error cause message" do
         run_invalid_utf8_scenario("error_cause_message")
 
@@ -128,6 +142,13 @@ if DependencyHelper.opentelemetry_present?
         causes = attribute_value(exception, "appsignal.error_causes")
         expect(causes).not_to be_nil
         expect(JSON.parse(causes).first["message"]).to eq(replaced)
+      end
+
+      it "exports a transaction with an invalid breadcrumb message" do
+        run_invalid_utf8_scenario("breadcrumb_message")
+
+        breadcrumb = span_event(exported_invalid_root_span, "appsignal.breadcrumb")
+        expect(attribute_value(breadcrumb, "message")).to eq(replaced)
       end
 
       it "exports a transaction with an invalid breadcrumb metadata value" do
