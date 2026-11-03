@@ -4,13 +4,16 @@ $LOAD_PATH.unshift(File.expand_path("lib", PROJECT_ROOT))
 
 require "appsignal"
 
+INVALID_STRING = "caf\xE9".dup.force_encoding(Encoding::UTF_8)
+
 # Name, environment and push API key come from the env vars the Runner
 # injects (see `Runner::DEFAULT_ENV`). The options below are specific to
 # this test's resource-attribute assertions.
 Appsignal.configure do |config|
   config.service_name = "collector-mode-test-service"
   config.hostname = "test-host"
-  config.revision = "abc1234"
+  config.revision =
+    ENV["INVALID_UTF8_SCENARIO"] == "revision" ? INVALID_STRING : "abc1234"
   config.filter_attributes = ["password", "secret"]
   config.filter_request_payload = ["payload-key"]
   config.send_request_payload = false

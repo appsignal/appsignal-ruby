@@ -122,5 +122,43 @@ if DependencyHelper.opentelemetry_present?
       expect(attrs).to have_key("appsignal.config.request_headers")
       expect(attrs["appsignal.config.request_headers"].array_value.values).to eq([])
     end
+
+    it "emits OTLP traces, metrics, and logs when the revision is not valid UTF-8" do
+      runner = Runner.new(
+        "collector_mode_emit",
+        :env => OTLPCollectorServer.env.merge("INVALID_UTF8_SCENARIO" => "revision")
+      )
+      runner.run
+      replaced = "caf\u{FFFD}"
+
+      trace_req = OTLPCollectorServer.listen_to("/v1/traces", :timeout => 2)
+      trace_msg = Opentelemetry::Proto::Collector::Trace::V1::ExportTraceServiceRequest
+        .decode(trace_req[:body])
+      span_names = trace_msg.resource_spans
+        .flat_map { |rs| rs.scope_spans.flat_map { |ss| ss.spans.map(&:name) } }
+      expect(span_names).to include("test-span")
+      expect(revision_attribute(trace_msg.resource_spans.first.resource)).to eq(replaced)
+
+      metric_req = OTLPCollectorServer.listen_to("/v1/metrics", :timeout => 2)
+      metric_msg = Opentelemetry::Proto::Collector::Metrics::V1::ExportMetricsServiceRequest
+        .decode(metric_req[:body])
+      metric_names = metric_msg.resource_metrics
+        .flat_map { |rm| rm.scope_metrics.flat_map { |sm| sm.metrics.map(&:name) } }
+      expect(metric_names).to include("test_counter")
+      expect(revision_attribute(metric_msg.resource_metrics.first.resource)).to eq(replaced)
+
+      log_req = OTLPCollectorServer.listen_to("/v1/logs", :timeout => 2)
+      log_msg = Opentelemetry::Proto::Collector::Logs::V1::ExportLogsServiceRequest
+        .decode(log_req[:body])
+      log_bodies = log_msg.resource_logs.flat_map do |rl|
+        rl.scope_logs.flat_map { |sl| sl.log_records.map { |lr| lr.body.string_value } }
+      end
+      expect(log_bodies).to include("test-log-line")
+      expect(revision_attribute(log_msg.resource_logs.first.resource)).to eq(replaced)
+    end
+
+    def revision_attribute(resource)
+      resource.attributes.find { |kv| kv.key == "appsignal.config.revision" }&.value&.string_value
+    end
   end
 end
