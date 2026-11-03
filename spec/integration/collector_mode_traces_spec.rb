@@ -63,6 +63,21 @@ if DependencyHelper.opentelemetry_present?
       let(:replaced) { "caf\u{FFFD}" }
       let(:invalid_action) { "InvalidUtf8Controller#index" }
 
+      it "exports a transaction with an invalid action name" do
+        run_invalid_utf8_scenario("action")
+
+        spans = exported_spans
+        expect(spans.map(&:name)).to include("MyController#index", replaced)
+        span = spans.find { |s| s.name == replaced }
+        expect(attribute_value(span, "appsignal.action_name")).to eq(replaced)
+      end
+
+      it "exports a transaction with an invalid namespace" do
+        run_invalid_utf8_scenario("namespace")
+
+        span = exported_invalid_root_span
+        expect(attribute_value(span, "appsignal.namespace")).to eq(replaced)
+      end
 
       it "exports a transaction with an invalid OpenTelemetry attribute value" do
         run_invalid_utf8_scenario("opentelemetry_attribute_value")
