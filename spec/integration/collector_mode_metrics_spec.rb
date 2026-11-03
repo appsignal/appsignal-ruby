@@ -42,6 +42,44 @@ if DependencyHelper.opentelemetry_present?
       expect(attribute_value(histogram_point, "tag")).to eq("value")
     end
 
+    context "with invalid UTF-8" do
+      let(:replaced) { "caf\u{FFFD}" }
+
+      it "exports metrics with an invalid tag value" do
+        run_invalid_utf8_scenario("metric_tag_value")
+
+        data_point = exported_invalid_counter_point
+        expect(attribute_value(data_point, "invalid_tag")).to eq(replaced)
+      end
+
+      it "exports metrics with an invalid tag key" do
+        run_invalid_utf8_scenario("metric_tag_key")
+
+        data_point = exported_invalid_counter_point
+        expect(attribute_value(data_point, replaced)).to eq("value")
+      end
+
+      def run_invalid_utf8_scenario(scenario)
+        runner = Runner.new(
+          "collector_mode_metrics",
+          :env => OTLPCollectorServer.env.merge("INVALID_UTF8_SCENARIO" => scenario)
+        )
+        runner.run
+      end
+
+      def exported_invalid_counter_point
+        metric_req = OTLPCollectorServer.listen_to("/v1/metrics", :timeout => 2)
+        metrics_by_name = Opentelemetry::Proto::Collector::Metrics::V1::ExportMetricsServiceRequest
+          .decode(metric_req[:body])
+          .resource_metrics.flat_map(&:scope_metrics)
+          .flat_map(&:metrics)
+          .to_h { |metric| [metric.name, metric] }
+
+        expect(metrics_by_name.keys).to include("test_counter", "invalid_counter")
+        metrics_by_name.fetch("invalid_counter").sum.data_points.first
+      end
+    end
+
     def attribute_value(data_point, key)
       pair = data_point.attributes.find { |attr| attr.key == key }
       pair&.value&.string_value
