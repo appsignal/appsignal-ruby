@@ -59,6 +59,56 @@ if DependencyHelper.opentelemetry_present?
       expect(int_attribute_value(sql, "appsignal.self_allocation_count")).to be >= 0
     end
 
+    context "with invalid UTF-8" do
+      let(:replaced) { "caf\u{FFFD}" }
+      let(:invalid_action) { "InvalidUtf8Controller#index" }
+
+      it "exports a transaction with an invalid error cause message" do
+        run_invalid_utf8_scenario("error_cause_message")
+
+        exception = span_event(exported_invalid_root_span, "exception")
+        causes = attribute_value(exception, "appsignal.error_causes")
+        expect(causes).not_to be_nil
+        expect(JSON.parse(causes).first["message"]).to eq(replaced)
+      end
+
+      it "exports a transaction with an invalid breadcrumb metadata value" do
+        run_invalid_utf8_scenario("breadcrumb_metadata")
+
+        breadcrumb = span_event(exported_invalid_root_span, "appsignal.breadcrumb")
+        metadata = attribute_value(breadcrumb, "metadata")
+        expect(metadata).not_to be_nil
+        expect(JSON.parse(metadata)).to eq("key" => replaced)
+      end
+
+      def run_invalid_utf8_scenario(scenario)
+        runner = Runner.new(
+          "collector_mode_traces",
+          :env => OTLPCollectorServer.env.merge("INVALID_UTF8_SCENARIO" => scenario)
+        )
+        runner.run
+      end
+
+      def exported_spans
+        trace_req = OTLPCollectorServer.listen_to("/v1/traces", :timeout => 2)
+        Opentelemetry::Proto::Collector::Trace::V1::ExportTraceServiceRequest
+          .decode(trace_req[:body])
+          .resource_spans.flat_map { |rs| rs.scope_spans.flat_map(&:spans) }
+      end
+
+      def exported_invalid_root_span
+        spans = exported_spans
+        expect(spans.map(&:name)).to include("MyController#index", invalid_action)
+        spans.find { |s| s.name == invalid_action }
+      end
+
+      def span_event(span, name)
+        event = span.events.find { |e| e.name == name }
+        expect(event).not_to be_nil, "expected a #{name.inspect} event on span #{span.name.inspect}"
+        event
+      end
+    end
+
     def attribute_value(span, key)
       pair = span.attributes.find { |attr| attr.key == key }
       pair&.value&.string_value
