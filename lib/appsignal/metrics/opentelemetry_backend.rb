@@ -65,7 +65,7 @@ module Appsignal
         # first-time calls don't both create the instrument (which would
         # make the SDK log a duplicate-registration warning).
         def instrument(kind, name)
-          name = name.to_s
+          name = Appsignal::Utils::UTF8.encode(name.to_s)
           MUTEX.synchronize do
             case kind
             when :gauge
