@@ -24,7 +24,7 @@ module Appsignal
         def jsonify_node(value, depth, issues)
           case value
           when String
-            encode_utf8(value)
+            Appsignal::Utils::UTF8.encode(value)
           when Float
             jsonify_float(value)
           when Numeric, NilClass, TrueClass, FalseClass
@@ -65,18 +65,6 @@ module Appsignal
             value.positive? ? "Infinity" : "-Infinity"
           else
             value
-          end
-        end
-
-        def encode_utf8(value)
-          if value.encoding == Encoding::BINARY
-            String.new(value, :encoding => Encoding::UTF_8).scrub
-          else
-            value.encode(
-              "utf-8",
-              :invalid => :replace,
-              :undef   => :replace
-            )
           end
         end
 

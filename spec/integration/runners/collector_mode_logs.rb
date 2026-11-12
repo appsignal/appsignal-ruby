@@ -4,6 +4,8 @@ $LOAD_PATH.unshift(File.expand_path("lib", PROJECT_ROOT))
 
 require "appsignal"
 
+INVALID_STRING = "caf\xE9".dup.force_encoding(Encoding::UTF_8)
+
 # Name, environment and push API key come from the env vars the Runner
 # injects (see `Runner::DEFAULT_ENV`); `Appsignal.start` loads them.
 Appsignal.start
@@ -21,6 +23,23 @@ logger = Appsignal::Logger.new(
 logger.info("info line", :tag => "value")
 logger.warn("warn line")
 logger.error("error line")
+
+# Set by the invalid UTF-8 specs: puts the invalid string in one place, in a
+# log line exported in the same batch as the valid ones above.
+case ENV.fetch("INVALID_UTF8_SCENARIO", nil)
+when nil
+  nil
+when "log_message"
+  Appsignal::Logger.new("invalid-group").info(INVALID_STRING)
+when "log_attribute_value"
+  Appsignal::Logger.new("invalid-group").info("invalid line", :invalid_attribute => INVALID_STRING)
+when "log_attribute_key"
+  Appsignal::Logger.new("invalid-group").info("invalid line", INVALID_STRING => "value")
+when "log_group"
+  Appsignal::Logger.new(INVALID_STRING).info("invalid line")
+else
+  raise "Unknown INVALID_UTF8_SCENARIO: #{ENV.fetch("INVALID_UTF8_SCENARIO")}"
+end
 
 # Shut AppSignal down so the OTel providers drain their buffers and the
 # spec sees the queued request deterministically.
