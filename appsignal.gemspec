@@ -76,6 +76,10 @@ Gem::Specification.new do |gem|
   # rubocop:disable Gemspec/RubyVersionGlobalsUsage
   gem.add_development_dependency "public_suffix", "< 6" if RUBY_VERSION < "3.2"
   # rubocop:enable Gemspec/RubyVersionGlobalsUsage
+  # Sord loads the RBI files of every installed gem, and Parlour cannot read
+  # the overloaded signatures in Prism 2's RBI files until this is released:
+  # https://github.com/AaronC81/parlour/pull/156
+  gem.add_development_dependency("prism", "< 2") unless RUBY_PLATFORM == "java"
   gem.add_development_dependency "rake", ">= 12"
   gem.add_development_dependency "rspec", "~> 3.8"
   gem.add_development_dependency "rubocop", "~> 1.87.0"
