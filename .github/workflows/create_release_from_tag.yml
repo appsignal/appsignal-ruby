@@ -32,12 +32,11 @@ jobs:
           # Use sed to remove everything after "-----BEGIN PGP SIGNATURE-----" if it's present
           # and also always remove the last line of the git show output
           git show --format=oneline --no-color --no-patch "${{ env.TAG_NAME }}" \
-          | sed '1,2d' \
+          | sed '1,3d' \
           | sed '$d' \
           | sed '/-----BEGIN PGP SIGNATURE-----/,$d' \
           > CHANGELOG_TEXT.txt
 
-          echo "" >> CHANGELOG_TEXT.txt
           echo "" >> CHANGELOG_TEXT.txt
 
           TAG_NAME_FOR_LINK=$(echo "${{ env.TAG_NAME }}" | sed 's/^v//' | tr -d '.')
@@ -58,5 +57,5 @@ jobs:
             -H "Authorization: token ${{ secrets.INTEGRATIONS_CHANGELOG_TOKEN }}" \
             -H "Accept: application/vnd.github+json" \
             --fail-with-body \
-            https://api.github.com/repos/appsignal/appsignal.com/actions/workflows/102125282/dispatches \
+            https://api.github.com/repos/appsignal/appsignal-web/actions/workflows/create_integrations_changelog_entry.yml/dispatches \
             -d "$payload"
