@@ -1,5 +1,38 @@
 # AppSignal for Ruby gem Changelog
 
+## 3.13.3
+
+_Published on 2026-11-12._
+
+### Added
+
+- Automatically detect the application's revision from the `HEROKU_BUILD_COMMIT`
+  environment variable, which is set by Heroku at build time [when the
+  `runtime-dyno-build-metadata` Heroku Labs
+  feature](https://devcenter.heroku.com/articles/dyno-metadata) is enabled.
+
+  (patch [4625aaeb](https://github.com/appsignal/appsignal-ruby/commit/4625aaeb2504e1324bba99a1014bbe9db1c1d746))
+
+### Fixed
+
+- Fix the sanitization of function arguments in SQL statements.
+
+  Before this release, SQL sanitization of function arguments stripped out parts of the SQL statement after the function argument list.
+
+  (patch [4625aaeb](https://github.com/appsignal/appsignal-ruby/commit/4625aaeb2504e1324bba99a1014bbe9db1c1d746))
+- Fix issues in the extension that lead to gaps in data reporting. (patch [4625aaeb](https://github.com/appsignal/appsignal-ruby/commit/4625aaeb2504e1324bba99a1014bbe9db1c1d746))
+- Improve handling of the extension internal queue when full. (patch [4625aaeb](https://github.com/appsignal/appsignal-ruby/commit/4625aaeb2504e1324bba99a1014bbe9db1c1d746))
+
+### Security
+
+- Bump the bundled certificates that the agent uses when it can't open the
+  configured CA file. They no longer include the emSign ECC Root CA - G3 and AAA
+  Certificate Services root certificates, which [compromised eMudhra intermediate
+  certificates](https://bugzilla.mozilla.org/show_bug.cgi?id=2083449) chain to.
+
+  (patch [4625aaeb](https://github.com/appsignal/appsignal-ruby/commit/4625aaeb2504e1324bba99a1014bbe9db1c1d746))
+- Stop trusting certificates issued under the eMudhra intermediate certificate authorities whose private keys were [compromised in October 2026](https://bugzilla.mozilla.org/show_bug.cgi?id=2083449). The bundled CA certificates no longer include the emSign ECC Root CA - G3 root certificate, which those intermediates chain to. (patch [c340ae83](https://github.com/appsignal/appsignal-ruby/commit/c340ae83513c12c3fdbd3292fa0282fe944c1ac5))
+
 ## 5.0.7
 
 _Published on 2026-10-23._
