@@ -264,7 +264,7 @@ namespace :build_matrix do
 
         # Add build for macOS
         ruby_gem = PRIMARY_JOB_GEMSET
-        runs_on = "macos-14"
+        runs_on = "macos-15"
         job = build_job(ruby_version, :runs_on => runs_on)
         job["env"] = matrix["env"]
           .merge("BUNDLE_GEMFILE" => "gemfiles/#{ruby_gem}.gemfile")
