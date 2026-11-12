@@ -648,6 +648,50 @@ if DependencyHelper.active_job_present? && DependencyHelper.rails_present?
       end
     end
 
+    def stub_transaction_method_to_raise(method_name, message)
+      allow(Appsignal::Transaction).to receive(:new)
+        .and_wrap_original do |original, *args, **kwargs|
+        original.call(*args, **kwargs).tap do |transaction|
+          allow(transaction).to receive(method_name)
+            .and_raise(ExampleStandardError, message)
+        end
+      end
+    end
+
+    context "when setting up the transaction fails" do
+      it_in_both_modes "raises the error, completes, and clears the transaction" do
+        stub_transaction_method_to_raise(:add_opentelemetry_attributes, "setup failed")
+        expect_any_instance_of(ActiveJobTestJob).to_not receive(:perform)
+
+        expect { queue_job(ActiveJobTestJob) }
+          .to raise_error(ExampleStandardError, "setup failed")
+
+        expect(last_transaction).to be_completed
+        expect(current_transaction?).to be(false)
+      end
+    end
+
+    context "when setting the queue start fails" do
+      it_in_both_modes "logs the error, completes, and clears the transaction" do
+        stub_transaction_method_to_raise(:set_queue_start, "set queue start failed")
+        job_data = ActiveJobTestJob.new.serialize
+          .merge("enqueued_at" => "2001-01-01T09:00:00.000000000Z")
+
+        logs =
+          capture_logs do
+            expect { perform_active_job { ActiveJob::Base.execute(job_data) } }
+              .to_not raise_error
+          end
+
+        transaction = last_transaction
+        expect(logs).to contains_log :error,
+          "Error finalizing transaction ##{transaction.transaction_id}: " \
+            "ExampleStandardError: set queue start failed"
+        expect(transaction).to be_completed
+        expect(current_transaction?).to be(false)
+      end
+    end
+
     context "when wrapped in another transaction" do
       describe "does not create a new transaction or close the currently open one" do
         def perform(current_transaction)

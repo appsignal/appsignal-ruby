@@ -89,6 +89,37 @@ describe Appsignal::Hooks::RakeHook do
           perform
           expect_to_have_registered_at_exit_hook
         end
+
+        it_in_both_modes "leaves no current transaction" do
+          perform
+
+          expect(last_transaction).to be_completed
+          expect(current_transaction?).to be(false)
+        end
+
+        context "when setting the action fails" do
+          it_in_both_modes "logs the error, completes, and clears the transaction" do
+            allow(Appsignal::Transaction).to receive(:new)
+              .and_wrap_original do |original, *args, **kwargs|
+              original.call(*args, **kwargs).tap do |transaction|
+                allow(transaction).to receive(:set_action)
+                  .and_raise(ExampleStandardError, "set action failed")
+              end
+            end
+
+            logs =
+              capture_logs do
+                expect(perform).to eq([])
+              end
+
+            transaction = last_transaction
+            expect(logs).to contains_log :error,
+              "Error finalizing transaction ##{transaction.transaction_id}: " \
+                "ExampleStandardError: set action failed"
+            expect(transaction).to be_completed
+            expect(current_transaction?).to be(false)
+          end
+        end
       end
     end
 
@@ -142,6 +173,13 @@ describe Appsignal::Hooks::RakeHook do
         it_in_both_modes "registers an at_exit hook" do
           perform
           expect_to_have_registered_at_exit_hook
+        end
+
+        it_in_both_modes "leaves no current transaction" do
+          perform
+
+          expect(last_transaction).to be_completed
+          expect(current_transaction?).to be(false)
         end
 
         context "when first argument is not a `Rake::TaskArguments`" do

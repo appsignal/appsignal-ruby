@@ -11,24 +11,22 @@ module Appsignal
         request_id = request.request_id || SecureRandom.uuid
         env[Appsignal::Hooks::ActionCableHook::REQUEST_ID] ||= request_id
 
-        transaction = Appsignal::Transaction.create(
-          Appsignal::Transaction::ACTION_CABLE,
-          :opentelemetry_scope => ["appsignal-ruby/action_cable", Appsignal::VERSION]
-        )
-
-        begin
+        Appsignal::Transaction.run(
+          :namespace => Appsignal::Transaction::ACTION_CABLE,
+          :opentelemetry_scope => ["appsignal-ruby/action_cable", Appsignal::VERSION],
+          :finalize => lambda do |transaction|
+            transaction.set_action_if_nil("#{self.class}##{args.first["action"]}")
+            transaction.add_request_payload_if_nil(args.first)
+            transaction.add_session_data { request.session.to_h if request.respond_to? :session }
+            transaction.set_metadata("path", request.path)
+            transaction.set_metadata("method", "websocket")
+            transaction.add_tags(:request_id => request_id) if request_id
+          end
+        ) do |transaction|
           super
         rescue Exception => exception
           transaction.set_error(exception)
           raise exception
-        ensure
-          transaction.set_action_if_nil("#{self.class}##{args.first["action"]}")
-          transaction.add_request_payload_if_nil(args.first)
-          transaction.add_session_data { request.session.to_h if request.respond_to? :session }
-          transaction.set_metadata("path", request.path)
-          transaction.set_metadata("method", "websocket")
-          transaction.add_tags(:request_id => request_id) if request_id
-          Appsignal::Transaction.complete_current!
         end
       end
     end

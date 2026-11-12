@@ -1776,7 +1776,8 @@ module Appsignal
                      ) -> Transaction
 
     # Returns currently active transaction or a {NilTransaction} if none is
-    # active.
+    # active. A transaction that is already completed but not yet cleared is
+    # not considered active.
     # 
     # _@see_ `.current?`
     def self.current: () -> (Appsignal::Transaction | Appsignal::Transaction::NilTransaction)
