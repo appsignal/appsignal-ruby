@@ -2486,10 +2486,10 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/sidekiq-8-collector.gemfile
-  ruby_4-0-0_macos-14:
-    name: Ruby 4.0.0 (macos-14)
+  ruby_4-0-0_macos-15:
+    name: Ruby 4.0.0 (macos-15)
     needs: validation
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
@@ -2514,7 +2514,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: ruby_4-0-0_macos-14
+        name: ruby_4-0-0_macos-15
         path: tmp/examples-*.json
         if-no-files-found: error
         retention-days: 1
@@ -5255,10 +5255,10 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/sidekiq-8-collector.gemfile
-  ruby_3-4-1_macos-14:
-    name: Ruby 3.4.1 (macos-14)
+  ruby_3-4-1_macos-15:
+    name: Ruby 3.4.1 (macos-15)
     needs: validation
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
@@ -5283,7 +5283,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: ruby_3-4-1_macos-14
+        name: ruby_3-4-1_macos-15
         path: tmp/examples-*.json
         if-no-files-found: error
         retention-days: 1
@@ -7954,10 +7954,10 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/redis-5-collector.gemfile
-  ruby_3-3-4_macos-14:
-    name: Ruby 3.3.4 (macos-14)
+  ruby_3-3-4_macos-15:
+    name: Ruby 3.3.4 (macos-15)
     needs: validation
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
@@ -7982,7 +7982,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: ruby_3-3-4_macos-14
+        name: ruby_3-3-4_macos-15
         path: tmp/examples-*.json
         if-no-files-found: error
         retention-days: 1
@@ -10513,10 +10513,10 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/redis-5-collector.gemfile
-  ruby_3-2-5_macos-14:
-    name: Ruby 3.2.5 (macos-14)
+  ruby_3-2-5_macos-15:
+    name: Ruby 3.2.5 (macos-15)
     needs: validation
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
@@ -10541,7 +10541,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: ruby_3-2-5_macos-14
+        name: ruby_3-2-5_macos-15
         path: tmp/examples-*.json
         if-no-files-found: error
         retention-days: 1
@@ -12862,10 +12862,10 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/redis-5-collector.gemfile
-  ruby_3-1-6_macos-14:
-    name: Ruby 3.1.6 (macos-14)
+  ruby_3-1-6_macos-15:
+    name: Ruby 3.1.6 (macos-15)
     needs: validation
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
@@ -12890,7 +12890,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: ruby_3-1-6_macos-14
+        name: ruby_3-1-6_macos-15
         path: tmp/examples-*.json
         if-no-files-found: error
         retention-days: 1
@@ -14021,10 +14021,10 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/redis-5.gemfile
-  ruby_3-0-7_macos-14:
-    name: Ruby 3.0.7 (macos-14)
+  ruby_3-0-7_macos-15:
+    name: Ruby 3.0.7 (macos-15)
     needs: validation
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
@@ -14049,7 +14049,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: ruby_3-0-7_macos-14
+        name: ruby_3-0-7_macos-15
         path: tmp/examples-*.json
         if-no-files-found: error
         retention-days: 1
@@ -14970,10 +14970,10 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/redis-5.gemfile
-  ruby_2-7-8_macos-14:
-    name: Ruby 2.7.8 (macos-14)
+  ruby_2-7-8_macos-15:
+    name: Ruby 2.7.8 (macos-15)
     needs: validation
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
@@ -14998,7 +14998,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: ruby_2-7-8_macos-14
+        name: ruby_2-7-8_macos-15
         path: tmp/examples-*.json
         if-no-files-found: error
         retention-days: 1
@@ -15219,10 +15219,10 @@ jobs:
       JRUBY_OPTS: ''
       COV: '1'
       BUNDLE_GEMFILE: gemfiles/rails-7.2.gemfile
-  ruby_jruby-9-4-7-0_macos-14:
-    name: Ruby jruby-9.4.7.0 (macos-14)
+  ruby_jruby-9-4-7-0_macos-15:
+    name: Ruby jruby-9.4.7.0 (macos-15)
     needs: validation
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
     - name: Check out repository
       uses: actions/checkout@v4
@@ -15247,7 +15247,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: ruby_jruby-9-4-7-0_macos-14
+        name: ruby_jruby-9-4-7-0_macos-15
         path: tmp/examples-*.json
         if-no-files-found: error
         retention-days: 1
