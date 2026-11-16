@@ -1931,8 +1931,19 @@ module Appsignal
     end
     def self.create(namespace, opentelemetry_context: nil, opentelemetry_scope: nil, opentelemetry_kind: nil, opentelemetry_relationship: nil); end
 
+    # Complete the current transaction, if still running, and create a new one.
+    # 
+    # _@param_ `namespace` — Namespace of the to be created transaction.
+    # 
+    # _@param_ `options` — Passed on to {.create}. See there for the accepted keys.
+    # 
+    # _@see_ `.create`
+    sig { params(namespace: String, options: T.untyped).returns(Transaction) }
+    def self.create!(namespace, **options); end
+
     # Returns currently active transaction or a {NilTransaction} if none is
-    # active.
+    # active. A transaction that is already completed but not yet cleared is
+    # not considered active.
     # 
     # _@see_ `.current?`
     sig { returns(T.any(Appsignal::Transaction, Appsignal::Transaction::NilTransaction)) }

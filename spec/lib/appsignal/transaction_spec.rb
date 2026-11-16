@@ -264,6 +264,43 @@ describe Appsignal::Transaction do
     end
   end
 
+  describe ".create!" do
+    before do
+      allow(SecureRandom).to receive(:uuid)
+        .and_return("transaction_id_1", "transaction_id_2")
+    end
+
+    def create_transaction!
+      Appsignal::Transaction.create!(default_namespace)
+    end
+
+    context "when no transaction is running" do
+      it "creates a new current transaction" do
+        transaction = create_transaction!
+
+        expect(transaction).to have_id("transaction_id_1")
+        expect(transaction).to eq(current_transaction)
+      end
+    end
+
+    context "when an incomplete transaction is current" do
+      let!(:stale_transaction) { create_transaction }
+
+      it "completes the current transaction" do
+        create_transaction!
+
+        expect(stale_transaction).to be_completed
+      end
+
+      it "creates a new current transaction" do
+        transaction = create_transaction!
+
+        expect(transaction).to have_id("transaction_id_2")
+        expect(transaction).to eq(current_transaction)
+      end
+    end
+  end
+
   # A block handed to AppSignal (an error block, or an after_create/
   # before_complete hook) is user code that can raise. Because these blocks
   # can run far from where they were defined -- an error block runs at

@@ -83,6 +83,17 @@ module Appsignal
         end
       end
 
+      # Complete the current transaction, if still running, and create a new one.
+      #
+      # @see .create
+      # @param namespace [String] Namespace of the to be created transaction.
+      # @param options Passed on to {.create}. See there for the accepted keys.
+      # @return [Transaction]
+      def create!(namespace, **options)
+        complete_current!
+        create(namespace, **options)
+      end
+
       # Add a block, if given, to be executed after a transaction is created.
       # The block will be called with the transaction as an argument.
       # Returns the array of blocks that will be executed after a transaction
