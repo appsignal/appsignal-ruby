@@ -211,6 +211,19 @@ describe Appsignal::Rack::EventHandler do
       end
     end
 
+    context "when a transaction from a previous request is still current" do
+      it_in_both_modes "completes it and creates a new transaction" do
+        use_test_logger
+        stale_transaction = create_transaction
+
+        on_start
+
+        expect(stale_transaction).to be_completed
+        expect(last_transaction).to_not eq(stale_transaction)
+        expect(Appsignal::Transaction.current).to eq(last_transaction)
+      end
+    end
+
     it_in_both_modes "registers transaction on the request environment" do
       use_test_logger
       on_start
@@ -333,7 +346,7 @@ describe Appsignal::Rack::EventHandler do
     def expect_setup_failure_cleanup(method)
       use_test_logger
       transaction = new_transaction
-      set_current_transaction(transaction)
+      allow(Appsignal::Transaction).to receive(:new).and_return(transaction)
       allow(transaction).to receive(method).and_call_original
       expect(transaction).to receive(method)
         .and_raise(ExampleStandardError, "setup failed")
