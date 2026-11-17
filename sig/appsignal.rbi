@@ -1932,7 +1932,8 @@ module Appsignal
     def self.create(namespace, opentelemetry_context: nil, opentelemetry_scope: nil, opentelemetry_kind: nil, opentelemetry_relationship: nil); end
 
     # Returns currently active transaction or a {NilTransaction} if none is
-    # active.
+    # active. A transaction that is already completed but not yet cleared is
+    # not considered active.
     # 
     # _@see_ `.current?`
     sig { returns(T.any(Appsignal::Transaction, Appsignal::Transaction::NilTransaction)) }

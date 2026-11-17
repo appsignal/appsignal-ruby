@@ -147,53 +147,53 @@ module Appsignal
 
         # Read the incoming trace context off the job's tags so the transaction
         # links back to the enqueuer. No-op outside collector mode.
-        transaction =
-          Appsignal::Transaction.create(
-            Appsignal::Transaction::BACKGROUND_JOB,
-            :opentelemetry_context => QueTraceContext.extract_context(job_data, tags),
-            :opentelemetry_scope => ["appsignal-ruby/que", Appsignal::VERSION],
-            :opentelemetry_kind => :consumer,
-            :opentelemetry_relationship => relationship
-          )
-        # Describes this span as a job being performed. The messaging system is
-        # what the trace timeline reads to recognize background job work, and
-        # `que` is the value OpenTelemetry's own Que instrumentation uses.
-        transaction.add_opentelemetry_attributes(
-          Appsignal::OpenTelemetry::Messaging
-            .perform_attributes("que", :destination => local_attrs[:queue])
-        )
-
-        begin
-          Appsignal.instrument(
-            "perform_job.que",
-            :opentelemetry_scope => ["appsignal-ruby/que", Appsignal::VERSION]
-          ) do
-            Appsignal::Transaction.current.add_opentelemetry_attributes(
-              Appsignal::OpenTelemetry::Messaging
-                .perform_attributes("que", :destination => local_attrs[:queue])
-            )
-            super
-          end
-        rescue Exception => error
-          transaction.set_error(error)
-          raise error
-        ensure
-          transaction.set_action_if_nil("#{local_attrs[:job_class]}#run")
-          transaction.add_function_parameters_if_nil do
-            {
-              :arguments => local_attrs[:args]
-            }.tap do |hash|
-              hash[:keyword_arguments] = local_attrs[:kwargs] if local_attrs.key?(:kwargs)
+        Appsignal::Transaction.run(
+          :namespace => Appsignal::Transaction::BACKGROUND_JOB,
+          :opentelemetry_context => QueTraceContext.extract_context(job_data, tags),
+          :opentelemetry_scope => ["appsignal-ruby/que", Appsignal::VERSION],
+          :opentelemetry_kind => :consumer,
+          :opentelemetry_relationship => relationship,
+          :finalize => lambda do |transaction|
+            transaction.set_action_if_nil("#{local_attrs[:job_class]}#run")
+            transaction.add_function_parameters_if_nil do
+              {
+                :arguments => local_attrs[:args]
+              }.tap do |hash|
+                hash[:keyword_arguments] = local_attrs[:kwargs] if local_attrs.key?(:kwargs)
+              end
             end
+            transaction.add_tags(
+              "id" => local_attrs[:job_id] || local_attrs[:id],
+              "queue" => local_attrs[:queue],
+              "run_at" => local_attrs[:run_at].to_s,
+              "priority" => local_attrs[:priority],
+              "attempts" => local_attrs[:error_count].to_i
+            )
           end
-          transaction.add_tags(
-            "id" => local_attrs[:job_id] || local_attrs[:id],
-            "queue" => local_attrs[:queue],
-            "run_at" => local_attrs[:run_at].to_s,
-            "priority" => local_attrs[:priority],
-            "attempts" => local_attrs[:error_count].to_i
+        ) do |transaction|
+          # Describes this span as a job being performed. The messaging system is
+          # what the trace timeline reads to recognize background job work, and
+          # `que` is the value OpenTelemetry's own Que instrumentation uses.
+          transaction.add_opentelemetry_attributes(
+            Appsignal::OpenTelemetry::Messaging
+              .perform_attributes("que", :destination => local_attrs[:queue])
           )
-          Appsignal::Transaction.complete_current!
+
+          begin
+            Appsignal.instrument(
+              "perform_job.que",
+              :opentelemetry_scope => ["appsignal-ruby/que", Appsignal::VERSION]
+            ) do
+              Appsignal::Transaction.current.add_opentelemetry_attributes(
+                Appsignal::OpenTelemetry::Messaging
+                  .perform_attributes("que", :destination => local_attrs[:queue])
+              )
+              super
+            end
+          rescue Exception => error
+            transaction.set_error(error)
+            raise error
+          end
         end
       end
     end

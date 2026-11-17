@@ -535,6 +535,48 @@ describe Appsignal::Integrations::ShoryukenMiddleware do
       end
     end
   end
+
+  def stub_transaction_method_to_raise(method_name, message)
+    allow(Appsignal::Transaction).to receive(:new)
+      .and_wrap_original do |original, *args, **kwargs|
+      original.call(*args, **kwargs).tap do |transaction|
+        allow(transaction).to receive(method_name)
+          .and_raise(ExampleStandardError, message)
+      end
+    end
+  end
+
+  context "when setting up the transaction fails" do
+    it_in_both_modes "raises the error, completes, and clears the transaction" do
+      stub_transaction_method_to_raise(:add_opentelemetry_attributes, "setup failed")
+      job_performed = false
+
+      expect { perform_shoryuken_job { job_performed = true } }
+        .to raise_error(ExampleStandardError, "setup failed")
+
+      expect(job_performed).to be(false)
+      expect(last_transaction).to be_completed
+      expect(current_transaction?).to be(false)
+    end
+  end
+
+  context "when setting the tags fails" do
+    it_in_both_modes "logs the error, completes, and clears the transaction" do
+      stub_transaction_method_to_raise(:add_tags, "set tags failed")
+
+      logs =
+        capture_logs do
+          expect { perform_shoryuken_job }.to_not raise_error
+        end
+
+      transaction = last_transaction
+      expect(logs).to contains_log :error,
+        "Error finalizing transaction ##{transaction.transaction_id}: " \
+          "ExampleStandardError: set tags failed"
+      expect(transaction).to be_completed
+      expect(current_transaction?).to be(false)
+    end
+  end
 end
 
 describe Appsignal::Integrations::ShoryukenClientMiddleware do

@@ -415,6 +415,49 @@ if DependencyHelper.resque_present?
       end
     end
 
+    def stub_transaction_method_to_raise(method_name, message)
+      allow(Appsignal::Transaction).to receive(:new)
+        .and_wrap_original do |original, *args, **kwargs|
+        original.call(*args, **kwargs).tap do |transaction|
+          allow(transaction).to receive(method_name)
+            .and_raise(ExampleStandardError, message)
+        end
+      end
+    end
+
+    context "when setting up the transaction fails" do
+      it_in_both_modes "raises the error, completes, and clears the transaction" do
+        stub_transaction_method_to_raise(:add_opentelemetry_attributes, "setup failed")
+        expect(ResqueTestJob).to_not receive(:perform)
+        expect(Appsignal).to receive(:stop)
+
+        expect { perform_rescue_job(ResqueTestJob) }
+          .to raise_error(ExampleStandardError, "setup failed")
+
+        expect(last_transaction).to be_completed
+        expect(current_transaction?).to be(false)
+      end
+    end
+
+    context "when setting the tags fails" do
+      it_in_both_modes "logs the error, completes, and clears the transaction" do
+        stub_transaction_method_to_raise(:add_tags, "set tags failed")
+        expect(Appsignal).to receive(:stop)
+
+        logs =
+          capture_logs do
+            expect { perform_rescue_job(ResqueTestJob) }.to_not raise_error
+          end
+
+        transaction = last_transaction
+        expect(logs).to contains_log :error,
+          "Error finalizing transaction ##{transaction.transaction_id}: " \
+            "ExampleStandardError: set tags failed"
+        expect(transaction).to be_completed
+        expect(current_transaction?).to be(false)
+      end
+    end
+
     describe Appsignal::Integrations::ResquePushIntegration do
       # A stand-in for the `Resque` singleton with the integration prepended.
       # Its `push` records the pushed item so we can inspect what was written.

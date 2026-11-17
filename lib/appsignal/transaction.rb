@@ -137,12 +137,16 @@ module Appsignal
       end
 
       # Returns currently active transaction or a {NilTransaction} if none is
-      # active.
+      # active. A transaction that is already completed but not yet cleared is
+      # not considered active.
       #
       # @see .current?
       # @return [Appsignal::Transaction, Appsignal::Transaction::NilTransaction]
       def current
-        Thread.current[:appsignal_transaction] || NilTransaction.new
+        transaction = Thread.current[:appsignal_transaction]
+        return NilTransaction.new if transaction.nil? || transaction.completed?
+
+        transaction
       end
 
       # Returns if any transaction is currently active or not. A
@@ -159,10 +163,94 @@ module Appsignal
       #
       # @return [void]
       def complete_current!
-        current.complete
+        complete_and_clear(current)
+      end
+
+      # Run the given block with a transaction as the current transaction, and
+      # clean it up afterwards.
+      #
+      # Everything an integration does with the transaction after creating it
+      # belongs in the block, so an error raised while setting it up cannot
+      # skip the cleanup.
+      #
+      # If an (uncompleted) transaction exists, when calling this method, that
+      # transaction isn't completed nor cleared.
+      #
+      # When `finalize` is given, it runs that after the block, even when the
+      # block raised. Any error raised by `finalize` is rescued and logged.
+      # These do not skip the cleanup nor replace the block's own error.
+      #
+      # When `existing` is given, the block joins that transaction instead. It
+      # is not completed or cleared here, because whoever created it owns that.
+      #
+      # When `complete_on_error` is false, an error raised by the block leaves
+      # the transaction current and incomplete, for an error handler that runs
+      # after the block to complete it.
+      #
+      # @param namespace [String] Namespace of the transaction to create.
+      # @param existing [Transaction, nil] Transaction to join instead of
+      #   creating one. Defaults to the current transaction if it isn't
+      #   completed.
+      # @param finalize [#call, nil] Called with the transaction after the
+      #   block, even when the block raised.
+      # @param complete_on_error [Boolean] Whether to complete the transaction
+      #   when the block raises.
+      # @yieldparam transaction [Transaction]
+      # @return [Object] The return value of the block.
+      # @!visibility private
+      def run( # rubocop:disable Metrics/ParameterLists
+        namespace: HTTP_REQUEST,
+        existing: (current if current?),
+        finalize: nil,
+        complete_on_error: true,
+        opentelemetry_context: nil,
+        opentelemetry_scope: nil,
+        opentelemetry_kind: nil,
+        opentelemetry_relationship: nil
+      )
+        previous = Thread.current[:appsignal_transaction]
+        transaction = existing || create(
+          namespace,
+          :opentelemetry_context => opentelemetry_context,
+          :opentelemetry_scope => opentelemetry_scope,
+          :opentelemetry_kind => opentelemetry_kind,
+          :opentelemetry_relationship => opentelemetry_relationship
+        )
+
+        # Only transactions created here are ours to complete and clear.
+        owner = existing.nil? && !transaction.equal?(previous)
+        raised = false
+        begin
+          yield transaction
+        rescue Exception
+          raised = true
+          raise
+        ensure
+          begin
+            finalize&.call(transaction)
+          rescue => error
+            Appsignal.internal_logger.error(
+              "Error finalizing transaction ##{transaction.transaction_id}: " \
+                "#{error.class}: #{error.message}"
+            )
+          ensure
+            complete_and_clear(transaction) if owner && (complete_on_error || !raised)
+          end
+        end
+      end
+
+      # Complete the given transaction and unset the current transaction. An
+      # error raised while completing is logged, not raised, and the current
+      # transaction is cleared either way.
+      #
+      # @param transaction [Transaction, NilTransaction]
+      # @return [void]
+      # @!visibility private
+      def complete_and_clear(transaction)
+        transaction.complete
       rescue => e
         Appsignal.internal_logger.error(
-          "Failed to complete transaction ##{current.transaction_id}. #{e.message}"
+          "Failed to complete transaction ##{transaction.transaction_id}. #{e.message}"
         )
       ensure
         clear_current_transaction!

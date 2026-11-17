@@ -37,12 +37,22 @@ module Appsignal
           raise error
         ensure
           if transaction
-            # Format given arguments and cast to hash if possible
-            params, _ = args
-            params = params.to_hash if params.respond_to?(:to_hash)
-            transaction.set_action(name)
-            transaction.add_request_payload_if_nil(params)
-            transaction.complete
+            begin
+              # Format given arguments and cast to hash if possible
+              params, _ = args
+              params = params.to_hash if params.respond_to?(:to_hash)
+              transaction.set_action(name)
+              transaction.add_request_payload_if_nil(params)
+            rescue => metadata_error
+              Appsignal.internal_logger.error(
+                "Error finalizing transaction ##{transaction.transaction_id}: " \
+                  "#{metadata_error.class}: #{metadata_error.message}"
+              )
+            ensure
+              # Also unset it as the current transaction, so it is not reused by
+              # code that runs after this task on the same thread.
+              Appsignal::Transaction.complete_and_clear(transaction)
+            end
           end
         end
       end
