@@ -25,6 +25,10 @@ module DependencyHelper
     Appsignal::System.jruby?
   end
 
+  def jruby_9_4_15_0?
+    running_jruby? && JRUBY_VERSION == "9.4.15.0"
+  end
+
   # Whether the optional OpenTelemetry gems collector mode needs are
   # installable in this bundle. They're no longer gemspec dependencies, so
   # the OTel specs only run under the `-collector` gemfiles (Ruby 3.1+). This

@@ -1471,43 +1471,48 @@ if DependencyHelper.sidekiq_present?
         end
       end
 
-      context "with ActionMailer" do
-        include ActionMailerHelpers
+      unless DependencyHelper.jruby_9_4_15_0? && DependencyHelper.rails7_1_present?
+        # JRuby 9.4.15.0 drops the `ruby2_keywords` flag from Active Job
+        # arguments on Rails 7.1 and newer, so Action Mailer jobs fail with an
+        # `ArgumentError`: https://github.com/jruby/jruby/pull/9517
+        context "with ActionMailer" do
+          include ActionMailerHelpers
 
-        before do
-          class ActionMailerSidekiqTestJob < ActionMailer::Base
-            def welcome(*args)
+          before do
+            class ActionMailerSidekiqTestJob < ActionMailer::Base
+              def welcome(*args)
+              end
             end
           end
-        end
 
-        describe "reports ActionMailer data on the transaction" do
-          def perform
-            perform_mailer(ActionMailerSidekiqTestJob, :welcome, given_args)
-          end
+          describe "reports ActionMailer data on the transaction" do
+            def perform
+              perform_mailer(ActionMailerSidekiqTestJob, :welcome, given_args)
+            end
 
-          it "in agent mode", :agent_mode do
-            start_agent
-            perform
+            it "in agent mode", :agent_mode do
+              start_agent
+              perform
 
-            transaction = last_transaction
-            expect(transaction).to have_action("ActionMailerSidekiqTestJob#welcome")
-            expect(transaction).to include_params(
-              ["ActionMailerSidekiqTestJob", "welcome",
-               "deliver_now"] + expected_wrapped_args
-            )
-          end
+              transaction = last_transaction
+              expect(transaction).to have_action("ActionMailerSidekiqTestJob#welcome")
+              expect(transaction).to include_params(
+                ["ActionMailerSidekiqTestJob", "welcome",
+                 "deliver_now"] + expected_wrapped_args
+              )
+            end
 
-          it "in collector mode", :collector_mode do
-            start_collector_agent
-            perform
+            it "in collector mode", :collector_mode do
+              start_collector_agent
+              perform
 
-            expect(root_span.attributes["appsignal.action_name"])
-              .to eq("ActionMailerSidekiqTestJob#welcome")
-            expected_params =
-              ["ActionMailerSidekiqTestJob", "welcome", "deliver_now"] + expected_wrapped_args
-            expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
-              .to eq(expected_params)
+              expect(root_span.attributes["appsignal.action_name"])
+                .to eq("ActionMailerSidekiqTestJob#welcome")
+              expected_params =
+                ["ActionMailerSidekiqTestJob", "welcome", "deliver_now"] + expected_wrapped_args
+              expect(JSON.parse(root_span.attributes["appsignal.function.parameters"]))
+                .to eq(expected_params)
+            end
           end
         end
       end
