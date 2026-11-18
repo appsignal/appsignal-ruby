@@ -9,16 +9,28 @@ INVALID_STRING = "caf\xE9".dup.force_encoding(Encoding::UTF_8)
 # Name, environment and push API key come from the env vars the Runner
 # injects (see `Runner::DEFAULT_ENV`). The options below are specific to
 # this test's resource-attribute assertions.
-Appsignal.configure do |config|
-  config.service_name = "collector-mode-test-service"
-  config.hostname = "test-host"
-  config.revision =
-    ENV["INVALID_UTF8_SCENARIO"] == "revision" ? INVALID_STRING : "abc1234"
-  config.filter_attributes = ["password", "secret"]
-  config.filter_request_payload = ["payload-key"]
-  config.send_request_payload = false
-  config.ignore_actions = ["IgnoredController#action"]
-  config.ignore_namespaces = ["background"]
+if ENV["INVALID_UTF8_SCENARIO"] == "revision"
+  Appsignal.configure do |config|
+    config.filter_attributes = [INVALID_STRING, INVALID_STRING]
+    config.filter_request_payload = [INVALID_STRING]
+    config.hostname = INVALID_STRING
+    config.ignore_actions = [INVALID_STRING]
+    config.ignore_namespaces = [INVALID_STRING]
+    config.revision = INVALID_STRING
+    config.send_request_payload = false
+    config.service_name = INVALID_STRING
+  end
+else
+  Appsignal.configure do |config|
+    config.service_name = "collector-mode-test-service"
+    config.hostname = "test-host"
+    config.revision = "abc1234"
+    config.filter_attributes = ["password", "secret"]
+    config.filter_request_payload = ["payload-key"]
+    config.send_request_payload = false
+    config.ignore_actions = ["IgnoredController#action"]
+    config.ignore_namespaces = ["background"]
+  end
 end
 
 Appsignal.start

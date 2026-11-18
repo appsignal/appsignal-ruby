@@ -123,42 +123,63 @@ if DependencyHelper.opentelemetry_present?
       expect(attrs["appsignal.config.request_headers"].array_value.values).to eq([])
     end
 
-    it "emits OTLP traces, metrics, and logs when the revision is not valid UTF-8" do
-      runner = Runner.new(
-        "collector_mode_emit",
-        :env => OTLPCollectorServer.env.merge("INVALID_UTF8_SCENARIO" => "revision")
-      )
-      runner.run
-      replaced = "caf\u{FFFD}"
+    context "with invalid UTF-8 configuration values" do
+      it "configures collector mode with valid UTF-8" do
+        runner = Runner.new(
+          "collector_mode_emit",
+          :env => OTLPCollectorServer.env.merge("INVALID_UTF8_SCENARIO" => "revision")
+        )
+        runner.run
+        replaced = "caf\u{FFFD}"
 
-      trace_req = OTLPCollectorServer.listen_to("/v1/traces", :timeout => 2)
-      trace_msg = Opentelemetry::Proto::Collector::Trace::V1::ExportTraceServiceRequest
-        .decode(trace_req[:body])
-      span_names = trace_msg.resource_spans
-        .flat_map { |rs| rs.scope_spans.flat_map { |ss| ss.spans.map(&:name) } }
-      expect(span_names).to include("test-span")
-      expect(revision_attribute(trace_msg.resource_spans.first.resource)).to eq(replaced)
+        trace_req = OTLPCollectorServer.listen_to("/v1/traces")
+        trace_msg_resource = Opentelemetry::Proto::Collector::Trace::V1::ExportTraceServiceRequest
+          .decode(trace_req[:body]).resource_spans.first.resource
 
-      metric_req = OTLPCollectorServer.listen_to("/v1/metrics", :timeout => 2)
-      metric_msg = Opentelemetry::Proto::Collector::Metrics::V1::ExportMetricsServiceRequest
-        .decode(metric_req[:body])
-      metric_names = metric_msg.resource_metrics
-        .flat_map { |rm| rm.scope_metrics.flat_map { |sm| sm.metrics.map(&:name) } }
-      expect(metric_names).to include("test_counter")
-      expect(revision_attribute(metric_msg.resource_metrics.first.resource)).to eq(replaced)
+        config_attributes.each do |attr|
+          expect(attribute_values(trace_msg_resource, attr)).to all(be == replaced)
+        end
 
-      log_req = OTLPCollectorServer.listen_to("/v1/logs", :timeout => 2)
-      log_msg = Opentelemetry::Proto::Collector::Logs::V1::ExportLogsServiceRequest
-        .decode(log_req[:body])
-      log_bodies = log_msg.resource_logs.flat_map do |rl|
-        rl.scope_logs.flat_map { |sl| sl.log_records.map { |lr| lr.body.string_value } }
+        metric_req = OTLPCollectorServer.listen_to("/v1/metrics")
+        metric_msg_resource = Opentelemetry::Proto::Collector::Metrics::V1::ExportMetricsServiceRequest
+          .decode(metric_req[:body]).resource_metrics.first.resource
+
+        config_attributes.each do |attr|
+          expect(attribute_values(metric_msg_resource, attr)).to all(be == replaced)
+        end
+
+        log_req = OTLPCollectorServer.listen_to("/v1/logs")
+        log_msg_resource = Opentelemetry::Proto::Collector::Logs::V1::ExportLogsServiceRequest
+          .decode(log_req[:body]).resource_logs.first.resource
+
+        config_attributes.each do |attr|
+          expect(attribute_values(log_msg_resource, attr)).to all(be == replaced)
+        end
       end
-      expect(log_bodies).to include("test-log-line")
-      expect(revision_attribute(log_msg.resource_logs.first.resource)).to eq(replaced)
     end
 
-    def revision_attribute(resource)
-      resource.attributes.find { |kv| kv.key == "appsignal.config.revision" }&.value&.string_value
+    # Update configuration at spec/integration/runners/collector_mode_emit.rb
+    # when adding values to the array.
+    def config_attributes
+      %w[
+        appsignal.config.filter_attributes
+        appsignal.config.filter_request_payload
+        appsignal.config.ignore_actions
+        appsignal.config.ignore_namespaces
+        appsignal.config.revision
+        host.name
+        service.name
+      ]
+    end
+
+    def attribute_values(resource, name)
+      attribute = resource.attributes.find { |kv| kv.key == name }
+
+      if attribute.value.string_value && !attribute.value.string_value.empty?
+        [attribute.value.string_value]
+      else
+        attribute.value.array_value.values.flat_map(&:string_value)
+      end
     end
   end
 end
