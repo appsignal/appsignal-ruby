@@ -122,5 +122,64 @@ if DependencyHelper.opentelemetry_present?
       expect(attrs).to have_key("appsignal.config.request_headers")
       expect(attrs["appsignal.config.request_headers"].array_value.values).to eq([])
     end
+
+    context "with invalid UTF-8 configuration values" do
+      it "configures collector mode with valid UTF-8" do
+        runner = Runner.new(
+          "collector_mode_emit",
+          :env => OTLPCollectorServer.env.merge("INVALID_UTF8_SCENARIO" => "revision")
+        )
+        runner.run
+        replaced = "caf\u{FFFD}"
+
+        trace_req = OTLPCollectorServer.listen_to("/v1/traces")
+        trace_msg_resource = Opentelemetry::Proto::Collector::Trace::V1::ExportTraceServiceRequest
+          .decode(trace_req[:body]).resource_spans.first.resource
+
+        config_attributes.each do |attr|
+          expect(attribute_values(trace_msg_resource, attr)).to all(be == replaced)
+        end
+
+        metric_req = OTLPCollectorServer.listen_to("/v1/metrics")
+        metric_msg_resource = Opentelemetry::Proto::Collector::Metrics::V1::ExportMetricsServiceRequest
+          .decode(metric_req[:body]).resource_metrics.first.resource
+
+        config_attributes.each do |attr|
+          expect(attribute_values(metric_msg_resource, attr)).to all(be == replaced)
+        end
+
+        log_req = OTLPCollectorServer.listen_to("/v1/logs")
+        log_msg_resource = Opentelemetry::Proto::Collector::Logs::V1::ExportLogsServiceRequest
+          .decode(log_req[:body]).resource_logs.first.resource
+
+        config_attributes.each do |attr|
+          expect(attribute_values(log_msg_resource, attr)).to all(be == replaced)
+        end
+      end
+    end
+
+    # Update configuration at spec/integration/runners/collector_mode_emit.rb
+    # when adding values to the array.
+    def config_attributes
+      %w[
+        appsignal.config.filter_attributes
+        appsignal.config.filter_request_payload
+        appsignal.config.ignore_actions
+        appsignal.config.ignore_namespaces
+        appsignal.config.revision
+        host.name
+        service.name
+      ]
+    end
+
+    def attribute_values(resource, name)
+      attribute = resource.attributes.find { |kv| kv.key == name }
+
+      if attribute.value.string_value && !attribute.value.string_value.empty?
+        [attribute.value.string_value]
+      else
+        attribute.value.array_value.values.flat_map(&:string_value)
+      end
+    end
   end
 end
