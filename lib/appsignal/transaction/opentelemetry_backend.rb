@@ -371,7 +371,7 @@ module Appsignal
         attributes = {
           "exception.type" => class_name,
           "exception.message" => encode_utf8(message.to_s),
-          "exception.stacktrace" => encode_utf8(error_lines.join("\n")),
+          "exception.stacktrace" => error_lines.map { |line| encode_utf8(line) }.join("\n"),
           "appsignal.alert_this_error" => true
         }
 
@@ -827,9 +827,13 @@ module Appsignal
       # "sql.active_record (User Load)". Some integrations pass the event
       # name as the title as well; in that case the name is not repeated.
       def write_event_span_name(span, name, title)
+        span_name = encode_utf8(name)
         has_title = title && !title.empty? && title != name
-        span_name = has_title ? "#{name} (#{title})" : name
-        span.name = encode_utf8(span_name)
+        span.name = if has_title
+                      "#{span_name} (#{encode_utf8(title)})"
+                    else
+                      span_name
+                    end
       end
 
       def write_event_body_attributes(span, body, body_format, db_system_name_set)
