@@ -70,7 +70,7 @@ module Appsignal
         # Several OpenTelemetry SDKs write header attribute names with underscores,
         # where the semantic conventions the collector compares against use dashes.
         def normalize(name)
-          name.to_s.downcase.tr("_", "-")
+          Appsignal::Utils::UTF8.encode(name).to_s.downcase.tr("_", "-")
         end
       end
     end
