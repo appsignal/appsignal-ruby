@@ -714,12 +714,81 @@ if DependencyHelper.opentelemetry_present?
         expect(attrs).not_to have_key("appsignal.config.platform")
         expect(attrs).not_to have_key("appsignal.config.app_path")
       end
+
+      context "with invalid UTF-8 configuration values" do
+        it "configures collector mode with valid UTF-8" do
+          invalid_string = "caf\xE9".dup.force_encoding(Encoding::UTF_8)
+          replaced = "caf\u{FFFD}"
+          resource = described_class.build_resource(
+                    build_config(
+                      :options => {
+                        :filter_attributes => [invalid_string, invalid_string],
+                        :filter_function_parameters => invalid_string,
+                        :filter_request_payload => invalid_string,
+                        :filter_request_query_parameters => invalid_string,
+                        :filter_session_data => invalid_string,
+                        :hostname => invalid_string,
+                        :ignore_actions => [invalid_string],
+                        :ignore_errors => invalid_string,
+                        :ignore_logs => [invalid_string],
+                        :ignore_namespaces => invalid_string,
+                        :keep_request_headers => [invalid_string, invalid_string],
+                        :name => invalid_string,
+                        :platform => invalid_string,
+                        :response_headers => [invalid_string, invalid_string],
+                        :revision => invalid_string,
+                        :send_function_parameters => invalid_string,
+                        :send_request_payload => invalid_string,
+                        :send_request_query_parameters => invalid_string,
+                        :send_session_data => invalid_string,
+                        :service_name => invalid_string
+                      }
+                    )
+                  )
+          attrs = resource_attrs(resource)
+
+          config_attributes.each do |attr|
+            attr_value = attrs[attr]
+
+            if attr_value.is_a?(Array)
+              expect(attr_value).to all(be == replaced)
+            else
+              expect(attr_value).to eq(replaced)
+            end
+          end
+        end
+      end
     end
 
     # Pull the attributes out of an OTel Resource as a plain hash so specs
     # can assert on them without touching the SDK's internals.
     def resource_attrs(resource)
       resource.attribute_enumerator.to_h
+    end
+
+    def config_attributes
+      %w[
+        appsignal.config.name
+        appsignal.config.revision
+        appsignal.config.platform
+        service.name
+        host.name
+        appsignal.config.filter_attributes
+        appsignal.config.filter_function_parameters
+        appsignal.config.filter_request_query_parameters
+        appsignal.config.filter_request_payload
+        appsignal.config.filter_request_session_data
+        appsignal.config.ignore_actions
+        appsignal.config.ignore_errors
+        appsignal.config.ignore_logs
+        appsignal.config.ignore_namespaces
+        appsignal.config.response_headers
+        appsignal.config.request_headers
+        appsignal.config.send_function_parameters
+        appsignal.config.send_request_query_parameters
+        appsignal.config.send_request_payload
+        appsignal.config.send_request_session_data
+      ]
     end
   end
 end

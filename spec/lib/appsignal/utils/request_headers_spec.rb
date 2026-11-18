@@ -140,5 +140,11 @@ describe Appsignal::Utils::RequestHeaders do
     it "leaves a name that is already in that spelling alone" do
       expect(described_class.normalize("accept-encoding")).to eq("accept-encoding")
     end
+
+    it "ensures all bytes are UTF-8" do
+      invalid_bytes = "caf\xE9".dup.force_encoding(Encoding::UTF_8)
+
+      expect(described_class.normalize(invalid_bytes)).to eq("caf\u{FFFD}")
+    end
   end
 end
