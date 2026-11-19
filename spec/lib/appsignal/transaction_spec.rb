@@ -264,6 +264,63 @@ describe Appsignal::Transaction do
     end
   end
 
+  describe ".create!" do
+    before do
+      allow(SecureRandom).to receive(:uuid)
+        .and_return("transaction_id_1", "transaction_id_2")
+    end
+
+    def create_transaction!
+      Appsignal::Transaction.create!(default_namespace)
+    end
+
+    context "when no transaction is running" do
+      it "creates a new current transaction" do
+        transaction = create_transaction!
+
+        expect(transaction).to have_id("transaction_id_1")
+        expect(transaction).to eq(current_transaction)
+      end
+
+      it "does not log a still running transaction" do
+        logs = capture_logs { create_transaction! }
+
+        expect(logs).to_not contains_log(:info, /is still running/)
+      end
+    end
+
+    context "when an incomplete transaction is current" do
+      let!(:stale_transaction) { create_transaction }
+
+      it "completes the current transaction" do
+        create_transaction!
+
+        expect(stale_transaction).to be_completed
+      end
+
+      it "creates a new current transaction" do
+        transaction = create_transaction!
+
+        expect(transaction).to have_id("transaction_id_2")
+        expect(transaction).to eq(current_transaction)
+      end
+
+      it "logs the completed transaction and the caller" do
+        stale_transaction.set_action("StaleController#index")
+        message = "Transaction 'transaction_id_1' is still running. " \
+          "Completing it and creating a new one. " \
+          "(namespace: '#{default_namespace}', action: \"StaleController#index\", caller: "
+
+        logs = capture_logs { create_transaction! }
+
+        expect(logs).to contains_log(
+          :info,
+          /#{Regexp.escape(message)}.+transaction_spec\.rb:\d+:in .+create_transaction!/
+        )
+      end
+    end
+  end
+
   # A block handed to AppSignal (an error block, or an after_create/
   # before_complete hook) is user code that can raise. Because these blocks
   # can run far from where they were defined -- an error block runs at
@@ -400,6 +457,20 @@ describe Appsignal::Transaction do
 
       it "returns true for current?" do
         expect(Appsignal::Transaction.current?).to be(true)
+      end
+    end
+
+    context "when the current transaction is completed" do
+      let!(:transaction) { create_transaction }
+      before { transaction.complete }
+
+      it "returns a NilTransaction stub" do
+        expect(current_transaction.nil_transaction?).to be(true)
+        expect(current_transaction).to be_a(Appsignal::Transaction::NilTransaction)
+      end
+
+      it "returns false for current?" do
+        expect(Appsignal::Transaction.current?).to be(false)
       end
     end
 
