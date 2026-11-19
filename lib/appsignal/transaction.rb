@@ -89,7 +89,18 @@ module Appsignal
       # @param namespace [String] Namespace of the to be created transaction.
       # @param options Passed on to {.create}. See there for the accepted keys.
       # @return [Transaction]
+      # @!visibility private
       def create!(namespace, **options)
+        if current?
+          running = current
+          Appsignal.internal_logger.info(
+            "Transaction '#{running.transaction_id}' is still running. " \
+              "Completing it and creating a new one. " \
+              "(namespace: '#{running.namespace}', action: #{running.action.inspect}, " \
+              "caller: #{caller_locations(1, 1).first})"
+          )
+        end
+
         complete_current!
         create(namespace, **options)
       end

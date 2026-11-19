@@ -281,6 +281,12 @@ describe Appsignal::Transaction do
         expect(transaction).to have_id("transaction_id_1")
         expect(transaction).to eq(current_transaction)
       end
+
+      it "does not log a still running transaction" do
+        logs = capture_logs { create_transaction! }
+
+        expect(logs).to_not contains_log(:info, /is still running/)
+      end
     end
 
     context "when an incomplete transaction is current" do
@@ -297,6 +303,20 @@ describe Appsignal::Transaction do
 
         expect(transaction).to have_id("transaction_id_2")
         expect(transaction).to eq(current_transaction)
+      end
+
+      it "logs the completed transaction and the caller" do
+        stale_transaction.set_action("StaleController#index")
+        message = "Transaction 'transaction_id_1' is still running. " \
+          "Completing it and creating a new one. " \
+          "(namespace: '#{default_namespace}', action: \"StaleController#index\", caller: "
+
+        logs = capture_logs { create_transaction! }
+
+        expect(logs).to contains_log(
+          :info,
+          /#{Regexp.escape(message)}.+transaction_spec\.rb:\d+:in .+create_transaction!/
+        )
       end
     end
   end
