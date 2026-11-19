@@ -160,8 +160,9 @@ module Appsignal
         transaction
       end
 
-      # Returns if any transaction is currently active or not. A
-      # {NilTransaction} is not considered an active transaction.
+      # Returns if any transaction is currently active or not. A transaction
+      # that is already completed but not yet cleared is not considered
+      # active. A {NilTransaction} is not considered an active transaction.
       #
       # @see .current
       # @return [Boolean]
