@@ -135,14 +135,14 @@ describe Appsignal::Metrics::OpenTelemetryBackend, :if => DependencyHelper.opent
   describe "metric names OpenTelemetry rejects" do
     [:set_gauge, :increment_counter, :add_distribution_value].each do |helper|
       it "rejects the #{helper} metric and logs a warning" do
-        name = "caf\xE9".dup.force_encoding(Encoding::UTF_8)
+        name = "café"
 
         logs = capture_logs do
           expect { described_class.public_send(helper, name, 1, {}) }.not_to raise_error
         end
 
         expect(collect_snapshots).to be_empty
-        expect(logs).to contains_log(:warn, "Invalid metric name \"caf�\"")
+        expect(logs).to contains_log(:warn, "Invalid metric name \"café\"")
       end
     end
   end

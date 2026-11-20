@@ -16,7 +16,11 @@ module Appsignal
       # @see https://docs.appsignal.com/metrics/custom.html
       #   Metrics documentation
       def set_gauge(name, value, tags = {})
-        Appsignal::Backends.metrics.set_gauge(name, value, tags)
+        Appsignal::Backends.metrics.set_gauge(
+          Appsignal::Utils::UTF8.encode(name),
+          value,
+          Appsignal::Utils::UTF8.encode_hash(tags)
+        )
       end
 
       # Report a counter metric.
@@ -32,7 +36,11 @@ module Appsignal
       # @see https://docs.appsignal.com/metrics/custom.html
       #   Metrics documentation
       def increment_counter(name, value = 1.0, tags = {})
-        Appsignal::Backends.metrics.increment_counter(name, value, tags)
+        Appsignal::Backends.metrics.increment_counter(
+          Appsignal::Utils::UTF8.encode(name),
+          value,
+          Appsignal::Utils::UTF8.encode_hash(tags)
+        )
       end
 
       # Report a distribution metric.
@@ -48,7 +56,11 @@ module Appsignal
       # @see https://docs.appsignal.com/metrics/custom.html
       #   Metrics documentation
       def add_distribution_value(name, value, tags = {})
-        Appsignal::Backends.metrics.add_distribution_value(name, value, tags)
+        Appsignal::Backends.metrics.add_distribution_value(
+          Appsignal::Utils::UTF8.encode(name),
+          value,
+          Appsignal::Utils::UTF8.encode_hash(tags)
+        )
       end
     end
   end

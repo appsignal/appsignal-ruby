@@ -68,7 +68,7 @@ module Appsignal
         # Returns nil when OpenTelemetry rejects the metric name for any
         # reason, e.g. non-ASCII characters or a leading digit.
         def instrument(kind, name)
-          name = Appsignal::Utils::UTF8.encode(name.to_s)
+          name = name.to_s
           MUTEX.synchronize do
             case kind
             when :gauge
