@@ -371,13 +371,10 @@ module Appsignal
         # allowlist cannot say, so an empty list is sent and an unset option is not.
         attrs.reject! { |_, value| value.nil? || value == "" }
         attrs.transform_values! do |value|
-          case value
-          when String
-            Appsignal::Utils::UTF8.encode(value)
-          when Array
-            value.map { |item| item.is_a?(String) ? Appsignal::Utils::UTF8.encode(item) : item }
+          if value.is_a?(Array)
+            value.map { |item| Appsignal::Utils::UTF8.encode(item) }
           else
-            value
+            Appsignal::Utils::UTF8.encode(value)
           end
         end
         ::OpenTelemetry::SDK::Resources::Resource.create(attrs)
