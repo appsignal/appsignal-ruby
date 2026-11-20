@@ -229,21 +229,18 @@ describe Appsignal::Utils::Data do
             expect(array_json).to be_valid_encoding
           end
 
-          # The extension reads the bytes as UTF-8 and ignores the Ruby
-          # encoding, so the ISO-8859-1 "é" (0xE9) is an invalid byte to it.
-          # Collector mode converts the same string to "café".
-          it "replaces the non-ASCII characters of strings in other encodings" do
+          it "converts strings in other encodings to UTF-8" do
             latin1 = "café".encode(Encoding::ISO_8859_1)
 
             hash_json = generate(
               latin1 => latin1, "array" => [latin1], "hash" => { latin1 => latin1 }
             ).to_s
             expect(hash_json)
-              .to eq(%({"array":["caf�"],"caf�":"caf�","hash":{"caf�":"caf�"}}))
+              .to eq(%({"array":["café"],"café":"café","hash":{"café":"café"}}))
             expect(hash_json).to be_valid_encoding
 
             array_json = generate([latin1, [latin1], { latin1 => latin1 }]).to_s
-            expect(array_json).to eq(%(["caf�",["caf�"],{"caf�":"caf�"}]))
+            expect(array_json).to eq(%(["café",["café"],{"café":"café"}]))
             expect(array_json).to be_valid_encoding
           end
         end

@@ -17,10 +17,10 @@ module Appsignal
         def map_hash(hash_value)
           map = Appsignal::Extension.data_map_new
           hash_value.each do |key, value|
-            key = key.to_s
+            key = Appsignal::Utils::UTF8.encode(key.to_s)
             case value
             when String
-              map.set_string(key, value)
+              map.set_string(key, Appsignal::Utils::UTF8.encode(value))
             when Integer
               # An Integer too big for C-lang longs to fit
               bigint = 1 << 63
@@ -40,7 +40,7 @@ module Appsignal
             when Array
               map.set_data(key, map_array(value))
             else
-              map.set_string(key, value.to_s)
+              map.set_string(key, Appsignal::Utils::UTF8.encode(value.to_s))
             end
           end
           map
@@ -51,7 +51,7 @@ module Appsignal
           array_value.each do |value|
             case value
             when String
-              array.append_string(value)
+              array.append_string(Appsignal::Utils::UTF8.encode(value))
             when Integer
               # An Integer too big for C-lang longs to fit
               bigint = 1 << 63
@@ -71,7 +71,7 @@ module Appsignal
             when Array
               array.append_data(map_array(value))
             else
-              array.append_string(value.to_s)
+              array.append_string(Appsignal::Utils::UTF8.encode(value.to_s))
             end
           end
           array
