@@ -3,12 +3,11 @@ bump: patch
 type: fix
 ---
 
-In collector mode, sending data to the AppSignal collector would fail if invalid
-UTF-8 bytes were present, anywhere in the data structure.  Such failures would
-cause the loss of the complete batch data.
+Fix reporting strings that are not valid UTF-8.  In collector mode, a batch of
+traces, metrics or logs that contains said string prevented the batch from being
+sent.  In agent mode, a request header name or an error backtrace that contains
+said string would raise an error in the application.
 
-This change ensures that valid UTF-8 strings are used by replacing the invalid
-bytes with `�`.
-
-Also, custom metrics are now rejected if their names are not in accordance with
-OpenTelemetry's standard.  When that happens a log issued.
+Now, string bytes that are not valid UTF-8 are replaced with `�`, and strings in
+another encoding are converted to UTF-8, thus preventing the data loss and the
+error raising mentioned above.

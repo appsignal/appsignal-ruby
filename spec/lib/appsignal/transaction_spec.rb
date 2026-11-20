@@ -2,6 +2,8 @@ describe Appsignal::Transaction do
   let(:options) { {} }
   let(:time) { Time.at(fixed_time) }
   let(:root_path) { nil }
+  let(:invalid) { "caf\xE9".dup.force_encoding(Encoding::UTF_8) }
+  let(:replaced) { "caf\u{FFFD}" }
 
   before do |example|
     # Only auto-start the agent for non-mode examples. Mode-tagged examples
@@ -1201,6 +1203,29 @@ describe Appsignal::Transaction do
       end
     end
 
+    describe "adding params with invalid UTF-8" do
+      def perform
+        transaction.add_params(invalid => invalid)
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_params(replaced => replaced)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(JSON.parse(root_span.attributes["appsignal.request.payload"]))
+          .to eq(replaced => replaced)
+      end
+    end
+
     describe "merging the params on the transaction" do
       def perform
         transaction.add_params("abc" => "value")
@@ -1925,6 +1950,29 @@ describe Appsignal::Transaction do
       end
     end
 
+    describe "adding attributes with invalid UTF-8" do
+      def perform
+        transaction.add_opentelemetry_attributes(invalid => invalid)
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to_not include_tags(replaced => replaced)
+        expect(transaction).to_not include_metadata(replaced => replaced)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(root_span.attributes[replaced]).to eq(replaced)
+      end
+    end
+
     describe "adding attributes while an event is open" do
       def perform
         set_current_transaction(transaction)
@@ -2042,6 +2090,29 @@ describe Appsignal::Transaction do
 
         expect(JSON.parse(root_span.attributes["appsignal.request.session_data"]))
           .to eq("key" => "value")
+      end
+    end
+
+    describe "adding session data with invalid UTF-8" do
+      def perform
+        transaction.add_session_data(invalid => invalid)
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_session_data(replaced => replaced)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(JSON.parse(root_span.attributes["appsignal.request.session_data"]))
+          .to eq(replaced => replaced)
       end
     end
 
@@ -2830,6 +2901,30 @@ describe Appsignal::Transaction do
       end
     end
 
+    # The header named with invalid UTF-8 is not in the allowlist, so it is
+    # dropped. It is there to show that its name does not break the others.
+    describe "adding headers with invalid UTF-8" do
+      def perform
+        transaction.add_request_headers("accept" => invalid, invalid => "value")
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_environment("HTTP_ACCEPT" => replaced)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(root_span.attributes["http.request.header.accept"]).to eq(replaced)
+      end
+    end
+
     describe "adding a header named in another spelling" do
       let(:options) { { :keep_request_headers => %w[Accept-Encoding] } }
 
@@ -2893,6 +2988,28 @@ describe Appsignal::Transaction do
         transaction.complete
 
         expect(root_span.attributes["appsignal.environment.REMOTE_ADDR"]).to eq("127.0.0.1")
+      end
+    end
+
+    describe "adding values with invalid UTF-8" do
+      def perform
+        transaction.add_request_environment("REMOTE_ADDR" => invalid)
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_environment("REMOTE_ADDR" => replaced)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(root_span.attributes["appsignal.environment.REMOTE_ADDR"]).to eq(replaced)
       end
     end
   end
@@ -3188,6 +3305,28 @@ describe Appsignal::Transaction do
       end
     end
 
+    describe "storing tags with invalid UTF-8" do
+      def perform
+        transaction.add_tags(invalid => invalid)
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_tags(replaced => replaced)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(root_span.attributes["appsignal.tag.#{replaced}"]).to eq(replaced)
+      end
+    end
+
     describe "merging the tags when called multiple times" do
       def perform
         transaction.add_tags(:key1 => "value1")
@@ -3334,6 +3473,30 @@ describe Appsignal::Transaction do
           }
         }
       end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_custom_data(expected)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(JSON.parse(root_span.attributes["appsignal.custom_data"])).to eq(expected)
+      end
+    end
+
+    describe "adding custom data with invalid UTF-8" do
+      def perform
+        transaction.add_custom_data(invalid => { invalid => [invalid] })
+      end
+
+      let(:expected) { { replaced => { replaced => [replaced] } } }
 
       it "in agent mode", :agent_mode do
         start_agent(**start_agent_args)
@@ -3579,6 +3742,40 @@ describe Appsignal::Transaction do
       end
     end
 
+    context "with invalid UTF-8" do
+      def perform
+        transaction.add_breadcrumb(invalid, invalid, invalid, invalid => invalid)
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction.complete
+
+        expect(transaction).to include_breadcrumb(
+          replaced,
+          replaced,
+          replaced,
+          { replaced => replaced },
+          kind_of(Integer)
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        attributes = breadcrumb_events.first.attributes
+        expect(attributes).to include(
+          "category" => replaced,
+          "action" => replaced,
+          "message" => replaced
+        )
+        expect(JSON.parse(attributes["metadata"])).to eq(replaced => replaced)
+      end
+    end
+
     context "with metadata argument that's not a Hash" do
       def perform
         transaction.add_breadcrumb("category", "action", "message", "invalid metadata")
@@ -3635,6 +3832,30 @@ describe Appsignal::Transaction do
         transaction.complete
         expect(root_span.name).to eq(action_name)
         expect(root_span.attributes["appsignal.action_name"]).to eq(action_name)
+      end
+    end
+
+    context "when the action has invalid UTF-8" do
+      def perform
+        transaction.set_action(invalid)
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+
+        expect(transaction.action).to eq(replaced)
+        expect(transaction).to have_action(replaced)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+
+        expect(transaction.action).to eq(replaced)
+        transaction.complete
+        expect(root_span.name).to eq(replaced)
+        expect(root_span.attributes["appsignal.action_name"]).to eq(replaced)
       end
     end
 
@@ -3779,6 +4000,52 @@ describe Appsignal::Transaction do
       end
     end
 
+    context "when the namespace has invalid UTF-8" do
+      def perform
+        transaction.set_namespace(invalid)
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+
+        expect(transaction.namespace).to eq(replaced)
+        expect(transaction).to have_namespace(replaced)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+
+        expect(transaction.namespace).to eq(replaced)
+        transaction.complete
+        expect(root_span.attributes["appsignal.namespace"]).to eq(replaced)
+      end
+    end
+
+    context "when the transaction is created with a namespace with invalid UTF-8" do
+      def perform
+        new_transaction(invalid)
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        transaction = perform
+
+        expect(transaction.namespace).to eq(replaced)
+        expect(transaction).to have_namespace(replaced)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        transaction = perform
+
+        expect(transaction.namespace).to eq(replaced)
+        transaction.complete
+        expect(root_span.attributes["appsignal.namespace"]).to eq(replaced)
+      end
+    end
+
     context "when the namespace is nil" do
       def perform
         transaction.set_namespace(namespace)
@@ -3909,6 +4176,27 @@ describe Appsignal::Transaction do
 
         # Metadata has no dedicated OTel attribute; it is emitted as a tag.
         expect(root_span.attributes["appsignal.tag.request_method"]).to eq("GET")
+      end
+    end
+
+    describe "updating the metadata with invalid UTF-8" do
+      def perform
+        transaction.set_metadata(invalid, invalid)
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+
+        expect(transaction).to include_metadata(replaced => replaced)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(root_span.attributes["appsignal.tag.#{replaced}"]).to eq(replaced)
       end
     end
 
@@ -4467,6 +4755,86 @@ describe Appsignal::Transaction do
       end
     end
 
+    describe "recording an error with invalid UTF-8" do
+      let(:error) do
+        ExampleStandardError.new(invalid).tap do |e|
+          e.set_backtrace([invalid])
+        end
+      end
+
+      def perform
+        transaction.add_error(error)
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+
+        expect(transaction).to have_error("ExampleStandardError", replaced, [replaced])
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        event = root_span.events.find { |e| e.name == "exception" }
+        expect(event.attributes["exception.message"]).to eq(replaced)
+        expect(event.attributes["exception.stacktrace"]).to eq(replaced)
+      end
+    end
+
+    describe "recording an error that has causes with invalid UTF-8" do
+      let(:error) do
+        cause = ExampleStandardError.new(invalid).tap do |e|
+          e.set_backtrace(["/path/#{invalid}.rb:1:in `cause_method'"])
+        end
+        ExampleException.new("wrapper message").tap do |e|
+          e.set_backtrace(["/path/wrapper.rb:2:in `wrapper_method'"])
+          allow(e).to receive(:cause).and_return(cause)
+        end
+      end
+
+      def perform
+        # Hide Rails so the backtrace isn't run through its cleaner, keeping the
+        # asserted lines deterministic (mirrors the error-causes sample-data spec).
+        hide_const("Rails")
+        transaction.add_error(error)
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+
+        expect(transaction).to include_error_causes(
+          [
+            hash_including(
+              "name" => "ExampleStandardError",
+              "message" => replaced,
+              "first_line" => hash_including("path" => "/path/#{replaced}.rb")
+            )
+          ]
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        event = root_span.events.find { |e| e.name == "exception" }
+        expect(JSON.parse(event.attributes["appsignal.error_causes"])).to eq(
+          [
+            {
+              "name" => "ExampleStandardError",
+              "message" => replaced,
+              "lines" => ["/path/#{replaced}.rb:1:in `cause_method'"]
+            }
+          ]
+        )
+      end
+    end
+
     describe "recording multiple errors" do
       let(:other_error) do
         ExampleStandardError.new("other message").tap { |e| e.set_backtrace(["line 2"]) }
@@ -4690,6 +5058,39 @@ describe Appsignal::Transaction do
         event = exception_event
         expect(event.attributes["exception.type"]).to eq("PG::UniqueViolation")
         expect(event.attributes["exception.message"]).to eq(sanitized_message)
+      end
+    end
+
+    context "with a PG::UniqueViolation with invalid UTF-8" do
+      let(:error) do
+        PG::UniqueViolation.new(
+          "ERROR: duplicate key value violates unique constraint " \
+            "\"index_users_on_email\" DETAIL: Key (email)=(#{invalid}) already exists."
+        )
+      end
+      let(:sanitized_message) do
+        "ERROR: duplicate key value violates unique constraint " \
+          "\"index_users_on_email\" DETAIL: Key (email)=(?) already exists."
+      end
+      before { stub_const("PG::UniqueViolation", Class.new(StandardError)) }
+
+      def perform
+        transaction.add_error(error)
+      end
+
+      it "returns a sanizited error message in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+
+        expect(transaction).to have_error("PG::UniqueViolation", sanitized_message)
+      end
+
+      it "records a sanitized error message in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(exception_event.attributes["exception.message"]).to eq(sanitized_message)
       end
     end
 
@@ -5716,6 +6117,37 @@ describe Appsignal::Transaction do
         expect(observed).to be_within(50_000_000).of(duration_ns)
       end
     end
+
+    describe "recording an event with invalid UTF-8" do
+      def perform(transaction)
+        transaction.record_event("custom.#{invalid}", "Title #{invalid}", invalid, 1_000,
+          Appsignal::EventFormatter::DEFAULT)
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+        perform(transaction)
+        Appsignal::Transaction.complete_current!
+
+        expect(transaction).to include_event(
+          "name" => "custom.#{replaced}",
+          "title" => "Title #{replaced}",
+          "body" => replaced
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+        perform(transaction)
+        Appsignal::Transaction.complete_current!
+
+        span = event_spans.first
+        expect(span.name).to eq("custom.#{replaced} (Title #{replaced})")
+        expect(span.attributes["appsignal.body"]).to eq(replaced)
+      end
+    end
   end
 
   describe "#instrument" do
@@ -5818,6 +6250,67 @@ describe Appsignal::Transaction do
         expect(span.attributes).not_to have_key("appsignal.category")
         expect(span.attributes).not_to have_key("db.query.text")
         expect(span.attributes).not_to have_key("db.system.name")
+      end
+    end
+
+    describe "instrumenting an event with invalid UTF-8" do
+      def perform(transaction)
+        transaction.instrument("custom.#{invalid}", "Title #{invalid}", invalid,
+          Appsignal::EventFormatter::DEFAULT) { nil }
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+        perform(transaction)
+        Appsignal::Transaction.complete_current!
+
+        expect(transaction).to include_event(
+          "name" => "custom.#{replaced}",
+          "title" => "Title #{replaced}",
+          "body" => replaced
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+        perform(transaction)
+        Appsignal::Transaction.complete_current!
+
+        span = event_spans.first
+        expect(span.name).to eq("custom.#{replaced} (Title #{replaced})")
+        expect(span.attributes["appsignal.body"]).to eq(replaced)
+      end
+    end
+
+    describe "instrumenting a SQL event with invalid UTF-8" do
+      def perform(transaction)
+        transaction.instrument("sql.active_record", "Query", "SELECT '#{invalid}'",
+          Appsignal::EventFormatter::SQL_BODY_FORMAT) { nil }
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+        perform(transaction)
+        Appsignal::Transaction.complete_current!
+
+        expect(transaction).to include_event(
+          "name" => "sql.active_record",
+          "title" => "Query",
+          "body" => "SELECT '#{replaced}'",
+          "body_format" => Appsignal::EventFormatter::SQL_BODY_FORMAT
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+        perform(transaction)
+        Appsignal::Transaction.complete_current!
+
+        expect(event_spans.first.attributes["db.query.text"]).to eq("SELECT '#{replaced}'")
       end
     end
 
