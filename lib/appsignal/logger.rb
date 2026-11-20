@@ -146,7 +146,13 @@ module Appsignal
 
       message = formatter.call(severity, Time.now, group, message) if formatter
 
-      Appsignal::Backends.logger.emit(group, severity, @format, message.to_s, appsignal_attributes)
+      Appsignal::Backends.logger.emit(
+        Appsignal::Utils::UTF8.encode(group),
+        severity,
+        @format,
+        Appsignal::Utils::UTF8.encode(message.to_s),
+        Appsignal::Utils::UTF8.encode_hash(appsignal_attributes)
+      )
 
       false
     end
