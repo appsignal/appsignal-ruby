@@ -68,5 +68,40 @@ describe Appsignal::Utils::UTF8 do
         expect(result.encoding).to eq(Encoding::UTF_8)
       end
     end
+
+    context "with a value that is not a String" do
+      it "returns the value itself" do
+        [nil, :symbol, 1, 1.5, true, ["caf\xE9".b]].each do |value|
+          expect(encode(value)).to equal(value)
+        end
+      end
+    end
+  end
+
+  describe ".encode_hash" do
+    let(:invalid) { "caf\xE9".dup.force_encoding(Encoding::UTF_8) }
+    let(:replaced) { "caf\u{FFFD}" }
+
+    it "converts the keys and values" do
+      expect(described_class.encode_hash(invalid => invalid, :key => 1))
+        .to eq(replaced => replaced, :key => 1)
+    end
+
+    it "does not convert nested values" do
+      nested = { "key" => [invalid] }
+
+      expect(described_class.encode_hash(nested)["key"]).to equal(nested["key"])
+    end
+
+    it "does not change the given Hash" do
+      hash = { invalid => invalid }
+      described_class.encode_hash(hash)
+
+      expect(hash.keys.first.bytes).to eq([99, 97, 102, 233])
+    end
+
+    it "returns a value that is not a Hash as it is" do
+      expect(described_class.encode_hash(nil)).to be_nil
+    end
   end
 end

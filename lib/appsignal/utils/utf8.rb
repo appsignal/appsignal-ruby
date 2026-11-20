@@ -8,19 +8,29 @@ module Appsignal
     # replaced with U+FFFD.
     module UTF8
       class << self
-        # Returns the string itself when it is already valid UTF-8, or a
-        # converted copy otherwise.
+        # Returns the value itself when it is not a String or is already valid
+        # UTF-8, or a converted copy otherwise.
         #
         # A binary String has no encoding of its own, so its bytes are read as
         # UTF-8. Any other String is converted from its own encoding.
-        def encode(string)
-          return string if string.encoding == Encoding::UTF_8 && string.valid_encoding?
+        def encode(value)
+          return value unless value.is_a?(String)
+          return value if value.encoding == Encoding::UTF_8 && value.valid_encoding?
 
-          if string.encoding == Encoding::BINARY
-            String.new(string, :encoding => Encoding::UTF_8).scrub
+          if value.encoding == Encoding::BINARY
+            String.new(value, :encoding => Encoding::UTF_8).scrub
           else
-            string.encode(Encoding::UTF_8, :invalid => :replace, :undef => :replace)
+            value.encode(Encoding::UTF_8, :invalid => :replace, :undef => :replace)
           end
+        end
+
+        # Returns a copy of the Hash with its keys and values converted by
+        # {.encode}. Nested Hashes and Arrays are not converted. Returns any
+        # other value as it is.
+        def encode_hash(hash)
+          return hash unless hash.is_a?(Hash)
+
+          hash.to_h { |key, value| [encode(key), encode(value)] }
         end
       end
     end
