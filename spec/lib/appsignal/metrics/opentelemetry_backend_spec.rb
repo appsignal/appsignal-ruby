@@ -132,6 +132,16 @@ describe Appsignal::Metrics::OpenTelemetryBackend, :if => DependencyHelper.opent
     end
   end
 
+  describe "metric names OpenTelemetry does not accept" do
+    [:set_gauge, :increment_counter, :add_distribution_value].each do |helper|
+      it "drops the #{helper} metric without raising" do
+        expect { described_class.public_send(helper, "my metric", 1, {}) }
+          .to_not raise_error
+        expect(collect_snapshots).to be_empty
+      end
+    end
+  end
+
   describe "instrument caching" do
     it "reuses the same instrument across calls for a given metric name" do
       meter = ::OpenTelemetry.meter_provider.meter("appsignal-helpers")

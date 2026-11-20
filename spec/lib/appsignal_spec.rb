@@ -3344,6 +3344,14 @@ describe Appsignal do
       end
     end
 
+    describe "with a name OpenTelemetry does not accept" do
+      [:set_gauge, :increment_counter, :add_distribution_value].each do |helper|
+        it_in_both_modes "does not raise for .#{helper}" do
+          expect { Appsignal.public_send(helper, "my metric", 1) }.to_not raise_error
+        end
+      end
+    end
+
     describe "with invalid UTF-8" do
       let(:invalid) { "caf\xE9".dup.force_encoding(Encoding::UTF_8) }
       let(:replaced) { "caf\u{FFFD}" }

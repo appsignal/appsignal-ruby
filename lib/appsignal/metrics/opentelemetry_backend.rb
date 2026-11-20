@@ -25,21 +25,21 @@ module Appsignal
 
       class << self
         def set_gauge(name, value, tags)
-          instrument(:gauge, name).record(
+          instrument(:gauge, name)&.record(
             value.to_f,
             :attributes => Appsignal::OpenTelemetry::Attributes.format(tags)
           )
         end
 
         def increment_counter(name, value, tags)
-          instrument(:up_down_counter, name).add(
+          instrument(:up_down_counter, name)&.add(
             value.to_f,
             :attributes => Appsignal::OpenTelemetry::Attributes.format(tags)
           )
         end
 
         def add_distribution_value(name, value, tags)
-          instrument(:histogram, name).record(
+          instrument(:histogram, name)&.record(
             value.to_f,
             :attributes => Appsignal::OpenTelemetry::Attributes.format(tags)
           )
@@ -64,6 +64,9 @@ module Appsignal
         # The lookup-or-create runs under the mutex so two concurrent
         # first-time calls don't both create the instrument (which would
         # make the SDK log a duplicate-registration warning).
+        #
+        # Returns nil for a name the OpenTelemetry naming rules reject, such as
+        # one with spaces or non-ASCII characters.
         def instrument(kind, name)
           name = name.to_s
           MUTEX.synchronize do
@@ -76,6 +79,8 @@ module Appsignal
               (@histograms ||= {})[name] ||= meter.create_histogram(name)
             end
           end
+        rescue ::OpenTelemetry::Metrics::Meter::InstrumentNameError
+          nil
         end
 
         # Only called from `instrument` while the mutex is held, so the plain
