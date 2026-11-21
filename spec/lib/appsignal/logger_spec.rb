@@ -918,6 +918,56 @@ describe Appsignal::Logger do
       end
     end
 
+    describe "restores the level when silence calls overlap in two threads" do
+      it_in_both_modes do
+        first_in = Queue.new
+        first_out = Queue.new
+        second_in = Queue.new
+        second_out = Queue.new
+
+        first = Thread.new do
+          logger.silence do
+            first_in << true
+            first_out.pop
+          end
+        end
+        first_in.pop
+
+        second = Thread.new do
+          logger.silence do
+            second_in << true
+            second_out.pop
+          end
+        end
+        second_in.pop
+
+        first_out << true
+        first.join
+        second_out << true
+        second.join
+
+        expect(logger.level).to eq(::Logger::DEBUG)
+      end
+    end
+
+    describe "only silences the thread that calls silence" do
+      it_in_both_modes do
+        inside = Queue.new
+        done = Queue.new
+        thread = Thread.new do
+          logger.silence do
+            inside << true
+            done.pop
+          end
+        end
+        inside.pop
+
+        expect(logger.level).to eq(::Logger::DEBUG)
+        done << true
+        thread.join
+      end
+    end
+
     describe "does not broadcast the message to the given logger when silenced" do
       let(:other_device) { StringIO.new }
       let(:other_logger) { ::Logger.new(other_device) }
