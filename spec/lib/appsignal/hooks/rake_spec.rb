@@ -22,6 +22,13 @@ describe Appsignal::Hooks::RakeHook do
     expect(Kernel).to have_received(:at_exit)
   end
 
+  def report_error_after_task
+    perform
+    rake_transaction = last_transaction
+    Appsignal.report_error(ExampleStandardError.new("after the task"))
+    rake_transaction
+  end
+
   describe "#execute" do
     context "without error" do
       def perform
@@ -89,6 +96,26 @@ describe Appsignal::Hooks::RakeHook do
           perform
           expect_to_have_registered_at_exit_hook
         end
+
+        describe "reports an error reported after the task" do
+          it "in agent mode", :agent_mode do
+            start_agent(**start_agent_args)
+            rake_transaction = report_error_after_task
+
+            transaction = last_transaction
+            expect(transaction).to_not equal(rake_transaction)
+            expect(transaction).to have_error("ExampleStandardError", "after the task")
+            expect(transaction).to be_completed
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            report_error_after_task
+
+            messages = exception_events.map { |event| event.attributes["exception.message"] }
+            expect(messages).to include("after the task")
+          end
+        end
       end
     end
 
@@ -142,6 +169,26 @@ describe Appsignal::Hooks::RakeHook do
         it_in_both_modes "registers an at_exit hook" do
           perform
           expect_to_have_registered_at_exit_hook
+        end
+
+        describe "reports an error reported after the task" do
+          it "in agent mode", :agent_mode do
+            start_agent(**start_agent_args)
+            rake_transaction = report_error_after_task
+
+            transaction = last_transaction
+            expect(transaction).to_not equal(rake_transaction)
+            expect(transaction).to have_error("ExampleStandardError", "after the task")
+            expect(transaction).to be_completed
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            report_error_after_task
+
+            messages = exception_events.map { |event| event.attributes["exception.message"] }
+            expect(messages).to include("after the task")
+          end
         end
 
         context "when first argument is not a `Rake::TaskArguments`" do
