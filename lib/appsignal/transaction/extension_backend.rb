@@ -207,6 +207,7 @@ module Appsignal
         first_line = backtrace&.first
         return unless first_line
 
+        first_line = Appsignal::Utils::UTF8.encode(first_line)
         captures = BACKTRACE_REGEX.match(first_line)
         return unless captures
 
