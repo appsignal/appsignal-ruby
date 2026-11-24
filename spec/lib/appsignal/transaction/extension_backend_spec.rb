@@ -246,16 +246,14 @@ describe Appsignal::Transaction::ExtensionBackend do
       backend.start_event
       backend.finish_event(string, string, string, 0)
       backend.record_event(string, string, string, 0, 1000)
-      # The cause has no backtrace because the first line of a cause's
-      # backtrace is matched against a regex, which raises on invalid UTF-8.
-      causes = [{ :name => string, :message => string, :backtrace => nil }]
+      causes = [
+        { :name => string, :message => string, :backtrace => ["/app/#{string}.rb:1:in `cause'"] }
+      ]
       backend.set_error(string, string, [string], causes, false)
       backend.set_sample_data("tags", string => string)
       backend.to_json
     end
 
-    # `converted` is what the strings serialized by `Utils::Data` and
-    # `Utils::JSON` become.
     shared_examples "a transaction with valid UTF-8 strings" do |expected, converted = expected|
       it "sends valid UTF-8 in every string field" do
         json = transaction_json(string)
@@ -272,9 +270,18 @@ describe Appsignal::Transaction::ExtensionBackend do
             "backtrace" => %(["#{converted}"])
           }
         )
-        expect(transaction["sample_data"]).to eq(
+        expect(transaction["sample_data"]).to match(
           "tags" => { converted => converted },
-          "error_causes" => [{ "name" => converted, "message" => converted, "first_line" => nil }]
+          "error_causes" => [{
+            "name" => converted,
+            "message" => converted,
+            "first_line" => hash_including(
+              "original" => "/app/#{converted}.rb:1:in `cause'",
+              "path" => "/app/#{converted}.rb",
+              "line" => 1,
+              "method" => "cause"
+            )
+          }]
         )
         expect(transaction["events"].size).to eq(2)
         expect(transaction["events"])
@@ -303,9 +310,9 @@ describe Appsignal::Transaction::ExtensionBackend do
     end
 
     # The extension reads the bytes as UTF-8 and ignores the Ruby encoding, so
-    # the ISO-8859-1 "é" (0xE9) is an invalid byte to it. `Utils::Data` and
-    # `Utils::JSON` convert the string to UTF-8 first, so the backtrace and
-    # sample data keep the "é".
+    # the ISO-8859-1 "é" (0xE9) is an invalid byte to it. `Utils::Data`
+    # converts the string to UTF-8 first, so the backtrace and sample data
+    # keep the "é".
     context "with a string in another encoding" do
       let(:string) { "café".encode(Encoding::ISO_8859_1) }
 
