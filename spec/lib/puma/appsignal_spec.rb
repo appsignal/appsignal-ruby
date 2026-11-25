@@ -148,8 +148,8 @@ RSpec.describe "Puma plugin" do
     ENV["APPSIGNAL_STATSD_PORT"] = nil
     Puma._set_stats = nil
     # Stop all threads in test and stop listening on the UDPSocket
-    @client_thread.kill if defined?(@client_thread) && @client_thread
-    @server_thread.kill if defined?(@server_thread) && @server_thread
+    @client_thread.kill.join if defined?(@client_thread) && @client_thread
+    @server_thread.kill.join if defined?(@server_thread) && @server_thread
     @client_thread = nil
     @server_thread = nil
 
