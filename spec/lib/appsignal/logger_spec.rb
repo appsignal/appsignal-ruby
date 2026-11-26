@@ -1318,6 +1318,29 @@ describe Appsignal::Logger do
     end
   end
 
+  describe "#error with an exception that has no backtrace" do
+    let(:error) { ExampleStandardError.new("oh no!") }
+
+    def perform
+      logger.error(error)
+    end
+
+    it "in agent mode", :agent_mode do
+      start_agent
+      expect(Appsignal::Extension).to receive(:log)
+        .with("group", 6, 3, "ExampleStandardError: oh no!", instance_of(Appsignal::Extension::Data))
+      perform
+    end
+
+    it "in collector mode", :collector_mode do
+      start_collector_agent
+      expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
+        .with("group", ::Logger::ERROR, Appsignal::Logger::AUTODETECT,
+          "ExampleStandardError: oh no!", {})
+      perform
+    end
+  end
+
   describe "#<<" do
     describe "writes an info message and returns the number of characters written" do
       def perform
