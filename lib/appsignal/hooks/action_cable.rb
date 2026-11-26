@@ -15,10 +15,15 @@ module Appsignal
 
       def install
         require "appsignal/integrations/action_cable"
-        ActionCable::Channel::Base.prepend Appsignal::Integrations::ActionCableIntegration
 
-        install_subscribe_callback
-        install_unsubscribe_callback
+        # Wait for Action Cable to load the channel base class instead of
+        # loading it during app initialization, which Rails warns about.
+        ActiveSupport.on_load(:action_cable_channel, :yield => true) do |base|
+          base.prepend Appsignal::Integrations::ActionCableIntegration
+
+          install_subscribe_callback
+          install_unsubscribe_callback
+        end
       end
 
       private
