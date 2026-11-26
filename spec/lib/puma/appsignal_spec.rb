@@ -59,21 +59,15 @@ RSpec.describe "Puma plugin" do
     end
 
     def start
-      if connected?
-        stop
-        connect
-      end
+      socket = @socket or return
 
       loop do
         # Listen for messages and track them on the messages Array.
-        packet = @socket.recvfrom(1024)
+        packet = socket.recvfrom(1024)
         track_message packet.first
-      rescue Errno::EBADF
-        # Ignore error for JRuby 9.1.17.0 specifically, it doesn't appear to
-        # happen on 9.2.18.0. It doesn't break the tests themselves, ignoring
-        # this error. It's probably a timing issue where it tries to read
-        # from the socket after it's closed.
       end
+    rescue IOError, Errno::EBADF
+      nil
     end
 
     def stop
