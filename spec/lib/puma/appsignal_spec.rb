@@ -148,13 +148,17 @@ RSpec.describe "Puma plugin" do
     ENV["APPSIGNAL_STATSD_PORT"] = nil
     Puma._set_stats = nil
     # Stop all threads in test and stop listening on the UDPSocket
-    @client_thread.kill.join if defined?(@client_thread) && @client_thread
-    @server_thread.kill.join if defined?(@server_thread) && @server_thread
-    @client_thread = nil
-    @server_thread = nil
-
+    @client_thread.kill if defined?(@client_thread) && @client_thread
+    @server_thread.kill if defined?(@server_thread) && @server_thread
+    # JRuby doesn't interrupt a blocking `recvfrom` on kill, so the socket
+    # must be closed before the server thread can be joined.
     @statsd.stop if defined?(@statsd) && @statsd
     @statsd = nil
+
+    @client_thread.join if defined?(@client_thread) && @client_thread
+    @server_thread.join if defined?(@server_thread) && @server_thread
+    @client_thread = nil
+    @server_thread = nil
   end
 
   def appsignal_plugin
