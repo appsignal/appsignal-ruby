@@ -65,8 +65,14 @@ module Appsignal
     }.freeze
 
     # Logging severity threshold
+    #
+    # Inside a {#silence} block this returns the silence level for the
+    # current thread (or fiber) only.
+    #
     # @return [Integer]
-    attr_reader :level
+    def level
+      Thread.current[@silence_key] || @level
+    end
 
     # rubocop:disable Lint/MissingSuper
 
@@ -83,7 +89,7 @@ module Appsignal
 
       @group = group
       @level = level
-      @silenced = false
+      @silence_key = :"appsignal_logger_silence_level_#{object_id}"
       @format = validated_format(format)
       @mutex = Mutex.new
       @default_attributes = attributes
@@ -113,7 +119,7 @@ module Appsignal
 
       # If the logger is silenced, we do not log *or broadcast* messages
       # below the log level.
-      return true if @silenced && severity < @level
+      return true if silenced? && severity < level
 
       # Ensure that the block is only run once, even if several loggers
       # are being broadcasted to.
@@ -217,14 +223,16 @@ module Appsignal
     #
     # @param severity [Integer] The minimum severity level to log during the block.
     # @return [Object] The return value of the block.
+    #
+    # The silence level is stored per thread (or fiber), so overlapping
+    # `silence` calls from different threads do not change the level of
+    # each other or of the logger itself.
     def silence(severity = ERROR, &block)
-      previous_level = @level
-      @level = severity
-      @silenced = true
+      previous_level = Thread.current[@silence_key]
+      Thread.current[@silence_key] = severity
       block.call(self)
     ensure
-      @level = previous_level
-      @silenced = false
+      Thread.current[@silence_key] = previous_level
     end
 
     # Adds a logger to broadcast log messages to.
@@ -287,6 +295,10 @@ module Appsignal
     end
 
     private
+
+    def silenced?
+      !Thread.current[@silence_key].nil?
+    end
 
     attr_reader :default_attributes, :appsignal_attributes
 
