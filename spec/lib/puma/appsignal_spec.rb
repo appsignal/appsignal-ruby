@@ -59,21 +59,15 @@ RSpec.describe "Puma plugin" do
     end
 
     def start
-      if connected?
-        stop
-        connect
-      end
+      socket = @socket or return
 
       loop do
         # Listen for messages and track them on the messages Array.
-        packet = @socket.recvfrom(1024)
+        packet = socket.recvfrom(1024)
         track_message packet.first
-      rescue Errno::EBADF
-        # Ignore error for JRuby 9.1.17.0 specifically, it doesn't appear to
-        # happen on 9.2.18.0. It doesn't break the tests themselves, ignoring
-        # this error. It's probably a timing issue where it tries to read
-        # from the socket after it's closed.
       end
+    rescue IOError, Errno::EBADF
+      nil
     end
 
     def stop
@@ -150,11 +144,15 @@ RSpec.describe "Puma plugin" do
     # Stop all threads in test and stop listening on the UDPSocket
     @client_thread.kill if defined?(@client_thread) && @client_thread
     @server_thread.kill if defined?(@server_thread) && @server_thread
-    @client_thread = nil
-    @server_thread = nil
-
+    # JRuby doesn't interrupt a blocking `recvfrom` on kill, so the socket
+    # must be closed before the server thread can be joined.
     @statsd.stop if defined?(@statsd) && @statsd
     @statsd = nil
+
+    @client_thread.join if defined?(@client_thread) && @client_thread
+    @server_thread.join if defined?(@server_thread) && @server_thread
+    @client_thread = nil
+    @server_thread = nil
   end
 
   def appsignal_plugin
