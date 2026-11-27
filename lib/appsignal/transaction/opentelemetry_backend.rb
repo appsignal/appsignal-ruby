@@ -422,7 +422,7 @@ module Appsignal
             "category" => breadcrumb[:category],
             "action" => breadcrumb[:action],
             "message" => breadcrumb[:message],
-            "metadata" => JSON.generate(breadcrumb[:metadata] || {})
+            "metadata" => Appsignal::Utils::JSON.generate(breadcrumb[:metadata] || {})
           }
         )
       end

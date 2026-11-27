@@ -3742,6 +3742,40 @@ describe Appsignal::Transaction do
       end
     end
 
+    context "with invalid UTF-8" do
+      def perform
+        transaction.add_breadcrumb(invalid, invalid, invalid, invalid => invalid)
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction.complete
+
+        expect(transaction).to include_breadcrumb(
+          replaced,
+          replaced,
+          replaced,
+          { replaced => replaced },
+          kind_of(Integer)
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        attributes = breadcrumb_events.first.attributes
+        expect(attributes).to include(
+          "category" => replaced,
+          "action" => replaced,
+          "message" => replaced
+        )
+        expect(JSON.parse(attributes["metadata"])).to eq(replaced => replaced)
+      end
+    end
+
     context "with metadata argument that's not a Hash" do
       def perform
         transaction.add_breadcrumb("category", "action", "message", "invalid metadata")

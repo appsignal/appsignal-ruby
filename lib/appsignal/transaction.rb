@@ -864,10 +864,10 @@ module Appsignal
       # span event right away (by completion its target span has finished).
       @backend.add_breadcrumb(
         :time => time.to_i,
-        :category => category,
-        :action => action,
-        :message => message,
-        :metadata => metadata
+        :category => Appsignal::Utils::UTF8.encode(category),
+        :action => Appsignal::Utils::UTF8.encode(action),
+        :message => Appsignal::Utils::UTF8.encode(message),
+        :metadata => Appsignal::Utils::UTF8.encode_hash(metadata)
       )
     end
 
