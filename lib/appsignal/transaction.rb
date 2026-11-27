@@ -249,7 +249,7 @@ module Appsignal
     )
       @transaction_id = id
       @action = nil
-      @namespace = namespace
+      @namespace = Appsignal::Utils::UTF8.encode(namespace)
       @paused = false
       @discarded = false
       @completed = false
@@ -864,10 +864,10 @@ module Appsignal
       # span event right away (by completion its target span has finished).
       @backend.add_breadcrumb(
         :time => time.to_i,
-        :category => category,
-        :action => action,
-        :message => message,
-        :metadata => metadata
+        :category => Appsignal::Utils::UTF8.encode(category),
+        :action => Appsignal::Utils::UTF8.encode(action),
+        :message => Appsignal::Utils::UTF8.encode(message),
+        :metadata => Appsignal::Utils::UTF8.encode_hash(metadata)
       )
     end
 
@@ -884,8 +884,8 @@ module Appsignal
     def set_action(action)
       return unless action
 
-      @action = action
-      @backend.set_action(action)
+      @action = Appsignal::Utils::UTF8.encode(action)
+      @backend.set_action(@action)
     end
 
     # Set an action name only if there is no current action set.
@@ -932,8 +932,8 @@ module Appsignal
     def set_namespace(namespace)
       return unless namespace
 
-      @namespace = namespace
-      @backend.set_namespace(namespace)
+      @namespace = Appsignal::Utils::UTF8.encode(namespace)
+      @backend.set_namespace(@namespace)
     end
 
     # Set queue start time for transaction.
@@ -957,7 +957,10 @@ module Appsignal
       return unless key && value
       return if Appsignal.config[:filter_metadata].include?(key.to_s)
 
-      @backend.set_metadata(key, value)
+      @backend.set_metadata(
+        Appsignal::Utils::UTF8.encode(key),
+        Appsignal::Utils::UTF8.encode(value)
+      )
     end
 
     # Add OpenTelemetry attributes to the span AppSignal is currently
@@ -1045,9 +1048,9 @@ module Appsignal
       return if paused?
 
       @backend.finish_event(
-        name,
-        title || BLANK,
-        body || BLANK,
+        Appsignal::Utils::UTF8.encode(name),
+        Appsignal::Utils::UTF8.encode(title || BLANK),
+        Appsignal::Utils::UTF8.encode(body || BLANK),
         body_format || Appsignal::EventFormatter::DEFAULT
       )
     end
@@ -1067,9 +1070,9 @@ module Appsignal
       return if paused?
 
       @backend.record_event(
-        name,
-        title || BLANK,
-        body || BLANK,
+        Appsignal::Utils::UTF8.encode(name),
+        Appsignal::Utils::UTF8.encode(title || BLANK),
+        Appsignal::Utils::UTF8.encode(body || BLANK),
         body_format || Appsignal::EventFormatter::DEFAULT,
         duration,
         :opentelemetry_kind => opentelemetry_kind,
@@ -1465,9 +1468,7 @@ module Appsignal
       bucket, transform = @headers_mapping.fetch(channel)
       sample = @headers_buckets.fetch(bucket)
 
-      if transform.nil?
-        sample.add(given_headers, &block)
-      elsif block
+      if block
         sample.add { transform_headers(transform, block.call) }
       else
         sample.add(transform_headers(transform, given_headers))
@@ -1479,7 +1480,8 @@ module Appsignal
     def transform_headers(transform, headers)
       return headers unless headers.is_a?(Hash)
 
-      headers.to_h(&transform)
+      headers = Appsignal::Utils::UTF8.encode_hash(headers)
+      transform ? headers.to_h(&transform) : headers
     end
 
     def mark_channel_set(channel)
@@ -1539,13 +1541,15 @@ module Appsignal
       all_tags = base_tags.merge(@tags)
 
       # Apply existing sanitization filter
-      all_tags.select do |key, value|
+      allowed_tags = all_tags.select do |key, value|
         ALLOWED_TAG_KEY_TYPES.any? { |type| key.is_a? type } &&
           ALLOWED_TAG_VALUE_TYPES.any? { |type| value.is_a? type }
       end
+      Appsignal::Utils::UTF8.encode_hash(allowed_tags)
     end
 
     def cleaned_backtrace(backtrace)
+      backtrace = backtrace&.map { |line| Appsignal::Utils::UTF8.encode(line) }
       if defined?(::Rails) && Rails.respond_to?(:backtrace_cleaner) && backtrace
         ::Rails.backtrace_cleaner.clean(backtrace, nil)
       else
@@ -1563,11 +1567,12 @@ module Appsignal
     # Clean error messages that are known to potentially contain user data.
     # Returns an unchanged message otherwise.
     def cleaned_error_message(error)
+      message = Appsignal::Utils::UTF8.encode(error.message.to_s)
       case error.class.to_s
       when "PG::UniqueViolation", "ActiveRecord::RecordNotUnique"
-        error.message.to_s.gsub(/\)=\(.*\)/, ")=(?)")
+        message.gsub(/\)=\(.*\)/, ")=(?)")
       else
-        error.message.to_s
+        message
       end
     end
 

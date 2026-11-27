@@ -141,14 +141,21 @@ module Appsignal
       return if message.nil?
 
       if message.is_a?(Exception)
-        first_line = message.backtrace&.first
-        message = "#{message.class}: #{message.message}"
+        error_message = Appsignal::Utils::UTF8.encode(message.message)
+        first_line = Appsignal::Utils::UTF8.encode(message.backtrace&.first)
+        message = "#{message.class}: #{error_message}"
         message = "#{message} (#{first_line})" if first_line
       end
 
       message = formatter.call(severity, Time.now, group, message) if formatter
 
-      Appsignal::Backends.logger.emit(group, severity, @format, message.to_s, appsignal_attributes)
+      Appsignal::Backends.logger.emit(
+        Appsignal::Utils::UTF8.encode(group),
+        severity,
+        @format,
+        Appsignal::Utils::UTF8.encode(message.to_s),
+        Appsignal::Utils::UTF8.encode_hash(appsignal_attributes)
+      )
 
       false
     end

@@ -198,6 +198,51 @@ describe Appsignal::Utils::Data do
               %("field_two":"aa�"})
             ].join
           end
+
+          it "replaces invalid bytes in UTF-8 strings" do
+            invalid = "caf\xE9".dup.force_encoding(Encoding::UTF_8)
+
+            hash_json = generate(
+              invalid => invalid, "array" => [invalid], "hash" => { invalid => invalid }
+            ).to_s
+            expect(hash_json)
+              .to eq(%({"array":["caf�"],"caf�":"caf�","hash":{"caf�":"caf�"}}))
+            expect(hash_json).to be_valid_encoding
+
+            array_json = generate([invalid, [invalid], { invalid => invalid }]).to_s
+            expect(array_json).to eq(%(["caf�",["caf�"],{"caf�":"caf�"}]))
+            expect(array_json).to be_valid_encoding
+          end
+
+          it "reads binary strings as UTF-8" do
+            binary = "caf\xC3\xA9".b
+
+            hash_json = generate(
+              binary => binary, "array" => [binary], "hash" => { binary => binary }
+            ).to_s
+            expect(hash_json)
+              .to eq(%({"array":["café"],"café":"café","hash":{"café":"café"}}))
+            expect(hash_json).to be_valid_encoding
+
+            array_json = generate([binary, [binary], { binary => binary }]).to_s
+            expect(array_json).to eq(%(["café",["café"],{"café":"café"}]))
+            expect(array_json).to be_valid_encoding
+          end
+
+          it "converts strings in other encodings to UTF-8" do
+            latin1 = "café".encode(Encoding::ISO_8859_1)
+
+            hash_json = generate(
+              latin1 => latin1, "array" => [latin1], "hash" => { latin1 => latin1 }
+            ).to_s
+            expect(hash_json)
+              .to eq(%({"array":["café"],"café":"café","hash":{"café":"café"}}))
+            expect(hash_json).to be_valid_encoding
+
+            array_json = generate([latin1, [latin1], { latin1 => latin1 }]).to_s
+            expect(array_json).to eq(%(["café",["café"],{"café":"café"}]))
+            expect(array_json).to be_valid_encoding
+          end
         end
       end
 

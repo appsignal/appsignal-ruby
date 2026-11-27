@@ -3343,6 +3343,49 @@ describe Appsignal do
         end
       end
     end
+
+    describe "with a name OpenTelemetry does not accept" do
+      it_in_both_modes "does not raise for .set_gauge" do
+        expect { Appsignal.set_gauge("my metric", 1) }.to_not raise_error
+      end
+
+      it_in_both_modes "does not raise for .increment_counter" do
+        expect { Appsignal.increment_counter("my metric", 1) }.to_not raise_error
+      end
+
+      it_in_both_modes "does not raise for .add_distribution_value" do
+        expect { Appsignal.add_distribution_value("my metric", 1) }.to_not raise_error
+      end
+    end
+
+    describe "with invalid UTF-8" do
+      let(:invalid) { "caf\xE9".dup.force_encoding(Encoding::UTF_8) }
+      let(:replaced) { "caf\u{FFFD}" }
+
+      [:set_gauge, :increment_counter, :add_distribution_value].each do |helper|
+        describe ".#{helper}" do
+          define_method(:perform) do
+            Appsignal.public_send(helper, invalid, 1, invalid => invalid)
+          end
+
+          it "in agent mode", :agent_mode do
+            start_agent
+            expect(Appsignal::Extension).to receive(helper)
+              .with(replaced, 1.0, Appsignal::Utils::Data.generate(replaced => replaced))
+            perform
+          end
+
+          it "in collector mode", :collector_mode do
+            start_collector_agent
+            allow(Appsignal::Metrics::OpenTelemetryBackend).to receive(helper)
+            expect(Appsignal::Extension).not_to receive(helper)
+            perform
+            expect(Appsignal::Metrics::OpenTelemetryBackend).to have_received(helper)
+              .with(replaced, 1, { replaced => replaced })
+          end
+        end
+      end
+    end
   end
 
   describe ".instrument" do
