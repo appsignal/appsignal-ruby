@@ -1950,6 +1950,29 @@ describe Appsignal::Transaction do
       end
     end
 
+    describe "adding attributes with invalid UTF-8" do
+      def perform
+        transaction.add_opentelemetry_attributes(invalid => invalid)
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to_not include_tags(replaced => replaced)
+        expect(transaction).to_not include_metadata(replaced => replaced)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(root_span.attributes[replaced]).to eq(replaced)
+      end
+    end
+
     describe "adding attributes while an event is open" do
       def perform
         set_current_transaction(transaction)
