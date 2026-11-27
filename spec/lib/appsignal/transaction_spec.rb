@@ -3733,6 +3733,30 @@ describe Appsignal::Transaction do
       end
     end
 
+    context "when the action has invalid UTF-8" do
+      def perform
+        transaction.set_action(invalid)
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+
+        expect(transaction.action).to eq(replaced)
+        expect(transaction).to have_action(replaced)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+
+        expect(transaction.action).to eq(replaced)
+        transaction.complete
+        expect(root_span.name).to eq(replaced)
+        expect(root_span.attributes["appsignal.action_name"]).to eq(replaced)
+      end
+    end
+
     context "when the action is nil" do
       def perform
         transaction.set_action(action_name)
@@ -3871,6 +3895,52 @@ describe Appsignal::Transaction do
         expect(transaction.namespace).to eq namespace
         transaction.complete
         expect(root_span.attributes["appsignal.namespace"]).to eq(namespace)
+      end
+    end
+
+    context "when the namespace has invalid UTF-8" do
+      def perform
+        transaction.set_namespace(invalid)
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+
+        expect(transaction.namespace).to eq(replaced)
+        expect(transaction).to have_namespace(replaced)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+
+        expect(transaction.namespace).to eq(replaced)
+        transaction.complete
+        expect(root_span.attributes["appsignal.namespace"]).to eq(replaced)
+      end
+    end
+
+    context "when the transaction is created with a namespace with invalid UTF-8" do
+      def perform
+        new_transaction(invalid)
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        transaction = perform
+
+        expect(transaction.namespace).to eq(replaced)
+        expect(transaction).to have_namespace(replaced)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        transaction = perform
+
+        expect(transaction.namespace).to eq(replaced)
+        transaction.complete
+        expect(root_span.attributes["appsignal.namespace"]).to eq(replaced)
       end
     end
 

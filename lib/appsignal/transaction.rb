@@ -249,7 +249,7 @@ module Appsignal
     )
       @transaction_id = id
       @action = nil
-      @namespace = namespace
+      @namespace = Appsignal::Utils::UTF8.encode(namespace)
       @paused = false
       @discarded = false
       @completed = false
@@ -884,8 +884,8 @@ module Appsignal
     def set_action(action)
       return unless action
 
-      @action = action
-      @backend.set_action(action)
+      @action = Appsignal::Utils::UTF8.encode(action)
+      @backend.set_action(@action)
     end
 
     # Set an action name only if there is no current action set.
@@ -932,8 +932,8 @@ module Appsignal
     def set_namespace(namespace)
       return unless namespace
 
-      @namespace = namespace
-      @backend.set_namespace(namespace)
+      @namespace = Appsignal::Utils::UTF8.encode(namespace)
+      @backend.set_namespace(@namespace)
     end
 
     # Set queue start time for transaction.
