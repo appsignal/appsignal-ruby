@@ -375,7 +375,7 @@ module Appsignal
         }
 
         unless causes.empty?
-          attributes["appsignal.error_causes"] = JSON.generate(
+          attributes["appsignal.error_causes"] = Appsignal::Utils::JSON.generate(
             causes.map do |cause|
               lines, lines_omitted = trim_shared_tail(Array(cause[:backtrace]), error_lines)
 

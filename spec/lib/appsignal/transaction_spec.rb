@@ -4721,6 +4721,86 @@ describe Appsignal::Transaction do
       end
     end
 
+    describe "recording an error with invalid UTF-8" do
+      let(:error) do
+        ExampleStandardError.new(invalid).tap do |e|
+          e.set_backtrace([invalid])
+        end
+      end
+
+      def perform
+        transaction.add_error(error)
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+
+        expect(transaction).to have_error("ExampleStandardError", replaced, [replaced])
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        event = root_span.events.find { |e| e.name == "exception" }
+        expect(event.attributes["exception.message"]).to eq(replaced)
+        expect(event.attributes["exception.stacktrace"]).to eq(replaced)
+      end
+    end
+
+    describe "recording an error that has causes with invalid UTF-8" do
+      let(:error) do
+        cause = ExampleStandardError.new(invalid).tap do |e|
+          e.set_backtrace(["/path/#{invalid}.rb:1:in `cause_method'"])
+        end
+        ExampleException.new("wrapper message").tap do |e|
+          e.set_backtrace(["/path/wrapper.rb:2:in `wrapper_method'"])
+          allow(e).to receive(:cause).and_return(cause)
+        end
+      end
+
+      def perform
+        # Hide Rails so the backtrace isn't run through its cleaner, keeping the
+        # asserted lines deterministic (mirrors the error-causes sample-data spec).
+        hide_const("Rails")
+        transaction.add_error(error)
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+
+        expect(transaction).to include_error_causes(
+          [
+            hash_including(
+              "name" => "ExampleStandardError",
+              "message" => replaced,
+              "first_line" => hash_including("path" => "/path/#{replaced}.rb")
+            )
+          ]
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        event = root_span.events.find { |e| e.name == "exception" }
+        expect(JSON.parse(event.attributes["appsignal.error_causes"])).to eq(
+          [
+            {
+              "name" => "ExampleStandardError",
+              "message" => replaced,
+              "lines" => ["/path/#{replaced}.rb:1:in `cause_method'"]
+            }
+          ]
+        )
+      end
+    end
+
     describe "recording multiple errors" do
       let(:other_error) do
         ExampleStandardError.new("other message").tap { |e| e.set_backtrace(["line 2"]) }
@@ -4944,6 +5024,39 @@ describe Appsignal::Transaction do
         event = exception_event
         expect(event.attributes["exception.type"]).to eq("PG::UniqueViolation")
         expect(event.attributes["exception.message"]).to eq(sanitized_message)
+      end
+    end
+
+    context "with a PG::UniqueViolation with invalid UTF-8" do
+      let(:error) do
+        PG::UniqueViolation.new(
+          "ERROR: duplicate key value violates unique constraint " \
+            "\"index_users_on_email\" DETAIL: Key (email)=(#{invalid}) already exists."
+        )
+      end
+      let(:sanitized_message) do
+        "ERROR: duplicate key value violates unique constraint " \
+          "\"index_users_on_email\" DETAIL: Key (email)=(?) already exists."
+      end
+      before { stub_const("PG::UniqueViolation", Class.new(StandardError)) }
+
+      def perform
+        transaction.add_error(error)
+      end
+
+      it "returns a sanizited error message in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+
+        expect(transaction).to have_error("PG::UniqueViolation", sanitized_message)
+      end
+
+      it "records a sanitized error message in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(exception_event.attributes["exception.message"]).to eq(sanitized_message)
       end
     end
 

@@ -1549,6 +1549,7 @@ module Appsignal
     end
 
     def cleaned_backtrace(backtrace)
+      backtrace = backtrace&.map { |line| Appsignal::Utils::UTF8.encode(line) }
       if defined?(::Rails) && Rails.respond_to?(:backtrace_cleaner) && backtrace
         ::Rails.backtrace_cleaner.clean(backtrace, nil)
       else
@@ -1566,11 +1567,12 @@ module Appsignal
     # Clean error messages that are known to potentially contain user data.
     # Returns an unchanged message otherwise.
     def cleaned_error_message(error)
+      message = Appsignal::Utils::UTF8.encode(error.message.to_s)
       case error.class.to_s
       when "PG::UniqueViolation", "ActiveRecord::RecordNotUnique"
-        error.message.to_s.gsub(/\)=\(.*\)/, ")=(?)")
+        message.gsub(/\)=\(.*\)/, ")=(?)")
       else
-        error.message.to_s
+        message
       end
     end
 
