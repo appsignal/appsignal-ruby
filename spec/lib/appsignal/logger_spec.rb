@@ -1342,6 +1342,33 @@ describe Appsignal::Logger do
     end
   end
 
+  describe "#error with exception object with incompatible encodings" do
+    let(:error) do
+      ExampleStandardError.new("caf\xE9".b).tap do |e|
+        e.set_backtrace(["/app/\u65E5\u672C.rb:1"])
+      end
+    end
+    let(:expected) { "ExampleStandardError: caf\u{FFFD} (/app/\u65E5\u672C.rb:1)" }
+
+    def perform
+      logger.error(error)
+    end
+
+    it "in agent mode", :agent_mode do
+      start_agent
+      expect(Appsignal::Extension).to receive(:log)
+        .with("group", 6, 3, expected, instance_of(Appsignal::Extension::Data))
+      perform
+    end
+
+    it "in collector mode", :collector_mode do
+      start_collector_agent
+      expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
+        .with("group", ::Logger::ERROR, Appsignal::Logger::AUTODETECT, expected, {})
+      perform
+    end
+  end
+
   describe "#error with an exception that has no backtrace" do
     let(:error) { ExampleStandardError.new("oh no!") }
 
