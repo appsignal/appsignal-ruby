@@ -2,6 +2,8 @@ describe Appsignal::Transaction do
   let(:options) { {} }
   let(:time) { Time.at(fixed_time) }
   let(:root_path) { nil }
+  let(:invalid) { "caf\xE9".dup.force_encoding(Encoding::UTF_8) }
+  let(:replaced) { "caf\u{FFFD}" }
 
   before do |example|
     # Only auto-start the agent for non-mode examples. Mode-tagged examples
@@ -1201,6 +1203,29 @@ describe Appsignal::Transaction do
       end
     end
 
+    describe "adding params with invalid UTF-8" do
+      def perform
+        transaction.add_params(invalid => invalid)
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_params(replaced => replaced)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(JSON.parse(root_span.attributes["appsignal.request.payload"]))
+          .to eq(replaced => replaced)
+      end
+    end
+
     describe "merging the params on the transaction" do
       def perform
         transaction.add_params("abc" => "value")
@@ -2042,6 +2067,29 @@ describe Appsignal::Transaction do
 
         expect(JSON.parse(root_span.attributes["appsignal.request.session_data"]))
           .to eq("key" => "value")
+      end
+    end
+
+    describe "adding session data with invalid UTF-8" do
+      def perform
+        transaction.add_session_data(invalid => invalid)
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_session_data(replaced => replaced)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(JSON.parse(root_span.attributes["appsignal.request.session_data"]))
+          .to eq(replaced => replaced)
       end
     end
 
@@ -3334,6 +3382,30 @@ describe Appsignal::Transaction do
           }
         }
       end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_custom_data(expected)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(JSON.parse(root_span.attributes["appsignal.custom_data"])).to eq(expected)
+      end
+    end
+
+    describe "adding custom data with invalid UTF-8" do
+      def perform
+        transaction.add_custom_data(invalid => { invalid => [invalid] })
+      end
+
+      let(:expected) { { replaced => { replaced => [replaced] } } }
 
       it "in agent mode", :agent_mode do
         start_agent(**start_agent_args)
