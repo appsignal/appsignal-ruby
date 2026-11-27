@@ -3343,6 +3343,20 @@ describe Appsignal do
         end
       end
     end
+
+    describe "with a name OpenTelemetry does not accept" do
+      it_in_both_modes "does not raise for .set_gauge" do
+        expect { Appsignal.set_gauge("my metric", 1) }.to_not raise_error
+      end
+
+      it_in_both_modes "does not raise for .increment_counter" do
+        expect { Appsignal.increment_counter("my metric", 1) }.to_not raise_error
+      end
+
+      it_in_both_modes "does not raise for .add_distribution_value" do
+        expect { Appsignal.add_distribution_value("my metric", 1) }.to_not raise_error
+      end
+    end
   end
 
   describe ".instrument" do
