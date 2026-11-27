@@ -3259,6 +3259,28 @@ describe Appsignal::Transaction do
       end
     end
 
+    describe "storing tags with invalid UTF-8" do
+      def perform
+        transaction.add_tags(invalid => invalid)
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_tags(replaced => replaced)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(root_span.attributes["appsignal.tag.#{replaced}"]).to eq(replaced)
+      end
+    end
+
     describe "merging the tags when called multiple times" do
       def perform
         transaction.add_tags(:key1 => "value1")
@@ -4074,6 +4096,27 @@ describe Appsignal::Transaction do
 
         # Metadata has no dedicated OTel attribute; it is emitted as a tag.
         expect(root_span.attributes["appsignal.tag.request_method"]).to eq("GET")
+      end
+    end
+
+    describe "updating the metadata with invalid UTF-8" do
+      def perform
+        transaction.set_metadata(invalid, invalid)
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+
+        expect(transaction).to include_metadata(replaced => replaced)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(root_span.attributes["appsignal.tag.#{replaced}"]).to eq(replaced)
       end
     end
 

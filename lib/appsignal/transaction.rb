@@ -957,7 +957,10 @@ module Appsignal
       return unless key && value
       return if Appsignal.config[:filter_metadata].include?(key.to_s)
 
-      @backend.set_metadata(key, value)
+      @backend.set_metadata(
+        Appsignal::Utils::UTF8.encode(key),
+        Appsignal::Utils::UTF8.encode(value)
+      )
     end
 
     # Add OpenTelemetry attributes to the span AppSignal is currently
@@ -1539,10 +1542,11 @@ module Appsignal
       all_tags = base_tags.merge(@tags)
 
       # Apply existing sanitization filter
-      all_tags.select do |key, value|
+      allowed_tags = all_tags.select do |key, value|
         ALLOWED_TAG_KEY_TYPES.any? { |type| key.is_a? type } &&
           ALLOWED_TAG_VALUE_TYPES.any? { |type| value.is_a? type }
       end
+      Appsignal::Utils::UTF8.encode_hash(allowed_tags)
     end
 
     def cleaned_backtrace(backtrace)
