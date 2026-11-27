@@ -2901,6 +2901,30 @@ describe Appsignal::Transaction do
       end
     end
 
+    # The header named with invalid UTF-8 is not in the allowlist, so it is
+    # dropped. It is there to show that its name does not break the others.
+    describe "adding headers with invalid UTF-8" do
+      def perform
+        transaction.add_request_headers("accept" => invalid, invalid => "value")
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_environment("HTTP_ACCEPT" => replaced)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(root_span.attributes["http.request.header.accept"]).to eq(replaced)
+      end
+    end
+
     describe "adding a header named in another spelling" do
       let(:options) { { :keep_request_headers => %w[Accept-Encoding] } }
 
@@ -2964,6 +2988,28 @@ describe Appsignal::Transaction do
         transaction.complete
 
         expect(root_span.attributes["appsignal.environment.REMOTE_ADDR"]).to eq("127.0.0.1")
+      end
+    end
+
+    describe "adding values with invalid UTF-8" do
+      def perform
+        transaction.add_request_environment("REMOTE_ADDR" => invalid)
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        perform
+        transaction._sample
+
+        expect(transaction).to include_environment("REMOTE_ADDR" => replaced)
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        perform
+        transaction.complete
+
+        expect(root_span.attributes["appsignal.environment.REMOTE_ADDR"]).to eq(replaced)
       end
     end
   end

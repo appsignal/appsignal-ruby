@@ -1468,9 +1468,7 @@ module Appsignal
       bucket, transform = @headers_mapping.fetch(channel)
       sample = @headers_buckets.fetch(bucket)
 
-      if transform.nil?
-        sample.add(given_headers, &block)
-      elsif block
+      if block
         sample.add { transform_headers(transform, block.call) }
       else
         sample.add(transform_headers(transform, given_headers))
@@ -1482,7 +1480,8 @@ module Appsignal
     def transform_headers(transform, headers)
       return headers unless headers.is_a?(Hash)
 
-      headers.to_h(&transform)
+      headers = Appsignal::Utils::UTF8.encode_hash(headers)
+      transform ? headers.to_h(&transform) : headers
     end
 
     def mark_channel_set(channel)
