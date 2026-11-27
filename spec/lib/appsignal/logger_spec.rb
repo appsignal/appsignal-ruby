@@ -532,6 +532,30 @@ describe Appsignal::Logger do
       end
     end
 
+    describe "with invalid UTF-8" do
+      let(:invalid) { "caf\xE9".dup.force_encoding(Encoding::UTF_8) }
+      let(:replaced) { "caf\u{FFFD}" }
+
+      def perform
+        Appsignal::Logger.new(invalid).info(invalid, invalid => invalid)
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent
+        expect(Appsignal::Extension).to receive(:log)
+          .with(replaced, 3, 3, replaced, Appsignal::Utils::Data.generate(replaced => replaced))
+        perform
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        expect(Appsignal::Logger::OpenTelemetryBackend).to receive(:emit)
+          .with(replaced, ::Logger::INFO, Appsignal::Logger::AUTODETECT, replaced,
+            { replaced => replaced })
+        perform
+      end
+    end
+
     describe "with a non-string message" do
       def perform
         logger.add(::Logger::INFO, 123)
