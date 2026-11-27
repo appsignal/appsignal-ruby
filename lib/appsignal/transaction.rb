@@ -1048,9 +1048,9 @@ module Appsignal
       return if paused?
 
       @backend.finish_event(
-        name,
-        title || BLANK,
-        body || BLANK,
+        Appsignal::Utils::UTF8.encode(name),
+        Appsignal::Utils::UTF8.encode(title || BLANK),
+        Appsignal::Utils::UTF8.encode(body || BLANK),
         body_format || Appsignal::EventFormatter::DEFAULT
       )
     end
@@ -1070,9 +1070,9 @@ module Appsignal
       return if paused?
 
       @backend.record_event(
-        name,
-        title || BLANK,
-        body || BLANK,
+        Appsignal::Utils::UTF8.encode(name),
+        Appsignal::Utils::UTF8.encode(title || BLANK),
+        Appsignal::Utils::UTF8.encode(body || BLANK),
         body_format || Appsignal::EventFormatter::DEFAULT,
         duration,
         :opentelemetry_kind => opentelemetry_kind,

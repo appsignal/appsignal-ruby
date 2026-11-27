@@ -6117,6 +6117,37 @@ describe Appsignal::Transaction do
         expect(observed).to be_within(50_000_000).of(duration_ns)
       end
     end
+
+    describe "recording an event with invalid UTF-8" do
+      def perform(transaction)
+        transaction.record_event("custom.#{invalid}", "Title #{invalid}", invalid, 1_000,
+          Appsignal::EventFormatter::DEFAULT)
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+        perform(transaction)
+        Appsignal::Transaction.complete_current!
+
+        expect(transaction).to include_event(
+          "name" => "custom.#{replaced}",
+          "title" => "Title #{replaced}",
+          "body" => replaced
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+        perform(transaction)
+        Appsignal::Transaction.complete_current!
+
+        span = event_spans.first
+        expect(span.name).to eq("custom.#{replaced} (Title #{replaced})")
+        expect(span.attributes["appsignal.body"]).to eq(replaced)
+      end
+    end
   end
 
   describe "#instrument" do
@@ -6219,6 +6250,67 @@ describe Appsignal::Transaction do
         expect(span.attributes).not_to have_key("appsignal.category")
         expect(span.attributes).not_to have_key("db.query.text")
         expect(span.attributes).not_to have_key("db.system.name")
+      end
+    end
+
+    describe "instrumenting an event with invalid UTF-8" do
+      def perform(transaction)
+        transaction.instrument("custom.#{invalid}", "Title #{invalid}", invalid,
+          Appsignal::EventFormatter::DEFAULT) { nil }
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+        perform(transaction)
+        Appsignal::Transaction.complete_current!
+
+        expect(transaction).to include_event(
+          "name" => "custom.#{replaced}",
+          "title" => "Title #{replaced}",
+          "body" => replaced
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+        perform(transaction)
+        Appsignal::Transaction.complete_current!
+
+        span = event_spans.first
+        expect(span.name).to eq("custom.#{replaced} (Title #{replaced})")
+        expect(span.attributes["appsignal.body"]).to eq(replaced)
+      end
+    end
+
+    describe "instrumenting a SQL event with invalid UTF-8" do
+      def perform(transaction)
+        transaction.instrument("sql.active_record", "Query", "SELECT '#{invalid}'",
+          Appsignal::EventFormatter::SQL_BODY_FORMAT) { nil }
+      end
+
+      it "in agent mode", :agent_mode do
+        start_agent(**start_agent_args)
+        transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+        perform(transaction)
+        Appsignal::Transaction.complete_current!
+
+        expect(transaction).to include_event(
+          "name" => "sql.active_record",
+          "title" => "Query",
+          "body" => "SELECT '#{replaced}'",
+          "body_format" => Appsignal::EventFormatter::SQL_BODY_FORMAT
+        )
+      end
+
+      it "in collector mode", :collector_mode do
+        start_collector_agent
+        transaction = create_transaction(Appsignal::Transaction::HTTP_REQUEST)
+        perform(transaction)
+        Appsignal::Transaction.complete_current!
+
+        expect(event_spans.first.attributes["db.query.text"]).to eq("SELECT '#{replaced}'")
       end
     end
 
